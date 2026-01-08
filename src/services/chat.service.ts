@@ -1,0 +1,91 @@
+import { api } from '@/lib/api'
+import type {
+  Chat,
+  CreateChat,
+  UpdateChat,
+  Message,
+  CreateMessage,
+  UpdateMessage,
+  MessageStorage,
+  CreateMessageStorage,
+  Summary,
+  CreateSummary,
+} from '@/types/database'
+
+export const chatService = {
+  // Chat CRUD
+  getAll: async (): Promise<Chat[]> => {
+    return api.get<Chat[]>('/chat')
+  },
+
+  getById: async (id: number): Promise<Chat> => {
+    return api.get<Chat>(`/chat/${id}`)
+  },
+
+  getByUser: async (userId: number): Promise<Chat[]> => {
+    return api.get<Chat[]>(`/chat/user/${userId}`)
+  },
+
+  getByArea: async (areaId: number): Promise<Chat[]> => {
+    return api.get<Chat[]>(`/chat/area/${areaId}`)
+  },
+
+  create: async (data: CreateChat): Promise<Chat> => {
+    return api.post<Chat>('/chat', data)
+  },
+
+  update: async (id: number, data: UpdateChat): Promise<Chat> => {
+    return api.put<Chat>(`/chat/${id}`, data)
+  },
+
+  delete: async (id: number): Promise<void> => {
+    return api.del<void>(`/chat/${id}`)
+  },
+
+  // Messages
+  getMessages: async (chatId: number): Promise<Message[]> => {
+    return api.get<Message[]>(`/chat/${chatId}/messages`)
+  },
+
+  createMessage: async (data: CreateMessage): Promise<Message> => {
+    return api.post<Message>('/chat/messages', data)
+  },
+
+  updateMessage: async (id: number, data: UpdateMessage): Promise<Message> => {
+    return api.put<Message>(`/chat/messages/${id}`, data)
+  },
+
+  deleteMessage: async (id: number): Promise<void> => {
+    return api.del<void>(`/chat/messages/${id}`)
+  },
+
+  // Message Storage
+  getMessageStorage: async (id: number): Promise<MessageStorage> => {
+    return api.get<MessageStorage>(`/chat/message-storage/${id}`)
+  },
+
+  createMessageStorage: async (data: CreateMessageStorage): Promise<MessageStorage> => {
+    return api.post<MessageStorage>('/chat/message-storage', data)
+  },
+
+  updateMessageStorage: async (id: number, data: Partial<CreateMessageStorage>): Promise<MessageStorage> => {
+    return api.put<MessageStorage>(`/chat/message-storage/${id}`, data)
+  },
+
+  // Summary
+  getSummary: async (chatId: number): Promise<Summary | null> => {
+    return api.get<Summary | null>(`/chat/${chatId}/summary`)
+  },
+
+  createSummary: async (data: CreateSummary): Promise<Summary> => {
+    return api.post<Summary>('/chat/summary', data)
+  },
+
+  updateSummary: async (id: number, data: Partial<CreateSummary>): Promise<Summary> => {
+    return api.put<Summary>(`/chat/summary/${id}`, data)
+  },
+
+  deleteSummary: async (id: number): Promise<void> => {
+    return api.del<void>(`/chat/summary/${id}`)
+  },
+}
