@@ -8,13 +8,16 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Sidebar } from "@/components/sidebar"
 import { useAuth } from "@/contexts/auth-context"
+import { useSidebar } from "@/contexts/sidebar-context"
 import { useNavigate } from "react-router-dom"
+import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { Cargo } from "@/types"
 
 export default function Cargos() {
   const { user } = useAuth()
+  const { isCollapsed } = useSidebar()
   const navigate = useNavigate()
   const [cargos, setCargos] = useState<Cargo[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -104,7 +107,12 @@ export default function Cargos() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
 
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-64 overflow-y-auto min-h-screen">
+      <main
+        className={cn(
+          "flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto min-h-screen transition-all duration-300",
+          isCollapsed ? "lg:ml-24" : "lg:ml-64"
+        )}
+      >
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>

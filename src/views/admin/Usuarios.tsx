@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Sidebar } from "@/components/sidebar"
 import { useAuth } from "@/contexts/auth-context"
+import { useSidebar } from "@/contexts/sidebar-context"
 import { useNavigate } from "react-router-dom"
+import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { User, UserRole, UserArea } from "@/types"
@@ -15,6 +17,7 @@ import type { User, UserRole, UserArea } from "@/types"
 export default function Usuarios() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { isCollapsed } = useSidebar()
   const [usuarios, setUsuarios] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -96,7 +99,12 @@ export default function Usuarios() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
 
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-64 overflow-y-auto min-h-screen">
+      <main
+        className={cn(
+          "flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto min-h-screen transition-all duration-300",
+          isCollapsed ? "lg:ml-24" : "lg:ml-64"
+        )}
+      >
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>

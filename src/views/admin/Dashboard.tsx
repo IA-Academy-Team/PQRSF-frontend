@@ -1,0 +1,469 @@
+import {
+  ArrowUpRight,
+  FileText,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  TrendingUp,
+  ClipboardList,
+  XCircle,
+  MessageCircle,
+} from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Sidebar } from "@/components/sidebar"
+import { Link, useNavigate } from "react-router-dom"
+import { useAuth } from "@/contexts/auth-context"
+import { useSidebar } from "@/contexts/sidebar-context"
+import { useEffect } from "react"
+import { cn } from "@/lib/utils"
+
+export default function Dashboard() {
+  const { user, isLoading } = useAuth()
+  const navigate = useNavigate()
+  const { isCollapsed } = useSidebar()
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      navigate("/")
+    }
+  }, [user, isLoading, navigate])
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (user.rol === "Administrador") {
+    return (
+      <div className="flex min-h-screen bg-background">
+        <Sidebar />
+
+        <main
+          className={cn(
+            "flex-1 p-4 sm:p-6 lg:p-8 h-screen overflow-hidden transition-all duration-300 flex flex-col",
+            isCollapsed ? "lg:ml-24" : "lg:ml-64"
+          )}
+        >
+          <div className="mb-4 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Panel de Administración</h1>
+                <p className="text-sm sm:text-base text-muted-foreground">Control total del sistema PQRSF</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-4 shrink-0">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+              {user.rol}
+            </div>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2 lg:gap-6 flex-1 min-h-0 overflow-hidden">
+            {/* Columna Izquierda */}
+            <div className="flex flex-col gap-4 lg:gap-6 min-h-0 overflow-hidden">
+              {/* Fila 1: Cards */}
+              <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 shrink-0">
+                <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
+                  <CardContent className="p-2 sm:p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="bg-white/20 rounded-lg p-1 sm:p-1.5">
+                        <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                      </div>
+                    </div>
+                    <h3 className="text-xs font-medium mb-1 opacity-90">Total PQRSF</h3>
+                    <p className="text-xl sm:text-2xl font-bold">287</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-orange-200 bg-orange-50">
+                  <CardContent className="p-2 sm:p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="bg-orange-500/20 rounded-lg p-1 sm:p-1.5">
+                        <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+                      </div>
+                    </div>
+                    <h3 className="text-xs font-medium text-muted-foreground mb-1">En Seguimiento</h3>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground">64</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-red-200 bg-red-50">
+                  <CardContent className="p-2 sm:p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="bg-red-500/20 rounded-lg p-1 sm:p-1.5">
+                        <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
+                      </div>
+                    </div>
+                    <h3 className="text-xs font-medium text-muted-foreground mb-1">En Apelación</h3>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground">18</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-green-200 bg-green-50">
+                  <CardContent className="p-2 sm:p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="bg-green-500/20 rounded-lg p-1 sm:p-1.5">
+                        <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
+                      </div>
+                    </div>
+                    <h3 className="text-xs font-medium text-muted-foreground mb-1">Cerradas</h3>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground">205</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Fila 2: Chats Recientes */}
+              <div className="min-h-0 flex flex-1">
+                <Card className="h-full w-full flex flex-col">
+                  <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 shrink-0">
+                    <CardTitle className="text-lg sm:text-xl">Chats Recientes</CardTitle>
+                    <Link to="/chats">
+                      <Button variant="ghost" size="sm" className="w-full sm:w-auto">
+                        Ver Todos
+                        <ArrowUpRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </Link>
+                  </CardHeader>
+                  <CardContent className="p-4 sm:p-6 flex-1 min-h-0 overflow-hidden">
+                    <div className="space-y-3">
+                      {[
+                        {
+                          radicado: "PQRSF-2023-045",
+                          cliente: "Carlos Méndez",
+                          ultimoMensaje: "Gracias por la respuesta, quedé satisfecho",
+                          fecha: "Hace 2 horas",
+                        },
+                        {
+                          radicado: "PQRSF-2023-051",
+                          cliente: "Ana López",
+                          ultimoMensaje: "Necesito más información sobre mi solicitud",
+                          fecha: "Hace 5 horas",
+                        },
+                        {
+                          radicado: "PQRSF-2023-062",
+                          cliente: "María González",
+                          ultimoMensaje: "El problema se resolvió correctamente",
+                          fecha: "Hace 8 horas",
+                        },
+                        {
+                          radicado: "PQRSF-2023-068",
+                          cliente: "Juan Rodríguez",
+                          ultimoMensaje: "Solicito seguimiento de mi caso",
+                          fecha: "Hace 12 horas",
+                        },
+                      ].map((chat, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <MessageCircle className="h-4 w-4 text-primary shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-sm truncate">{chat.radicado}</p>
+                              <p className="text-xs text-muted-foreground truncate">{chat.cliente}</p>
+                              <p className="text-xs mt-1 line-clamp-2">{chat.ultimoMensaje}</p>
+                            </div>
+                          </div>
+                          <span className="text-xs text-muted-foreground shrink-0 ml-2">{chat.fecha}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Columna Derecha */}
+            <div className="flex flex-col gap-4 lg:gap-6 min-h-0 overflow-hidden">
+              {/* Fila 1: PQRSF por Tipo */}
+              <Card className="flex-[2] min-h-0 flex flex-col">
+                <CardHeader className="shrink-0">
+                  <CardTitle className="text-lg">PQRSF por Tipo</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 min-h-0 overflow-y-auto">
+                  <div className="space-y-4">
+                    {[
+                      { tipo: "Petición", cantidad: 112, color: "bg-blue-500" },
+                      { tipo: "Queja", cantidad: 84, color: "bg-red-500" },
+                      { tipo: "Reclamo", cantidad: 46, color: "bg-orange-500" },
+                      { tipo: "Sugerencia", cantidad: 35, color: "bg-green-500" },
+                      { tipo: "Felicitación", cantidad: 10, color: "bg-purple-500" },
+                    ].map((item) => (
+                      <div key={item.tipo} className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium">{item.tipo}</span>
+                            <span className="text-sm text-muted-foreground">{item.cantidad}</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className={`h-full ${item.color}`}
+                              style={{ width: `${(item.cantidad / 287) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Fila 2: Tiempo Promedio de Respuesta */}
+              <Card className="flex-[1] min-h-0 flex flex-col">
+                <CardHeader className="shrink-0">
+                  <CardTitle className="text-lg">Tiempo Promedio de Respuesta</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 min-h-0 overflow-y-auto">
+                  <div className="space-y-2">
+                    {[
+                      { area: "Área Responsable", tiempo: "3.2 días", color: "text-green-600" },
+                      { area: "Servicio al Cliente", tiempo: "1.8 días", color: "text-blue-600" },
+                      { area: "Administración", tiempo: "2.5 días", color: "text-purple-600" },
+                    ].map((item) => (
+                      <div key={item.area} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm font-medium">{item.area}</span>
+                        <span className={`text-sm font-bold ${item.color}`}>{item.tiempo}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (user.rol === "Usuario de Área Responsable") {
+    return (
+      <div className="flex h-screen bg-background overflow-hidden">
+        <Sidebar />
+
+        <main
+          className={cn(
+            "flex-1 p-3 sm:p-4 lg:p-5 overflow-y-auto h-screen transition-all duration-300",
+            isCollapsed ? "lg:ml-24" : "lg:ml-64"
+          )}
+        >
+          <div className="mb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Panel del Área Responsable</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  PQRSF asignadas a: {user.area || "tu área"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-3">
+            <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+              {user.rol}
+              {user.area && <span className="text-muted-foreground">• {user.area}</span>}
+            </div>
+          </div>
+
+          <div className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4 mb-3">
+            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="bg-white/20 rounded-lg p-1.5">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                </div>
+                <h3 className="text-xs font-medium mb-1 opacity-90">PQRSF Asignadas</h3>
+                <p className="text-2xl font-bold mb-0.5">24</p>
+                <p className="text-[10px] opacity-80">Total en tu área</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-orange-200 bg-orange-50">
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="bg-orange-500/20 rounded-lg p-1.5">
+                    <ClipboardList className="h-4 w-4 text-orange-600" />
+                  </div>
+                </div>
+                <h3 className="text-xs font-medium text-muted-foreground mb-1">Pendientes</h3>
+                <p className="text-2xl font-bold text-foreground mb-0.5">8</p>
+                <p className="text-[10px] text-orange-600 font-medium">Requieren respuesta</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="bg-red-500/20 rounded-lg p-1.5">
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                  </div>
+                </div>
+                <h3 className="text-xs font-medium text-muted-foreground mb-1">Apelaciones</h3>
+                <p className="text-2xl font-bold text-foreground mb-0.5">3</p>
+                <p className="text-[10px] text-red-600 font-medium">Para reanálisis</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-green-200 bg-green-50">
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="bg-green-500/20 rounded-lg p-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  </div>
+                </div>
+                <h3 className="text-xs font-medium text-muted-foreground mb-1">Respondidas</h3>
+                <p className="text-2xl font-bold text-foreground mb-0.5">13</p>
+                <p className="text-[10px] text-green-600 font-medium">Enviadas a clientes</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="mb-3">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3">
+              <CardTitle className="text-sm sm:text-base">PQRSF Pendientes de Respuesta</CardTitle>
+              <Link to="/analisis-pendientes">
+                <Button variant="ghost" size="sm" className="w-full sm:w-auto h-7 text-xs">
+                  Ver Todas
+                  <ArrowUpRight className="h-3 w-3 ml-1" />
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent className="p-3">
+              <div className="space-y-2">
+                {[
+                  {
+                    radicado: "PQRSF-2023-001",
+                    tipo: "Petición",
+                    solicitante: "Carlos Mendoza",
+                    descripcion: "Solicitud de cambio de horario de clase",
+                    fecha: "Dic 15, 2023",
+                    prioridad: "Media",
+                    diasTranscurridos: 5,
+                    borderColor: "border-l-orange-500",
+                  },
+                  {
+                    radicado: "PQRSF-2023-005",
+                    tipo: "Queja",
+                    solicitante: "Ana García",
+                    descripcion: "Falta de equipos en sala de cómputo",
+                    fecha: "Dic 16, 2023",
+                    prioridad: "Alta",
+                    diasTranscurridos: 4,
+                    borderColor: "border-l-red-500",
+                  },
+                  {
+                    radicado: "PQRSF-2023-008",
+                    tipo: "Sugerencia",
+                    solicitante: "Luis Rodríguez",
+                    descripcion: "Mejoras en material didáctico",
+                    fecha: "Dic 17, 2023",
+                    prioridad: "Baja",
+                    diasTranscurridos: 3,
+                    borderColor: "border-l-blue-500",
+                  },
+                ].slice(0, 2).map((item, index) => (
+                  <div
+                    key={index}
+                    className={`flex flex-col lg:flex-row lg:items-center justify-between p-2.5 border-l-4 ${item.borderColor} bg-card rounded-lg hover:shadow-md transition-shadow gap-2`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-mono text-xs font-semibold text-primary">{item.radicado}</span>
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                          {item.tipo}
+                        </span>
+                      </div>
+                      <h4 className="font-semibold text-foreground text-xs mb-0.5 truncate">{item.descripcion}</h4>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {item.solicitante} • {item.fecha}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-row items-center gap-2">
+                      <div className="text-left">
+                        <p className="text-[10px] text-muted-foreground mb-0.5">PRIORIDAD</p>
+                        <span
+                          className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                            item.prioridad === "Alta"
+                              ? "bg-red-100 text-red-700"
+                              : item.prioridad === "Media"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-green-100 text-green-700"
+                          }`}
+                        >
+                          {item.prioridad}
+                        </span>
+                      </div>
+
+                      <div className="text-left">
+                        <p className="text-[10px] text-muted-foreground mb-0.5">TIEMPO</p>
+                        <p className="text-xs font-medium">{item.diasTranscurridos}d</p>
+                      </div>
+
+                      <Link to={`/pqrsf/${item.radicado}`}>
+                        <Button size="sm" className="h-7 text-xs px-2">
+                          <ClipboardList className="h-3 w-3 mr-1" />
+                          Responder
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl">Apelaciones Recientes</CardTitle>
+              <Link to="/apelaciones">
+                <Button variant="ghost" size="sm" className="w-full sm:w-auto">
+                  Ver Todas
+                  <ArrowUpRight className="h-4 w-4 ml-1" />
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6">
+              <div className="space-y-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between p-4 border-l-4 border-l-red-500 bg-card rounded-lg gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <span className="font-mono text-sm font-semibold text-primary">PQRSF-2023-010</span>
+                      <span className="text-xs font-medium px-2 py-1 rounded-full bg-red-100 text-red-700">
+                        Apelada
+                      </span>
+                    </div>
+                    <h4 className="font-semibold text-foreground text-sm sm:text-base mb-1">
+                      Solicitud rechazada - Usuario apela decisión
+                    </h4>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      María Pérez • Requiere reanálisis urgente
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Link to="/pqrsf/PQRSF-2023-010">
+                      <Button size="sm" variant="outline" className="w-full sm:w-auto bg-transparent">
+                        <AlertCircle className="h-4 w-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Reanalizar</span>
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    )
+  }
+
+  return null
+}

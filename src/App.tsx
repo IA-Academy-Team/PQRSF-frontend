@@ -1,26 +1,31 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/auth-context'
-import LoginPage from '@/views/LoginPage'
-import Dashboard from '@/views/Dashboard'
-import PQRSFList from '@/views/PQRSFList'
-import PQRSFDetail from '@/views/PQRSFDetail'
-import ForgotPassword from '@/views/ForgotPassword'
-import Register from '@/views/Register'
-import AdminLogin from '@/views/AdminLogin'
-import AnalisisPendientes from '@/views/AnalisisPendientes'
-import Apelaciones from '@/views/Apelaciones'
-import Cargos from '@/views/Cargos'
-import Cerradas from '@/views/Cerradas'
-import Chats from '@/views/Chats'
-import EnApelacion from '@/views/EnApelacion'
-import Seguimiento from '@/views/Seguimiento'
-import Usuarios from '@/views/Usuarios'
+import { SidebarProvider } from '@/contexts/sidebar-context'
+// Login views
+import LoginPage from '@/views/login/LoginPage'
+import AdminLogin from '@/views/login/AdminLogin'
+import Register from '@/views/login/Register'
+import ForgotPassword from '@/views/login/ForgotPassword'
+// Admin views
+import Dashboard from '@/views/admin/Dashboard'
+import PQRSFList from '@/views/admin/PQRSFList'
+import PQRSFDetail from '@/views/admin/PQRSFDetail'
+import Seguimiento from '@/views/admin/Seguimiento'
+import EnApelacion from '@/views/admin/EnApelacion'
+import Cerradas from '@/views/admin/Cerradas'
+import Chats from '@/views/admin/Chats'
+import Usuarios from '@/views/admin/Usuarios'
+import Cargos from '@/views/admin/Cargos'
+// Area Responsable views
+import AnalisisPendientes from '@/views/areaResponsable/AnalisisPendientes'
+import Apelaciones from '@/views/areaResponsable/Apelaciones'
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
+        <SidebarProvider>
+          <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/register" element={<Register />} />
@@ -37,7 +42,8 @@ function App() {
           <Route path="/seguimiento" element={<Seguimiento />} />
           <Route path="/usuarios" element={<Usuarios />} />
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+          </Routes>
+        </SidebarProvider>
       </AuthProvider>
     </BrowserRouter>
   )
