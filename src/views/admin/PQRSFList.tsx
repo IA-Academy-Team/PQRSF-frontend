@@ -626,7 +626,6 @@ export default function PQRSFList() {
       >
         <div className="mb-8 shrink-0">
           <h1 className="text-3xl font-bold text-foreground mb-2">Listado General de PQRSF</h1>
-          <p className="text-muted-foreground">Busca y filtra todas las solicitudes registradas en el sistema</p>
         </div>
 
         <CardContent className="pb-6 px-0 mb-6 shrink-0">
