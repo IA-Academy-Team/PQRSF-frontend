@@ -22,9 +22,414 @@ import {
 export default function PQRSFList() {
   const { isCollapsed } = useSidebar()
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 4
+  const itemsPerPage = 8
 
   const pqrsfItems = [
+    {
+      id: "PQRSF-2023-001",
+      user: "Carlos Mendoza",
+      type: "Petición",
+      area: "Formación",
+      date: "2023-12-15",
+      status: "Pendiente",
+      description: "Solicitud de cambio de horario de clase",
+    },
+    {
+      id: "PQRSF-2023-002",
+      user: "Ana García",
+      type: "Queja",
+      area: "Empleabilidad",
+      date: "2023-12-14",
+      status: "En revisión",
+      description: "Falta de seguimiento en proceso de contratación",
+    },
+    {
+      id: "PQRSF-2023-003",
+      user: "Luis Rodríguez",
+      type: "Sugerencia",
+      area: "Coworking Hubux",
+      date: "2023-12-13",
+      status: "Aprobado",
+      description: "Mejoras en espacios de trabajo colaborativo",
+    },
+    {
+      id: "PQRSF-2023-004",
+      user: "Anónimo",
+      type: "Reclamo",
+      area: "Administración",
+      date: "2023-12-12",
+      status: "Pendiente",
+      description: "Inconformidad con proceso de pago",
+    },
+    {
+      id: "PQRSF-2023-005",
+      user: "María López",
+      type: "Petición",
+      area: "Formación",
+      date: "2023-12-11",
+      status: "En revisión",
+      description: "Solicitud de certificado de estudios",
+    },
+    {
+      id: "PQRSF-2023-006",
+      user: "Juan Pérez",
+      type: "Queja",
+      area: "Empleabilidad",
+      date: "2023-12-10",
+      status: "Pendiente",
+      description: "Problemas con el proceso de selección",
+    },
+    {
+      id: "PQRSF-2023-007",
+      user: "Sofía Martínez",
+      type: "Sugerencia",
+      area: "Coworking Hubux",
+      date: "2023-12-09",
+      status: "Aprobado",
+      description: "Mejoras en los espacios de trabajo",
+    },
+    {
+      id: "PQRSF-2023-008",
+      user: "Diego Ramírez",
+      type: "Reclamo",
+      area: "Administración",
+      date: "2023-12-08",
+      status: "En revisión",
+      description: "Problema con facturación",
+    },
+    {
+      id: "PQRSF-2023-009",
+      user: "Laura García",
+      type: "Felicitación",
+      area: "Servicio al Cliente",
+      date: "2023-12-07",
+      status: "Aprobado",
+      description: "Excelente atención recibida",
+    },
+    {
+      id: "PQRSF-2023-010",
+      user: "Carlos Torres",
+      type: "Petición",
+      area: "Formación",
+      date: "2023-12-06",
+      status: "Pendiente",
+      description: "Solicitud de cambio de grupo",
+    },
+    {
+      id: "PQRSF-2023-011",
+      user: "Ana Rodríguez",
+      type: "Queja",
+      area: "Empleabilidad",
+      date: "2023-12-05",
+      status: "En revisión",
+      description: "Falta de respuesta en proceso de contratación",
+    },
+    {
+      id: "PQRSF-2023-012",
+      user: "Pedro Sánchez",
+      type: "Reclamo",
+      area: "Administración",
+      date: "2023-12-04",
+      status: "Pendiente",
+      description: "Problema con el sistema de pagos",
+    },
+    {
+      id: "PQRSF-2023-013",
+      user: "Carmen Díaz",
+      type: "Sugerencia",
+      area: "Coworking Hubux",
+      date: "2023-12-03",
+      status: "Aprobado",
+      description: "Mejoras en la iluminación de espacios",
+    },
+    {
+      id: "PQRSF-2023-014",
+      user: "Roberto Jiménez",
+      type: "Petición",
+      area: "Formación",
+      date: "2023-12-02",
+      status: "En revisión",
+      description: "Solicitud de material adicional",
+    },
+    {
+      id: "PQRSF-2023-015",
+      user: "Patricia Castro",
+      type: "Queja",
+      area: "Empleabilidad",
+      date: "2023-12-01",
+      status: "Pendiente",
+      description: "Problemas con el portal de empleo",
+    },
+    {
+      id: "PQRSF-2023-001",
+      user: "Carlos Mendoza",
+      type: "Petición",
+      area: "Formación",
+      date: "2023-12-15",
+      status: "Pendiente",
+      description: "Solicitud de cambio de horario de clase",
+    },
+    {
+      id: "PQRSF-2023-002",
+      user: "Ana García",
+      type: "Queja",
+      area: "Empleabilidad",
+      date: "2023-12-14",
+      status: "En revisión",
+      description: "Falta de seguimiento en proceso de contratación",
+    },
+    {
+      id: "PQRSF-2023-003",
+      user: "Luis Rodríguez",
+      type: "Sugerencia",
+      area: "Coworking Hubux",
+      date: "2023-12-13",
+      status: "Aprobado",
+      description: "Mejoras en espacios de trabajo colaborativo",
+    },
+    {
+      id: "PQRSF-2023-004",
+      user: "Anónimo",
+      type: "Reclamo",
+      area: "Administración",
+      date: "2023-12-12",
+      status: "Pendiente",
+      description: "Inconformidad con proceso de pago",
+    },
+    {
+      id: "PQRSF-2023-005",
+      user: "María López",
+      type: "Petición",
+      area: "Formación",
+      date: "2023-12-11",
+      status: "En revisión",
+      description: "Solicitud de certificado de estudios",
+    },
+    {
+      id: "PQRSF-2023-006",
+      user: "Juan Pérez",
+      type: "Queja",
+      area: "Empleabilidad",
+      date: "2023-12-10",
+      status: "Pendiente",
+      description: "Problemas con el proceso de selección",
+    },
+    {
+      id: "PQRSF-2023-007",
+      user: "Sofía Martínez",
+      type: "Sugerencia",
+      area: "Coworking Hubux",
+      date: "2023-12-09",
+      status: "Aprobado",
+      description: "Mejoras en los espacios de trabajo",
+    },
+    {
+      id: "PQRSF-2023-008",
+      user: "Diego Ramírez",
+      type: "Reclamo",
+      area: "Administración",
+      date: "2023-12-08",
+      status: "En revisión",
+      description: "Problema con facturación",
+    },
+    {
+      id: "PQRSF-2023-009",
+      user: "Laura García",
+      type: "Felicitación",
+      area: "Servicio al Cliente",
+      date: "2023-12-07",
+      status: "Aprobado",
+      description: "Excelente atención recibida",
+    },
+    {
+      id: "PQRSF-2023-010",
+      user: "Carlos Torres",
+      type: "Petición",
+      area: "Formación",
+      date: "2023-12-06",
+      status: "Pendiente",
+      description: "Solicitud de cambio de grupo",
+    },
+    {
+      id: "PQRSF-2023-011",
+      user: "Ana Rodríguez",
+      type: "Queja",
+      area: "Empleabilidad",
+      date: "2023-12-05",
+      status: "En revisión",
+      description: "Falta de respuesta en proceso de contratación",
+    },
+    {
+      id: "PQRSF-2023-012",
+      user: "Pedro Sánchez",
+      type: "Reclamo",
+      area: "Administración",
+      date: "2023-12-04",
+      status: "Pendiente",
+      description: "Problema con el sistema de pagos",
+    },
+    {
+      id: "PQRSF-2023-013",
+      user: "Carmen Díaz",
+      type: "Sugerencia",
+      area: "Coworking Hubux",
+      date: "2023-12-03",
+      status: "Aprobado",
+      description: "Mejoras en la iluminación de espacios",
+    },
+    {
+      id: "PQRSF-2023-014",
+      user: "Roberto Jiménez",
+      type: "Petición",
+      area: "Formación",
+      date: "2023-12-02",
+      status: "En revisión",
+      description: "Solicitud de material adicional",
+    },
+    {
+      id: "PQRSF-2023-015",
+      user: "Patricia Castro",
+      type: "Queja",
+      area: "Empleabilidad",
+      date: "2023-12-01",
+      status: "Pendiente",
+      description: "Problemas con el portal de empleo",
+    },
+    {
+      id: "PQRSF-2023-001",
+      user: "Carlos Mendoza",
+      type: "Petición",
+      area: "Formación",
+      date: "2023-12-15",
+      status: "Pendiente",
+      description: "Solicitud de cambio de horario de clase",
+    },
+    {
+      id: "PQRSF-2023-002",
+      user: "Ana García",
+      type: "Queja",
+      area: "Empleabilidad",
+      date: "2023-12-14",
+      status: "En revisión",
+      description: "Falta de seguimiento en proceso de contratación",
+    },
+    {
+      id: "PQRSF-2023-003",
+      user: "Luis Rodríguez",
+      type: "Sugerencia",
+      area: "Coworking Hubux",
+      date: "2023-12-13",
+      status: "Aprobado",
+      description: "Mejoras en espacios de trabajo colaborativo",
+    },
+    {
+      id: "PQRSF-2023-004",
+      user: "Anónimo",
+      type: "Reclamo",
+      area: "Administración",
+      date: "2023-12-12",
+      status: "Pendiente",
+      description: "Inconformidad con proceso de pago",
+    },
+    {
+      id: "PQRSF-2023-005",
+      user: "María López",
+      type: "Petición",
+      area: "Formación",
+      date: "2023-12-11",
+      status: "En revisión",
+      description: "Solicitud de certificado de estudios",
+    },
+    {
+      id: "PQRSF-2023-006",
+      user: "Juan Pérez",
+      type: "Queja",
+      area: "Empleabilidad",
+      date: "2023-12-10",
+      status: "Pendiente",
+      description: "Problemas con el proceso de selección",
+    },
+    {
+      id: "PQRSF-2023-007",
+      user: "Sofía Martínez",
+      type: "Sugerencia",
+      area: "Coworking Hubux",
+      date: "2023-12-09",
+      status: "Aprobado",
+      description: "Mejoras en los espacios de trabajo",
+    },
+    {
+      id: "PQRSF-2023-008",
+      user: "Diego Ramírez",
+      type: "Reclamo",
+      area: "Administración",
+      date: "2023-12-08",
+      status: "En revisión",
+      description: "Problema con facturación",
+    },
+    {
+      id: "PQRSF-2023-009",
+      user: "Laura García",
+      type: "Felicitación",
+      area: "Servicio al Cliente",
+      date: "2023-12-07",
+      status: "Aprobado",
+      description: "Excelente atención recibida",
+    },
+    {
+      id: "PQRSF-2023-010",
+      user: "Carlos Torres",
+      type: "Petición",
+      area: "Formación",
+      date: "2023-12-06",
+      status: "Pendiente",
+      description: "Solicitud de cambio de grupo",
+    },
+    {
+      id: "PQRSF-2023-011",
+      user: "Ana Rodríguez",
+      type: "Queja",
+      area: "Empleabilidad",
+      date: "2023-12-05",
+      status: "En revisión",
+      description: "Falta de respuesta en proceso de contratación",
+    },
+    {
+      id: "PQRSF-2023-012",
+      user: "Pedro Sánchez",
+      type: "Reclamo",
+      area: "Administración",
+      date: "2023-12-04",
+      status: "Pendiente",
+      description: "Problema con el sistema de pagos",
+    },
+    {
+      id: "PQRSF-2023-013",
+      user: "Carmen Díaz",
+      type: "Sugerencia",
+      area: "Coworking Hubux",
+      date: "2023-12-03",
+      status: "Aprobado",
+      description: "Mejoras en la iluminación de espacios",
+    },
+    {
+      id: "PQRSF-2023-014",
+      user: "Roberto Jiménez",
+      type: "Petición",
+      area: "Formación",
+      date: "2023-12-02",
+      status: "En revisión",
+      description: "Solicitud de material adicional",
+    },
+    {
+      id: "PQRSF-2023-015",
+      user: "Patricia Castro",
+      type: "Queja",
+      area: "Empleabilidad",
+      date: "2023-12-01",
+      status: "Pendiente",
+      description: "Problemas con el portal de empleo",
+    },
     {
       id: "PQRSF-2023-001",
       user: "Carlos Mendoza",
@@ -183,6 +588,32 @@ export default function PQRSFList() {
     return statusStyles[key] || "bg-gray-50 text-gray-700 border-gray-200"
   }
 
+  const getVisiblePages = (currentPage: number, totalPages: number, windowSize: number = 5): number[] => {
+    if (totalPages <= windowSize) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1)
+    }
+
+    // Calcular rango inicial: mantener currentPage centrado
+    let start = currentPage - Math.floor(windowSize / 2)
+    let end = start + windowSize - 1
+
+    // Ajustar si start < 1
+    if (start < 1) {
+      start = 1
+      end = windowSize
+    }
+
+    // Ajustar si end > totalPages
+    if (end > totalPages) {
+      end = totalPages
+      start = totalPages - windowSize + 1
+    }
+
+    return Array.from({ length: windowSize }, (_, i) => start + i)
+  }
+
+  const visiblePages = getVisiblePages(currentPage, totalPages)
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
@@ -238,7 +669,7 @@ export default function PQRSFList() {
         </CardContent>
 
         <div className="flex-1 min-h-0 overflow-y-auto mb-6">
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 grid-rows-4 gap-4">
             {paginatedItems.map((item) => (
               <Card key={item.id} className="p-5 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between gap-4">
@@ -302,35 +733,20 @@ export default function PQRSFList() {
                     className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
                   />
                 </PaginationItem>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                  if (
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                  ) {
-                    return (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            setCurrentPage(page)
-                          }}
-                          isActive={currentPage === page}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    )
-                  } else if (page === currentPage - 2 || page === currentPage + 2) {
-                    return (
-                      <PaginationItem key={page}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    )
-                  }
-                  return null
-                })}
+                {visiblePages.map((pageNum) => (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setCurrentPage(pageNum)
+                      }}
+                      isActive={currentPage === pageNum}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
                 <PaginationItem>
                   <PaginationNext
                     href="#"
