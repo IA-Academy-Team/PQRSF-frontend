@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react"
-import { Search, Filter, Calendar } from "lucide-react"
+import { Search, Filter, Calendar, User, Building2, ChevronRight } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sidebar } from "@/components/sidebar"
 import { useSidebar } from "@/contexts/sidebar-context"
@@ -166,34 +167,20 @@ export default function PQRSFList() {
   const endIndex = startIndex + itemsPerPage
   const paginatedItems = pqrsfItems.slice(startIndex, endIndex)
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Pendiente":
-        return "bg-orange-100 text-orange-700"
-      case "En revisión":
-        return "bg-blue-100 text-blue-700"
-      case "Aprobado":
-        return "bg-green-100 text-green-700"
-      default:
-        return "bg-gray-100 text-gray-700"
-    }
+  const statusStyles: Record<string, string> = {
+    pendiente: "bg-amber-50 text-amber-700 border-amber-200",
+    "en revisión": "bg-blue-50 text-blue-700 border-blue-200",
+    aprobado: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    rechazado: "bg-red-50 text-red-700 border-red-200",
   }
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "Petición":
-        return "bg-blue-50 text-blue-700 border-blue-200"
-      case "Queja":
-        return "bg-red-50 text-red-700 border-red-200"
-      case "Reclamo":
-        return "bg-orange-50 text-orange-700 border-orange-200"
-      case "Sugerencia":
-        return "bg-green-50 text-green-700 border-green-200"
-      case "Felicitación":
-        return "bg-purple-50 text-purple-700 border-purple-200"
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200"
-    }
+  const getStatusKey = (status: string): string => {
+    return status.toLowerCase()
+  }
+
+  const getStatusStyle = (status: string): string => {
+    const key = getStatusKey(status)
+    return statusStyles[key] || "bg-gray-50 text-gray-700 border-gray-200"
   }
 
   return (
@@ -253,40 +240,49 @@ export default function PQRSFList() {
         <div className="flex-1 min-h-0 overflow-y-auto mb-6">
           <div className="space-y-2">
             {paginatedItems.map((item) => (
-              <Card key={item.id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="font-mono text-sm font-semibold text-primary">{item.id}</span>
-                        <span className={`text-xs font-medium px-3 py-1 rounded-full border ${getTypeColor(item.type)}`}>
-                          {item.type}
-                        </span>
-                        <span className={`text-xs font-medium px-3 py-1 rounded-full ${getStatusColor(item.status)}`}>
-                          {item.status}
-                        </span>
-                      </div>
-
-                      <h3 className="font-semibold text-lg text-foreground mb-1">{item.description}</h3>
-
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div>
-                          <span className="font-medium">Usuario:</span> {item.user}
-                        </div>
-                        <div>
-                          <span className="font-medium">Área:</span> {item.area}
-                        </div>
-                        <div>
-                          <span className="font-medium">Fecha:</span> {item.date}
-                        </div>
-                      </div>
+              <Card key={item.id} className="p-5 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between gap-4">
+                  {/* Contenido principal */}
+                  <div className="flex-1 min-w-0 space-y-3">
+                    {/* Header con ID y badges */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-mono text-muted-foreground">{item.id}</span>
+                      <Badge variant="outline" className="text-xs font-medium">
+                        {item.type}
+                      </Badge>
+                      <Badge variant="outline" className={`text-xs font-medium capitalize ${getStatusStyle(item.status)}`}>
+                        {item.status}
+                      </Badge>
                     </div>
 
-                    <Link to={`/pqrsf/${item.id}`}>
-                      <Button>Ver Detalle</Button>
-                    </Link>
+                    {/* Título */}
+                    <h3 className="font-medium text-foreground leading-snug">{item.description}</h3>
+
+                    {/* Metadatos */}
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <User className="h-3.5 w-3.5" />
+                        <span>{item.user}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Building2 className="h-3.5 w-3.5" />
+                        <span>{item.area}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>{item.date}</span>
+                      </div>
+                    </div>
                   </div>
-                </CardContent>
+
+                  {/* Botón de acción */}
+                  <Link to={`/pqrsf/${item.id}`}>
+                    <Button variant="ghost" size="sm" className="shrink-0">
+                      Ver Detalle
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </Link>
+                </div>
               </Card>
             ))}
           </div>

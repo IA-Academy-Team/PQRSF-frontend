@@ -14,8 +14,8 @@ import Seguimiento from '@/views/admin/Seguimiento'
 import EnApelacion from '@/views/admin/EnApelacion'
 import Cerradas from '@/views/admin/Cerradas'
 import Chats from '@/views/admin/Chats'
-import Usuarios from '@/views/admin/Usuarios'
-import Cargos from '@/views/admin/Cargos'
+import Usuarios from '@/views/admin/responsables'
+import Cargos from '@/views/admin/areas'
 // Area Responsable views
 import AnalisisPendientes from '@/views/areaResponsable/AnalisisPendientes'
 import Apelaciones from '@/views/areaResponsable/Apelaciones'
@@ -35,12 +35,12 @@ function App() {
           <Route path="/pqrsf/:id" element={<PQRSFDetail />} />
           <Route path="/analisis-pendientes" element={<AnalisisPendientes />} />
           <Route path="/apelaciones" element={<Apelaciones />} />
-          <Route path="/cargos" element={<Cargos />} />
+          <Route path="/areas" element={<Cargos />} />
           <Route path="/cerradas" element={<Cerradas />} />
           <Route path="/chats" element={<Chats />} />
           <Route path="/en-apelacion" element={<EnApelacion />} />
           <Route path="/seguimiento" element={<Seguimiento />} />
-          <Route path="/usuarios" element={<Usuarios />} />
+          <Route path="/responsables" element={<Usuarios />} />
           <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </SidebarProvider>

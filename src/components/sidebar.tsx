@@ -51,8 +51,8 @@ export function Sidebar() {
   const getAdminItems = () => {
     if (user?.rol === "Administrador") {
       return [
-        { name: "Usuarios", href: "/usuarios", icon: Users },
-        { name: "Cargos", href: "/cargos", icon: Briefcase },
+        { name: "Responsables", href: "/responsables", icon: Users },
+        { name: "Areas", href: "/areas", icon: Briefcase },
         { name: "Perfil", href: "/profile", icon: Settings },
       ]
     } else if (user?.rol === "Usuario de Área Responsable") {
