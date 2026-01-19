@@ -285,10 +285,19 @@ export default function Seguimiento() {
     return matchSearch && matchEstado
   })
 
+  const totalPages = Math.ceil(filteredPQRSF.length / itemsPerPage) || 1
+
   // Resetear a la página 1 cuando cambian los filtros
   useEffect(() => {
     setCurrentPage(1)
   }, [searchTerm, filtroEstado])
+
+  // Asegurar que currentPage esté dentro del rango válido cuando cambia totalPages
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages)
+    }
+  }, [totalPages])
 
   const getVisiblePages = (currentPage: number, totalPages: number, windowSize: number = 5): number[] => {
     if (totalPages <= windowSize) {
@@ -314,11 +323,12 @@ export default function Seguimiento() {
     return Array.from({ length: windowSize }, (_, i) => start + i)
   }
 
-  const totalPages = Math.ceil(filteredPQRSF.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
+  // Calcular índices de paginación
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages)
+  const startIndex = (safeCurrentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
   const paginatedItems = filteredPQRSF.slice(startIndex, endIndex)
-  const visiblePages = getVisiblePages(currentPage, totalPages)
+  const visiblePages = getVisiblePages(safeCurrentPage, totalPages)
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -363,10 +373,10 @@ export default function Seguimiento() {
           </div>
         </CardContent>
 
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-hidden">
           <div className="grid grid-cols-2 grid-rows-2 gap-4">
-            {paginatedItems.map((pqrsf) => (
-            <Card key={pqrsf.radicado} className="hover:shadow-md transition-shadow">
+            {paginatedItems.map((pqrsf, index) => (
+            <Card key={`${pqrsf.radicado}-${startIndex + index}`} className="hover:shadow-md transition-shadow">
               <CardContent className="p-3">
                 <div className="flex flex-col lg:flex-row lg:items-start gap-6">
                   <div className="flex-1">
@@ -443,16 +453,17 @@ export default function Seguimiento() {
           {totalPages > 1 && (
             <Pagination>
               <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      if (currentPage > 1) setCurrentPage(currentPage - 1)
-                    }}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
+                {currentPage > 1 && (
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setCurrentPage(currentPage - 1)
+                      }}
+                    />
+                  </PaginationItem>
+                )}
                 {visiblePages.map((pageNum) => (
                   <PaginationItem key={pageNum}>
                     <PaginationLink
@@ -467,16 +478,17 @@ export default function Seguimiento() {
                     </PaginationLink>
                   </PaginationItem>
                 ))}
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      if (currentPage < totalPages) setCurrentPage(currentPage + 1)
-                    }}
-                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
+                {currentPage < totalPages && (
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setCurrentPage(currentPage + 1)
+                      }}
+                    />
+                  </PaginationItem>
+                )}
               </PaginationContent>
             </Pagination>
           )}
