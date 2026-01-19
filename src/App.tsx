@@ -15,7 +15,7 @@ import EnApelacion from '@/views/admin/EnApelacion'
 import Cerradas from '@/views/admin/Cerradas'
 import Chats from '@/views/admin/Chats'
 import Usuarios from '@/views/admin/responsables'
-import Cargos from '@/views/admin/areas'
+import Cargos from '@/views/admin/cargos'
 // Area Responsable views
 import AnalisisPendientes from '@/views/areaResponsable/AnalisisPendientes'
 import Apelaciones from '@/views/areaResponsable/Apelaciones'
@@ -35,7 +35,7 @@ function App() {
           <Route path="/pqrsf/:id" element={<PQRSFDetail />} />
           <Route path="/analisis-pendientes" element={<AnalisisPendientes />} />
           <Route path="/apelaciones" element={<Apelaciones />} />
-          <Route path="/areas" element={<Cargos />} />
+          <Route path="/cargos" element={<Cargos />} />
           <Route path="/cerradas" element={<Cerradas />} />
           <Route path="/chats" element={<Chats />} />
           <Route path="/en-apelacion" element={<EnApelacion />} />

@@ -52,7 +52,7 @@ export function Sidebar() {
     if (user?.rol === "Administrador") {
       return [
         { name: "Responsables", href: "/responsables", icon: Users },
-        { name: "Areas", href: "/areas", icon: Briefcase },
+        { name: "Cargos", href: "/cargos", icon: Briefcase },
         { name: "Perfil", href: "/profile", icon: Settings },
       ]
     } else if (user?.rol === "Usuario de Área Responsable") {

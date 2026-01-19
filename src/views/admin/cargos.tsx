@@ -117,9 +117,6 @@ export default function Cargos() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Gestión de Cargos</h1>
-              <p className="text-sm sm:text-base text-muted-foreground">
-                Define perfiles funcionales con permisos específicos
-              </p>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
@@ -150,8 +147,7 @@ export default function Cargos() {
           </div>
         </div>
 
-        <Card className="mb-6">
-          <CardContent className="p-4 sm:p-6">
+          <CardContent className="pb-6 px-0 mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -162,7 +158,6 @@ export default function Cargos() {
               />
             </div>
           </CardContent>
-        </Card>
 
         <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
           {filteredCargos.map((cargo) => (
