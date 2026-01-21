@@ -157,6 +157,30 @@ export default function Dashboard() {
                           ultimoMensaje: "Solicito seguimiento de mi caso",
                           fecha: "Hace 12 horas",
                         },
+                        {
+                          radicado: "PQRSF-2023-045",
+                          cliente: "Carlos Méndez",
+                          ultimoMensaje: "Gracias por la respuesta, quedé satisfecho",
+                          fecha: "Hace 2 horas",
+                        },
+                        {
+                          radicado: "PQRSF-2023-051",
+                          cliente: "Ana López",
+                          ultimoMensaje: "Necesito más información sobre mi solicitud",
+                          fecha: "Hace 5 horas",
+                        },
+                        {
+                          radicado: "PQRSF-2023-062",
+                          cliente: "María González",
+                          ultimoMensaje: "El problema se resolvió correctamente",
+                          fecha: "Hace 8 horas",
+                        },
+                        {
+                          radicado: "PQRSF-2023-068",
+                          cliente: "Juan Rodríguez",
+                          ultimoMensaje: "Solicito seguimiento de mi caso",
+                          fecha: "Hace 12 horas",
+                        }
                       ].map((chat, index) => (
                         <div
                           key={index}
@@ -248,29 +272,25 @@ export default function Dashboard() {
 
         <main
           className={cn(
-            "flex-1 p-3 sm:p-4 lg:p-5 overflow-y-auto h-screen transition-all duration-300",
+            "flex-1 p-3 sm:p-4 lg:p-5 h-screen transition-all duration-300 flex flex-col overflow-hidden",
             isCollapsed ? "lg:ml-24" : "lg:ml-64"
           )}
         >
-          <div className="mb-3">
+          <div className="mb-3 shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Panel del Área Responsable</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  PQRSF asignadas a: {user.area || "tu área"}
-                </p>
               </div>
             </div>
           </div>
 
-          <div className="mb-3">
+          <div className="mb-3 shrink-0">
             <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
               {user.rol}
-              {user.area && <span className="text-muted-foreground">• {user.area}</span>}
             </div>
           </div>
 
-          <div className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4 mb-3">
+          <div className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4 mb-3 shrink-0">
             <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-2">
@@ -280,7 +300,6 @@ export default function Dashboard() {
                 </div>
                 <h3 className="text-xs font-medium mb-1 opacity-90">PQRSF Asignadas</h3>
                 <p className="text-2xl font-bold mb-0.5">24</p>
-                <p className="text-[10px] opacity-80">Total en tu área</p>
               </CardContent>
             </Card>
 
@@ -293,7 +312,6 @@ export default function Dashboard() {
                 </div>
                 <h3 className="text-xs font-medium text-muted-foreground mb-1">Pendientes</h3>
                 <p className="text-2xl font-bold text-foreground mb-0.5">8</p>
-                <p className="text-[10px] text-orange-600 font-medium">Requieren respuesta</p>
               </CardContent>
             </Card>
 
@@ -306,7 +324,6 @@ export default function Dashboard() {
                 </div>
                 <h3 className="text-xs font-medium text-muted-foreground mb-1">Apelaciones</h3>
                 <p className="text-2xl font-bold text-foreground mb-0.5">3</p>
-                <p className="text-[10px] text-red-600 font-medium">Para reanálisis</p>
               </CardContent>
             </Card>
 
@@ -319,146 +336,147 @@ export default function Dashboard() {
                 </div>
                 <h3 className="text-xs font-medium text-muted-foreground mb-1">Respondidas</h3>
                 <p className="text-2xl font-bold text-foreground mb-0.5">13</p>
-                <p className="text-[10px] text-green-600 font-medium">Enviadas a clientes</p>
               </CardContent>
             </Card>
           </div>
 
-          <Card className="mb-3">
-            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3">
-              <CardTitle className="text-sm sm:text-base">PQRSF Pendientes de Respuesta</CardTitle>
-              <Link to="/analisis-pendientes">
-                <Button variant="ghost" size="sm" className="w-full sm:w-auto h-7 text-xs">
-                  Ver Todas
-                  <ArrowUpRight className="h-3 w-3 ml-1" />
-                </Button>
-              </Link>
-            </CardHeader>
-            <CardContent className="p-3">
-              <div className="space-y-2">
-                {[
-                  {
-                    radicado: "PQRSF-2023-001",
-                    tipo: "Petición",
-                    solicitante: "Carlos Mendoza",
-                    descripcion: "Solicitud de cambio de horario de clase",
-                    fecha: "Dic 15, 2023",
-                    prioridad: "Media",
-                    diasTranscurridos: 5,
-                    borderColor: "border-l-orange-500",
-                  },
-                  {
-                    radicado: "PQRSF-2023-005",
-                    tipo: "Queja",
-                    solicitante: "Ana García",
-                    descripcion: "Falta de equipos en sala de cómputo",
-                    fecha: "Dic 16, 2023",
-                    prioridad: "Alta",
-                    diasTranscurridos: 4,
-                    borderColor: "border-l-red-500",
-                  },
-                  {
-                    radicado: "PQRSF-2023-008",
-                    tipo: "Sugerencia",
-                    solicitante: "Luis Rodríguez",
-                    descripcion: "Mejoras en material didáctico",
-                    fecha: "Dic 17, 2023",
-                    prioridad: "Baja",
-                    diasTranscurridos: 3,
-                    borderColor: "border-l-blue-500",
-                  },
-                ].slice(0, 2).map((item, index) => (
-                  <div
-                    key={index}
-                    className={`flex flex-col lg:flex-row lg:items-center justify-between p-2.5 border-l-4 ${item.borderColor} bg-card rounded-lg hover:shadow-md transition-shadow gap-2`}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono text-xs font-semibold text-primary">{item.radicado}</span>
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                          {item.tipo}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
+            <Card className="h-full flex flex-col">
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 shrink-0">
+                <CardTitle className="text-sm sm:text-base">PQRSF Pendientes de Respuesta</CardTitle>
+                <Link to="/analisis-pendientes">
+                  <Button variant="ghost" size="sm" className="w-full sm:w-auto h-7 text-xs">
+                    Ver Todas
+                    <ArrowUpRight className="h-3 w-3 ml-1" />
+                  </Button>
+                </Link>
+              </CardHeader>
+              <CardContent className="p-3 flex-1 min-h-0 overflow-y-auto">
+                <div className="space-y-2">
+                  {[
+                    {
+                      radicado: "PQRSF-2023-001",
+                      tipo: "Petición",
+                      solicitante: "Carlos Mendoza",
+                      descripcion: "Solicitud de cambio de horario de clase",
+                      fecha: "Dic 15, 2023",
+                      prioridad: "Media",
+                      diasTranscurridos: 5,
+                      borderColor: "border-l-orange-500",
+                    },
+                    {
+                      radicado: "PQRSF-2023-005",
+                      tipo: "Queja",
+                      solicitante: "Ana García",
+                      descripcion: "Falta de equipos en sala de cómputo",
+                      fecha: "Dic 16, 2023",
+                      prioridad: "Alta",
+                      diasTranscurridos: 4,
+                      borderColor: "border-l-red-500",
+                    },
+                    {
+                      radicado: "PQRSF-2023-008",
+                      tipo: "Sugerencia",
+                      solicitante: "Luis Rodríguez",
+                      descripcion: "Mejoras en material didáctico",
+                      fecha: "Dic 17, 2023",
+                      prioridad: "Baja",
+                      diasTranscurridos: 3,
+                      borderColor: "border-l-blue-500",
+                    },
+                  ].slice(0, 2).map((item, index) => (
+                    <div
+                      key={index}
+                      className={`flex flex-col lg:flex-row lg:items-center justify-between p-2.5 border-l-4 ${item.borderColor} bg-card rounded-lg hover:shadow-md transition-shadow gap-2`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono text-xs font-semibold text-primary">{item.radicado}</span>
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                            {item.tipo}
+                          </span>
+                        </div>
+                        <h4 className="font-semibold text-foreground text-xs mb-0.5 truncate">{item.descripcion}</h4>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {item.solicitante} • {item.fecha}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-row items-center gap-2">
+                        <div className="text-left">
+                          <p className="text-[10px] text-muted-foreground mb-0.5">PRIORIDAD</p>
+                          <span
+                            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                              item.prioridad === "Alta"
+                                ? "bg-red-100 text-red-700"
+                                : item.prioridad === "Media"
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-green-100 text-green-700"
+                            }`}
+                          >
+                            {item.prioridad}
+                          </span>
+                        </div>
+
+                        <div className="text-left">
+                          <p className="text-[10px] text-muted-foreground mb-0.5">TIEMPO</p>
+                          <p className="text-xs font-medium">{item.diasTranscurridos}d</p>
+                        </div>
+
+                        <Link to={`/pqrsf/${item.radicado}`}>
+                          <Button size="sm" className="h-7 text-xs px-2">
+                            <ClipboardList className="h-3 w-3 mr-1" />
+                            Responder
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="h-full flex flex-col">
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 shrink-0">
+                <CardTitle className="text-lg sm:text-xl">Apelaciones Recientes</CardTitle>
+                <Link to="/apelaciones">
+                  <Button variant="ghost" size="sm" className="w-full sm:w-auto">
+                    Ver Todas
+                    <ArrowUpRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </Link>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 flex-1 min-h-0 overflow-y-auto">
+                <div className="space-y-4">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between p-4 border-l-4 border-l-red-500 bg-card rounded-lg gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <span className="font-mono text-sm font-semibold text-primary">PQRSF-2023-010</span>
+                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-red-100 text-red-700">
+                          Apelada
                         </span>
                       </div>
-                      <h4 className="font-semibold text-foreground text-xs mb-0.5 truncate">{item.descripcion}</h4>
-                      <p className="text-[10px] text-muted-foreground truncate">
-                        {item.solicitante} • {item.fecha}
+                      <h4 className="font-semibold text-foreground text-sm sm:text-base mb-1">
+                        Solicitud rechazada - Usuario apela decisión
+                      </h4>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
+                        María Pérez • Requiere reanálisis urgente
                       </p>
                     </div>
 
-                    <div className="flex flex-row items-center gap-2">
-                      <div className="text-left">
-                        <p className="text-[10px] text-muted-foreground mb-0.5">PRIORIDAD</p>
-                        <span
-                          className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-                            item.prioridad === "Alta"
-                              ? "bg-red-100 text-red-700"
-                              : item.prioridad === "Media"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-green-100 text-green-700"
-                          }`}
-                        >
-                          {item.prioridad}
-                        </span>
-                      </div>
-
-                      <div className="text-left">
-                        <p className="text-[10px] text-muted-foreground mb-0.5">TIEMPO</p>
-                        <p className="text-xs font-medium">{item.diasTranscurridos}d</p>
-                      </div>
-
-                      <Link to={`/pqrsf/${item.radicado}`}>
-                        <Button size="sm" className="h-7 text-xs px-2">
-                          <ClipboardList className="h-3 w-3 mr-1" />
-                          Responder
+                    <div className="flex items-center gap-3">
+                      <Link to="/pqrsf/PQRSF-2023-010">
+                        <Button size="sm" variant="outline" className="w-full sm:w-auto bg-transparent">
+                          <AlertCircle className="h-4 w-4 sm:mr-1" />
+                          <span className="hidden sm:inline">Reanalizar</span>
                         </Button>
                       </Link>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6">
-              <CardTitle className="text-lg sm:text-xl">Apelaciones Recientes</CardTitle>
-              <Link to="/apelaciones">
-                <Button variant="ghost" size="sm" className="w-full sm:w-auto">
-                  Ver Todas
-                  <ArrowUpRight className="h-4 w-4 ml-1" />
-                </Button>
-              </Link>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <div className="space-y-4">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between p-4 border-l-4 border-l-red-500 bg-card rounded-lg gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <span className="font-mono text-sm font-semibold text-primary">PQRSF-2023-010</span>
-                      <span className="text-xs font-medium px-2 py-1 rounded-full bg-red-100 text-red-700">
-                        Apelada
-                      </span>
-                    </div>
-                    <h4 className="font-semibold text-foreground text-sm sm:text-base mb-1">
-                      Solicitud rechazada - Usuario apela decisión
-                    </h4>
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                      María Pérez • Requiere reanálisis urgente
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Link to="/pqrsf/PQRSF-2023-010">
-                      <Button size="sm" variant="outline" className="w-full sm:w-auto bg-transparent">
-                        <AlertCircle className="h-4 w-4 sm:mr-1" />
-                        <span className="hidden sm:inline">Reanalizar</span>
-                      </Button>
-                    </Link>
-                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </main>
       </div>
     )
