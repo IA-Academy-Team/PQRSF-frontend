@@ -5,54 +5,27 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sidebar } from "@/components/sidebar"
 import { Link } from "react-router-dom"
+import { useEffect, useMemo, useState } from "react"
+import { pqrsfService, type PQRSFListItem, type PQRSFListQuery } from "@/services/pqrsf.service"
 
 export default function PQRSFList() {
-  const pqrsfItems = [
-    {
-      id: "PQRSF-2023-001",
-      user: "Carlos Mendoza",
-      type: "Petición",
-      area: "Formación",
-      date: "2023-12-15",
-      status: "Pendiente",
-      description: "Solicitud de cambio de horario de clase",
-    },
-    {
-      id: "PQRSF-2023-002",
-      user: "Ana García",
-      type: "Queja",
-      area: "Empleabilidad",
-      date: "2023-12-14",
-      status: "En revisión",
-      description: "Falta de seguimiento en proceso de contratación",
-    },
-    {
-      id: "PQRSF-2023-003",
-      user: "Luis Rodríguez",
-      type: "Sugerencia",
-      area: "Coworking Hubux",
-      date: "2023-12-13",
-      status: "Aprobado",
-      description: "Mejoras en espacios de trabajo colaborativo",
-    },
-    {
-      id: "PQRSF-2023-004",
-      user: "Anónimo",
-      type: "Reclamo",
-      area: "Administración",
-      date: "2023-12-12",
-      status: "Pendiente",
-      description: "Inconformidad con proceso de pago",
-    },
-  ]
+  const [items, setItems] = useState<PQRSFListItem[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("todos")
+  const [dateFilter, setDateFilter] = useState("")
+  const [sortFilter, setSortFilter] = useState("recent")
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Pendiente":
+      case "Radicado":
         return "bg-orange-100 text-orange-700"
-      case "En revisión":
+      case "Analisis":
         return "bg-blue-100 text-blue-700"
-      case "Aprobado":
+      case "Reanálisis":
+        return "bg-red-100 text-red-700"
+      case "Cerrado":
         return "bg-green-100 text-green-700"
       default:
         return "bg-gray-100 text-gray-700"
@@ -76,6 +49,56 @@ export default function PQRSFList() {
     }
   }
 
+  useEffect(() => {
+    let active = true
+    const timeout = setTimeout(async () => {
+      setIsLoading(true)
+      setError("")
+      try {
+        const query: PQRSFListQuery = {
+          q: searchTerm.trim() || undefined,
+          sort: sortFilter as PQRSFListQuery["sort"],
+        }
+        if (statusFilter !== "todos") {
+          query.pqrsStatusId = Number(statusFilter)
+        }
+        if (dateFilter) {
+          query.fromDate = dateFilter
+          query.toDate = dateFilter
+        }
+
+        const data = await pqrsfService.getAdminList(query)
+        if (!active) return
+        setItems(data)
+      } catch (err) {
+        if (!active) return
+        console.error("[pqrsf] list error", err)
+        setError("No se pudo cargar la bandeja de PQRSF.")
+      } finally {
+        if (active) setIsLoading(false)
+      }
+    }, 300)
+
+    return () => {
+      active = false
+      clearTimeout(timeout)
+    }
+  }, [searchTerm, statusFilter, dateFilter, sortFilter])
+
+  const formattedItems = useMemo(
+    () =>
+      items.map((item) => ({
+        id: item.ticketNumber,
+        user: item.clientName || "Anónimo",
+        type: item.typeName,
+        area: item.areaName,
+        date: item.createdAt ? new Date(item.createdAt).toLocaleDateString("es-CO") : "Sin fecha",
+        status: item.statusName,
+        description: item.description || "Sin descripcion",
+      })),
+    [items],
+  )
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
@@ -91,44 +114,70 @@ export default function PQRSFList() {
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar por nombre, ID o descripción..." className="pl-10" />
+                <Input
+                  placeholder="Buscar por nombre, ID o descripción..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
 
-              <Select defaultValue="todos">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full md:w-[200px]">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Todos los estados" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos los estados</SelectItem>
-                  <SelectItem value="pendiente">Pendiente</SelectItem>
-                  <SelectItem value="revision">En revisión</SelectItem>
-                  <SelectItem value="aprobado">Aprobado</SelectItem>
-                  <SelectItem value="rechazado">Rechazado</SelectItem>
+                  <SelectItem value="1">Radicado</SelectItem>
+                  <SelectItem value="2">Analisis</SelectItem>
+                  <SelectItem value="3">Reanálisis</SelectItem>
+                  <SelectItem value="4">Cerrado</SelectItem>
                 </SelectContent>
               </Select>
 
               <div className="relative w-full md:w-[200px]">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="date" className="pl-10" />
+                <Input
+                  type="date"
+                  className="pl-10"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                />
               </div>
 
-              <Select defaultValue="reciente">
+              <Select value={sortFilter} onValueChange={setSortFilter}>
                 <SelectTrigger className="w-full md:w-[220px]">
                   <SelectValue placeholder="Ordenar por" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="reciente">Fecha (Más reciente)</SelectItem>
-                  <SelectItem value="antiguo">Fecha (Más antiguo)</SelectItem>
-                  <SelectItem value="id">ID</SelectItem>
+                  <SelectItem value="recent">Fecha (Más reciente)</SelectItem>
+                  <SelectItem value="oldest">Fecha (Más antiguo)</SelectItem>
+                  <SelectItem value="ticket">ID</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </CardContent>
         </Card>
 
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         <div className="space-y-4">
-          {pqrsfItems.map((item) => (
+          {isLoading && (
+            <Card className="border-dashed">
+              <CardContent className="p-6 text-sm text-muted-foreground">Cargando bandeja...</CardContent>
+            </Card>
+          )}
+          {!isLoading && formattedItems.length === 0 && (
+            <Card className="border-dashed">
+              <CardContent className="p-6 text-sm text-muted-foreground">No hay PQRSF para mostrar.</CardContent>
+            </Card>
+          )}
+          {formattedItems.map((item) => (
             <Card key={item.id} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
