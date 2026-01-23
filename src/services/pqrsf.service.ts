@@ -57,6 +57,40 @@ export interface SeguimientoItem {
   surveyComment: string | null
 }
 
+export interface ApelacionItem {
+  id: number
+  ticketNumber: string
+  createdAt: string | null
+  statusId: number
+  statusName: string
+  typeName: string
+  areaName: string
+  clientName: string | null
+  responseContent: string | null
+  responseSentAt: string | null
+  surveyComment: string | null
+}
+
+export interface CerradaItem {
+  id: number
+  ticketNumber: string
+  createdAt: string | null
+  updatedAt: string | null
+  statusId: number
+  statusName: string
+  typeName: string
+  areaName: string
+  clientName: string | null
+  responseContent: string | null
+  responseSentAt: string | null
+  q1Clarity: number | null
+  q2Timeliness: number | null
+  q3Quality: number | null
+  q4Attention: number | null
+  q5Overall: number | null
+  surveyComment: string | null
+}
+
 export const pqrsfService = {
   // PQRSF CRUD
   getAll: async (): Promise<DBPQRSF[]> => {
@@ -100,6 +134,14 @@ export const pqrsfService = {
 
   getSeguimiento: async (): Promise<SeguimientoItem[]> => {
     return api.get<SeguimientoItem[]>('/pqrsf/seguimiento')
+  },
+
+  getApelaciones: async (): Promise<ApelacionItem[]> => {
+    return api.get<ApelacionItem[]>('/pqrsf/apelaciones')
+  },
+
+  getCerradas: async (): Promise<CerradaItem[]> => {
+    return api.get<CerradaItem[]>('/pqrsf/cerradas')
   },
 
   finalize: async (id: number): Promise<void> => {

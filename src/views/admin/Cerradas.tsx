@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react"
-import { CheckCircle, Search, Calendar, ArrowUpRight } from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
+import { CheckCircle, Search, ArrowUpRight } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { pqrsfService, type CerradaItem } from "@/services/pqrsf.service"
 
 export default function Cerradas() {
   const { user } = useAuth()
@@ -25,371 +26,87 @@ export default function Cerradas() {
   const { isCollapsed } = useSidebar()
   const [searchTerm, setSearchTerm] = useState("")
   const [filtroTipo, setFiltroTipo] = useState("todos")
-  const [filtroMes, setFiltroMes] = useState("todos")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 4
+  const [items, setItems] = useState<CerradaItem[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
 
   if (!user || user.rol !== "Administrador") {
     navigate("/dashboard")
     return null
   }
 
-  const pqrsfsCerradas = [
-    {
-      radicado: "PQRSF-2023-010",
-      tipo: "Petición",
-      solicitante: "María González",
-      area: "Área Responsable (Operativa)",
-      fechaRadicacion: "Nov 15, 2023",
-      fechaCierre: "Dic 10, 2023",
-      tiempoRespuesta: "25 días",
-      resultado: "Aprobada",
-      satisfaccionCliente: "Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-023",
-      tipo: "Queja",
-      solicitante: "Roberto Díaz",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Nov 20, 2023",
-      fechaCierre: "Dic 15, 2023",
-      tiempoRespuesta: "25 días",
-      resultado: "Resuelta",
-      satisfaccionCliente: "Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-035",
-      tipo: "Reclamo",
-      solicitante: "Patricia Castro",
-      area: "Área Responsable (Operativa)",
-      fechaRadicacion: "Nov 25, 2023",
-      fechaCierre: "Dic 18, 2023",
-      tiempoRespuesta: "23 días",
-      resultado: "Rechazada",
-      satisfaccionCliente: "Insatisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-042",
-      tipo: "Sugerencia",
-      solicitante: "Miguel Torres",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Dic 01, 2023",
-      fechaCierre: "Dic 20, 2023",
-      tiempoRespuesta: "19 días",
-      resultado: "Aceptada",
-      satisfaccionCliente: "Muy Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-055",
-      tipo: "Felicitación",
-      solicitante: "Sandra Jiménez",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Dic 05, 2023",
-      fechaCierre: "Dic 06, 2023",
-      tiempoRespuesta: "1 día",
-      resultado: "Registrada",
-      satisfaccionCliente: "Muy Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-010",
-      tipo: "Petición",
-      solicitante: "María González",
-      area: "Área Responsable (Operativa)",
-      fechaRadicacion: "Nov 15, 2023",
-      fechaCierre: "Dic 10, 2023",
-      tiempoRespuesta: "25 días",
-      resultado: "Aprobada",
-      satisfaccionCliente: "Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-023",
-      tipo: "Queja",
-      solicitante: "Roberto Díaz",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Nov 20, 2023",
-      fechaCierre: "Dic 15, 2023",
-      tiempoRespuesta: "25 días",
-      resultado: "Resuelta",
-      satisfaccionCliente: "Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-035",
-      tipo: "Reclamo",
-      solicitante: "Patricia Castro",
-      area: "Área Responsable (Operativa)",
-      fechaRadicacion: "Nov 25, 2023",
-      fechaCierre: "Dic 18, 2023",
-      tiempoRespuesta: "23 días",
-      resultado: "Rechazada",
-      satisfaccionCliente: "Insatisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-042",
-      tipo: "Sugerencia",
-      solicitante: "Miguel Torres",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Dic 01, 2023",
-      fechaCierre: "Dic 20, 2023",
-      tiempoRespuesta: "19 días",
-      resultado: "Aceptada",
-      satisfaccionCliente: "Muy Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-055",
-      tipo: "Felicitación",
-      solicitante: "Sandra Jiménez",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Dic 05, 2023",
-      fechaCierre: "Dic 06, 2023",
-      tiempoRespuesta: "1 día",
-      resultado: "Registrada",
-      satisfaccionCliente: "Muy Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-010",
-      tipo: "Petición",
-      solicitante: "María González",
-      area: "Área Responsable (Operativa)",
-      fechaRadicacion: "Nov 15, 2023",
-      fechaCierre: "Dic 10, 2023",
-      tiempoRespuesta: "25 días",
-      resultado: "Aprobada",
-      satisfaccionCliente: "Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-023",
-      tipo: "Queja",
-      solicitante: "Roberto Díaz",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Nov 20, 2023",
-      fechaCierre: "Dic 15, 2023",
-      tiempoRespuesta: "25 días",
-      resultado: "Resuelta",
-      satisfaccionCliente: "Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-035",
-      tipo: "Reclamo",
-      solicitante: "Patricia Castro",
-      area: "Área Responsable (Operativa)",
-      fechaRadicacion: "Nov 25, 2023",
-      fechaCierre: "Dic 18, 2023",
-      tiempoRespuesta: "23 días",
-      resultado: "Rechazada",
-      satisfaccionCliente: "Insatisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-042",
-      tipo: "Sugerencia",
-      solicitante: "Miguel Torres",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Dic 01, 2023",
-      fechaCierre: "Dic 20, 2023",
-      tiempoRespuesta: "19 días",
-      resultado: "Aceptada",
-      satisfaccionCliente: "Muy Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-055",
-      tipo: "Felicitación",
-      solicitante: "Sandra Jiménez",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Dic 05, 2023",
-      fechaCierre: "Dic 06, 2023",
-      tiempoRespuesta: "1 día",
-      resultado: "Registrada",
-      satisfaccionCliente: "Muy Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-010",
-      tipo: "Petición",
-      solicitante: "María González",
-      area: "Área Responsable (Operativa)",
-      fechaRadicacion: "Nov 15, 2023",
-      fechaCierre: "Dic 10, 2023",
-      tiempoRespuesta: "25 días",
-      resultado: "Aprobada",
-      satisfaccionCliente: "Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-023",
-      tipo: "Queja",
-      solicitante: "Roberto Díaz",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Nov 20, 2023",
-      fechaCierre: "Dic 15, 2023",
-      tiempoRespuesta: "25 días",
-      resultado: "Resuelta",
-      satisfaccionCliente: "Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-035",
-      tipo: "Reclamo",
-      solicitante: "Patricia Castro",
-      area: "Área Responsable (Operativa)",
-      fechaRadicacion: "Nov 25, 2023",
-      fechaCierre: "Dic 18, 2023",
-      tiempoRespuesta: "23 días",
-      resultado: "Rechazada",
-      satisfaccionCliente: "Insatisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-042",
-      tipo: "Sugerencia",
-      solicitante: "Miguel Torres",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Dic 01, 2023",
-      fechaCierre: "Dic 20, 2023",
-      tiempoRespuesta: "19 días",
-      resultado: "Aceptada",
-      satisfaccionCliente: "Muy Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-055",
-      tipo: "Felicitación",
-      solicitante: "Sandra Jiménez",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Dic 05, 2023",
-      fechaCierre: "Dic 06, 2023",
-      tiempoRespuesta: "1 día",
-      resultado: "Registrada",
-      satisfaccionCliente: "Muy Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-055",
-      tipo: "Felicitación",
-      solicitante: "Sandra Jiménez",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Dic 05, 2023",
-      fechaCierre: "Dic 06, 2023",
-      tiempoRespuesta: "1 día",
-      resultado: "Registrada",
-      satisfaccionCliente: "Muy Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-010",
-      tipo: "Petición",
-      solicitante: "María González",
-      area: "Área Responsable (Operativa)",
-      fechaRadicacion: "Nov 15, 2023",
-      fechaCierre: "Dic 10, 2023",
-      tiempoRespuesta: "25 días",
-      resultado: "Aprobada",
-      satisfaccionCliente: "Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-023",
-      tipo: "Queja",
-      solicitante: "Roberto Díaz",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Nov 20, 2023",
-      fechaCierre: "Dic 15, 2023",
-      tiempoRespuesta: "25 días",
-      resultado: "Resuelta",
-      satisfaccionCliente: "Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-035",
-      tipo: "Reclamo",
-      solicitante: "Patricia Castro",
-      area: "Área Responsable (Operativa)",
-      fechaRadicacion: "Nov 25, 2023",
-      fechaCierre: "Dic 18, 2023",
-      tiempoRespuesta: "23 días",
-      resultado: "Rechazada",
-      satisfaccionCliente: "Insatisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-042",
-      tipo: "Sugerencia",
-      solicitante: "Miguel Torres",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Dic 01, 2023",
-      fechaCierre: "Dic 20, 2023",
-      tiempoRespuesta: "19 días",
-      resultado: "Aceptada",
-      satisfaccionCliente: "Muy Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-055",
-      tipo: "Felicitación",
-      solicitante: "Sandra Jiménez",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Dic 05, 2023",
-      fechaCierre: "Dic 06, 2023",
-      tiempoRespuesta: "1 día",
-      resultado: "Registrada",
-      satisfaccionCliente: "Muy Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-055",
-      tipo: "Felicitación",
-      solicitante: "Sandra Jiménez",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Dic 05, 2023",
-      fechaCierre: "Dic 06, 2023",
-      tiempoRespuesta: "1 día",
-      resultado: "Registrada",
-      satisfaccionCliente: "Muy Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-010",
-      tipo: "Petición",
-      solicitante: "María González",
-      area: "Área Responsable (Operativa)",
-      fechaRadicacion: "Nov 15, 2023",
-      fechaCierre: "Dic 10, 2023",
-      tiempoRespuesta: "25 días",
-      resultado: "Aprobada",
-      satisfaccionCliente: "Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-023",
-      tipo: "Queja",
-      solicitante: "Roberto Díaz",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Nov 20, 2023",
-      fechaCierre: "Dic 15, 2023",
-      tiempoRespuesta: "25 días",
-      resultado: "Resuelta",
-      satisfaccionCliente: "Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-035",
-      tipo: "Reclamo",
-      solicitante: "Patricia Castro",
-      area: "Área Responsable (Operativa)",
-      fechaRadicacion: "Nov 25, 2023",
-      fechaCierre: "Dic 18, 2023",
-      tiempoRespuesta: "23 días",
-      resultado: "Rechazada",
-      satisfaccionCliente: "Insatisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-042",
-      tipo: "Sugerencia",
-      solicitante: "Miguel Torres",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Dic 01, 2023",
-      fechaCierre: "Dic 20, 2023",
-      tiempoRespuesta: "19 días",
-      resultado: "Aceptada",
-      satisfaccionCliente: "Muy Satisfecho",
-    },
-    {
-      radicado: "PQRSF-2023-055",
-      tipo: "Felicitación",
-      solicitante: "Sandra Jiménez",
-      area: "Servicio al Cliente",
-      fechaRadicacion: "Dic 05, 2023",
-      fechaCierre: "Dic 06, 2023",
-      tiempoRespuesta: "1 día",
-      resultado: "Registrada",
-      satisfaccionCliente: "Muy Satisfecho",
-    },
-  ]
+  useEffect(() => {
+    let active = true
+    const loadCerradas = async () => {
+      setIsLoading(true)
+      setError("")
+      try {
+        const data = await pqrsfService.getCerradas()
+        if (!active) return
+        setItems(data)
+      } catch (err) {
+        if (!active) return
+        console.error("[cerradas] load error", err)
+        setError("No se pudo cargar las PQRSF cerradas.")
+      } finally {
+        if (active) setIsLoading(false)
+      }
+    }
 
-  const filteredPQRSF = pqrsfsCerradas.filter((p) => {
+    void loadCerradas()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const computeAvgScore = (item: CerradaItem) => {
+    const scores = [
+      item.q1Clarity,
+      item.q2Timeliness,
+      item.q3Quality,
+      item.q4Attention,
+      item.q5Overall,
+    ].filter((value) => typeof value === "number") as number[]
+    if (scores.length === 0) return null
+    const total = scores.reduce((sum, value) => sum + value, 0)
+    return total / scores.length
+  }
+
+  const formattedItems = useMemo(() => {
+    return items.map((item) => {
+      const createdAt = item.createdAt ? new Date(item.createdAt) : null
+      const closedAt = item.updatedAt ? new Date(item.updatedAt) : null
+      const avgScore = computeAvgScore(item)
+      let satisfaccion = "Sin respuesta"
+      if (avgScore !== null) {
+        if (avgScore >= 4) satisfaccion = "Muy Satisfecho"
+        else if (avgScore >= 3) satisfaccion = "Satisfecho"
+        else satisfaccion = "Insatisfecho"
+      } else if (item.surveyComment) {
+        satisfaccion = "Satisfecho"
+      }
+
+      const responseDays =
+        createdAt && closedAt ? Math.max(0, Math.round((closedAt.getTime() - createdAt.getTime()) / 86400000)) : null
+
+      return {
+        id: item.id,
+        radicado: item.ticketNumber,
+        tipo: item.typeName,
+        solicitante: item.clientName || "Anónimo",
+        area: item.areaName,
+        fechaRadicacion: createdAt ? createdAt.toLocaleDateString("es-CO") : "Sin fecha",
+        fechaCierre: closedAt ? closedAt.toLocaleDateString("es-CO") : "Sin fecha",
+        tiempoRespuesta: responseDays !== null ? `${responseDays} días` : "Sin dato",
+        resultado: item.responseContent ? "Resuelta" : "Cerrada",
+        satisfaccionCliente: satisfaccion,
+      }
+    })
+  }, [items])
+
+  const filteredPQRSF = formattedItems.filter((p) => {
     const matchSearch =
       p.radicado.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.solicitante.toLowerCase().includes(searchTerm.toLowerCase())
@@ -399,12 +116,10 @@ export default function Cerradas() {
 
   const totalPages = Math.ceil(filteredPQRSF.length / itemsPerPage) || 1
 
-  // Resetear a la página 1 cuando cambian los filtros
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm, filtroTipo, filtroMes])
+  }, [searchTerm, filtroTipo])
 
-  // Asegurar que currentPage esté dentro del rango válido cuando cambia totalPages
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(totalPages)
@@ -416,17 +131,14 @@ export default function Cerradas() {
       return Array.from({ length: totalPages }, (_, i) => i + 1)
     }
 
-    // Calcular rango inicial: mantener currentPage centrado
     let start = currentPage - Math.floor(windowSize / 2)
     let end = start + windowSize - 1
 
-    // Ajustar si start < 1
     if (start < 1) {
       start = 1
       end = windowSize
     }
 
-    // Ajustar si end > totalPages
     if (end > totalPages) {
       end = totalPages
       start = totalPages - windowSize + 1
@@ -435,7 +147,6 @@ export default function Cerradas() {
     return Array.from({ length: windowSize }, (_, i) => start + i)
   }
 
-  // Calcular índices de paginación
   const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages)
   const startIndex = (safeCurrentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
@@ -449,7 +160,7 @@ export default function Cerradas() {
       <main
         className={cn(
           "flex-1 p-4 sm:p-6 lg:p-8 h-screen transition-all duration-300 flex flex-col",
-          isCollapsed ? "lg:ml-24" : "lg:ml-64"
+          isCollapsed ? "lg:ml-24" : "lg:ml-64",
         )}
       >
         <div className="mb-6 sm:mb-8 shrink-0">
@@ -461,110 +172,125 @@ export default function Cerradas() {
         </div>
 
         <CardContent className="pb-6 px-0 mb-6 shrink-0">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por radicado o solicitante..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select value={filtroTipo} onValueChange={setFiltroTipo}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Filtrar por tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos los tipos</SelectItem>
-                  <SelectItem value="Petición">Petición</SelectItem>
-                  <SelectItem value="Queja">Queja</SelectItem>
-                  <SelectItem value="Reclamo">Reclamo</SelectItem>
-                  <SelectItem value="Sugerencia">Sugerencia</SelectItem>
-                  <SelectItem value="Felicitación">Felicitación</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por radicado o solicitante..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          </CardContent>
+            <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Filtrar por tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los tipos</SelectItem>
+                <SelectItem value="Petición">Petición</SelectItem>
+                <SelectItem value="Queja">Queja</SelectItem>
+                <SelectItem value="Reclamo">Reclamo</SelectItem>
+                <SelectItem value="Sugerencia">Sugerencia</SelectItem>
+                <SelectItem value="Felicitación">Felicitación</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
 
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
         <div className="flex-1 min-h-0 overflow-hidden">
           <div className="grid grid-cols-2 grid-rows-2 gap-4">
+            {isLoading && (
+              <Card className="col-span-2 border-dashed">
+                <CardContent className="p-4 text-sm text-muted-foreground">Cargando cerradas...</CardContent>
+              </Card>
+            )}
+            {!isLoading && paginatedItems.length === 0 && (
+              <Card className="col-span-2 border-dashed">
+                <CardContent className="p-4 text-sm text-muted-foreground">No hay PQRSF cerradas.</CardContent>
+              </Card>
+            )}
             {paginatedItems.map((pqrsf, index) => (
-            <Card key={`${pqrsf.radicado}-${startIndex + index}`} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-3">
-                <div className="flex flex-col lg:flex-row lg:items-start gap-6">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="font-mono text-sm font-semibold text-primary">{pqrsf.radicado}</span>
-                      <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700">
-                        {pqrsf.tipo}
-                      </span>
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    </div>
-
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Solicitante: <span className="font-medium text-foreground">{pqrsf.solicitante}</span> • Área:{" "}
-                      <span className="font-medium text-foreground">{pqrsf.area}</span>
-                    </p>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">FECHA RADICACIÓN</p>
-                        <p className="text-sm font-medium">{pqrsf.fechaRadicacion}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">FECHA CIERRE</p>
-                        <p className="text-sm font-medium">{pqrsf.fechaCierre}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">TIEMPO RESPUESTA</p>
-                        <p className="text-sm font-medium text-blue-600">{pqrsf.tiempoRespuesta}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">RESULTADO</p>
-                        <span
-                          className={`text-xs font-medium px-2 py-1 rounded-full ${
-                            pqrsf.resultado === "Rechazada" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
-                          }`}
-                        >
-                          {pqrsf.resultado}
+              <Card key={`${pqrsf.radicado}-${startIndex + index}`} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-3">
+                  <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="font-mono text-sm font-semibold text-primary">{pqrsf.radicado}</span>
+                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                          {pqrsf.tipo}
                         </span>
+                        <CheckCircle className="h-4 w-4 text-green-600" />
                       </div>
-                    </div>
 
-                    <div
-                      className={`p-3 rounded-lg ${
-                        ["Satisfecho", "Muy Satisfecho"].includes(pqrsf.satisfaccionCliente)
-                          ? "bg-green-50"
-                          : "bg-red-50"
-                      }`}
-                    >
-                      <p
-                        className={`text-xs font-semibold mb-1 ${
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Solicitante: <span className="font-medium text-foreground">{pqrsf.solicitante}</span> • Área: {" "}
+                        <span className="font-medium text-foreground">{pqrsf.area}</span>
+                      </p>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">FECHA RADICACIÓN</p>
+                          <p className="text-sm font-medium">{pqrsf.fechaRadicacion}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">FECHA CIERRE</p>
+                          <p className="text-sm font-medium">{pqrsf.fechaCierre}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">TIEMPO RESPUESTA</p>
+                          <p className="text-sm font-medium text-blue-600">{pqrsf.tiempoRespuesta}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">RESULTADO</p>
+                          <span
+                            className={`text-xs font-medium px-2 py-1 rounded-full ${
+                              pqrsf.resultado === "Rechazada" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+                            }`}
+                          >
+                            {pqrsf.resultado}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`p-3 rounded-lg ${
                           ["Satisfecho", "Muy Satisfecho"].includes(pqrsf.satisfaccionCliente)
-                            ? "text-green-700"
-                            : "text-red-700"
+                            ? "bg-green-50"
+                            : "bg-red-50"
                         }`}
                       >
-                        SATISFACCIÓN DEL CLIENTE:
-                      </p>
-                      <p className="text-sm font-medium">{pqrsf.satisfaccionCliente}</p>
+                        <p
+                          className={`text-xs font-semibold mb-1 ${
+                            ["Satisfecho", "Muy Satisfecho"].includes(pqrsf.satisfaccionCliente)
+                              ? "text-green-700"
+                              : "text-red-700"
+                          }`}
+                        >
+                          SATISFACCIÓN DEL CLIENTE:
+                        </p>
+                        <p className="text-sm font-medium">{pqrsf.satisfaccionCliente}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 lg:min-w-[180px]">
+                      <Link to={`/pqrsf/${pqrsf.radicado}`} className="w-full">
+                        <Button variant="outline" className="w-full bg-transparent">
+                          Ver Historial Completo
+                          <ArrowUpRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      </Link>
                     </div>
                   </div>
-
-                  <div className="flex flex-col gap-2 lg:min-w-[180px]">
-                    <Link to={`/pqrsf/${pqrsf.radicado}`} className="w-full">
-                      <Button variant="outline" className="w-full bg-transparent">
-                        Ver Historial Completo
-                        <ArrowUpRight className="h-4 w-4 ml-2" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
 

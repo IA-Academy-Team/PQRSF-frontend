@@ -52,7 +52,7 @@ export function Sidebar() {
     if (user?.rol === "Administrador") {
       return [
         { name: "Responsables", href: "/Responsables", icon: Users }, // responsables son personas como Jerson, Alexa, jefes de areas
-        { name: "areas", href: "/areas", icon: Briefcase }, // areas son áreas de campuslands
+        { name: "Areas", href: "/areas", icon: Briefcase }, // areas son áreas de campuslands
       ]
     } else if (user?.rol === "Usuario de Área Responsable") {
       return [{ name: "Perfil", href: "/profile", icon: Settings }]
