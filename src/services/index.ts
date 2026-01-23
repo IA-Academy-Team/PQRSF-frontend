@@ -5,6 +5,7 @@ export { chatService } from './chat.service'
 export { userService } from './user.service'
 export { areaService } from './area.service'
 export { catalogService } from './catalog.service'
+export { dashboardService } from './dashboard.service'
 
 // Exportar tipos
 export * from '@/types/database'

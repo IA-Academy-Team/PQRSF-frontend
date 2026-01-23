@@ -14,17 +14,74 @@ import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/sidebar"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "@/contexts/auth-context"
-import { useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { dashboardService, type AdminChat, type AdminMetrics } from "@/services/dashboard.service"
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth()
   const navigate = useNavigate()
+  const [metrics, setMetrics] = useState<AdminMetrics | null>(null)
+  const [chats, setChats] = useState<AdminChat[]>([])
+  const [isDashboardLoading, setIsDashboardLoading] = useState(false)
+  const [dashboardError, setDashboardError] = useState("")
+  const chatItems = useMemo(() => {
+    const rtf = new Intl.RelativeTimeFormat("es", { numeric: "auto" })
+    const formatRelative = (value?: string | null) => {
+      if (!value) return "Sin actividad"
+      const date = new Date(value)
+      if (Number.isNaN(date.getTime())) return "Sin actividad"
+      const diffMs = date.getTime() - Date.now()
+      const diffMinutes = Math.round(diffMs / 60000)
+      if (Math.abs(diffMinutes) < 60) return rtf.format(diffMinutes, "minute")
+      const diffHours = Math.round(diffMinutes / 60)
+      if (Math.abs(diffHours) < 24) return rtf.format(diffHours, "hour")
+      const diffDays = Math.round(diffHours / 24)
+      return rtf.format(diffDays, "day")
+    }
+
+    return chats.map((chat) => ({
+      radicado: chat.ticketNumber || `CHAT-${chat.chatId}`,
+      cliente: chat.clientName || "Cliente",
+      ultimoMensaje: chat.lastMessage || "Sin mensajes",
+      fecha: formatRelative(chat.lastMessageAt),
+    }))
+  }, [chats])
 
   useEffect(() => {
     if (!isLoading && !user) {
       navigate("/")
     }
   }, [user, isLoading, navigate])
+
+  useEffect(() => {
+    if (!user || user.rol !== "Administrador") return
+
+    let active = true
+    const loadDashboard = async () => {
+      setIsDashboardLoading(true)
+      setDashboardError("")
+      try {
+        const [metricsResponse, chatsResponse] = await Promise.all([
+          dashboardService.getAdminMetrics(),
+          dashboardService.getAdminChats(),
+        ])
+        if (!active) return
+        setMetrics(metricsResponse)
+        setChats(chatsResponse)
+      } catch (err) {
+        if (!active) return
+        console.error("[dashboard] admin load error", err)
+        setDashboardError("No se pudo cargar el dashboard. Intenta nuevamente.")
+      } finally {
+        if (active) setIsDashboardLoading(false)
+      }
+    }
+
+    void loadDashboard()
+    return () => {
+      active = false
+    }
+  }, [user])
 
   if (isLoading || !user) {
     return (
@@ -37,6 +94,13 @@ export default function Dashboard() {
   }
 
   if (user.rol === "Administrador") {
+    const getStatusCount = (statusId: number) =>
+      metrics?.byStatus?.find((status) => status.statusId === statusId)?.count ?? 0
+    const totalPqrs = metrics?.totalPqrs ?? 0
+    const pqrsByType = metrics?.byType ?? []
+    const avgResponseByArea = metrics?.avgResponseByArea ?? []
+    const pqrsByTypeTotal = totalPqrs > 0 ? totalPqrs : 1
+
     return (
       <div className="flex min-h-screen bg-background">
         <Sidebar />
@@ -57,6 +121,12 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {dashboardError && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              {dashboardError}
+            </div>
+          )}
+
           <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6 sm:mb-8">
             <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
               <CardContent className="p-4 sm:p-6">
@@ -71,7 +141,9 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <h3 className="text-xs sm:text-sm font-medium mb-2 opacity-90">Total PQRSF</h3>
-                <p className="text-3xl sm:text-4xl font-bold mb-1">287</p>
+                <p className="text-3xl sm:text-4xl font-bold mb-1">
+                  {isDashboardLoading ? "..." : totalPqrs}
+                </p>
                 <p className="text-xs opacity-80">En el sistema</p>
               </CardContent>
             </Card>
@@ -84,7 +156,9 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-2">En Seguimiento</h3>
-                <p className="text-3xl sm:text-4xl font-bold text-foreground mb-1">64</p>
+                <p className="text-3xl sm:text-4xl font-bold text-foreground mb-1">
+                  {isDashboardLoading ? "..." : getStatusCount(2)}
+                </p>
                 <p className="text-xs text-orange-600 font-medium">Respondidas por áreas</p>
               </CardContent>
             </Card>
@@ -97,7 +171,9 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-2">En Apelación</h3>
-                <p className="text-3xl sm:text-4xl font-bold text-foreground mb-1">18</p>
+                <p className="text-3xl sm:text-4xl font-bold text-foreground mb-1">
+                  {isDashboardLoading ? "..." : getStatusCount(3)}
+                </p>
                 <p className="text-xs text-red-600 font-medium">Devueltas a áreas</p>
               </CardContent>
             </Card>
@@ -110,7 +186,9 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <h3 className="text-xs sm:text-sm font-medium text-muted-foreground mb-2">Cerradas</h3>
-                <p className="text-3xl sm:text-4xl font-bold text-foreground mb-1">205</p>
+                <p className="text-3xl sm:text-4xl font-bold text-foreground mb-1">
+                  {isDashboardLoading ? "..." : getStatusCount(4)}
+                </p>
                 <p className="text-xs text-green-600 font-medium">Finalizadas</p>
               </CardContent>
             </Card>
@@ -123,28 +201,35 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    { tipo: "Petición", cantidad: 112, color: "bg-blue-500" },
-                    { tipo: "Queja", cantidad: 84, color: "bg-red-500" },
-                    { tipo: "Reclamo", cantidad: 46, color: "bg-orange-500" },
-                    { tipo: "Sugerencia", cantidad: 35, color: "bg-green-500" },
-                    { tipo: "Felicitación", cantidad: 10, color: "bg-purple-500" },
-                  ].map((item) => (
-                    <div key={item.tipo} className="flex items-center gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">{item.tipo}</span>
-                          <span className="text-sm text-muted-foreground">{item.cantidad}</span>
-                        </div>
-                        <div className="h-2 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className={`h-full ${item.color}`}
-                            style={{ width: `${(item.cantidad / 287) * 100}%` }}
-                          />
+                  {pqrsByType.length === 0 && !isDashboardLoading && (
+                    <div className="text-sm text-muted-foreground">Sin datos disponibles.</div>
+                  )}
+                  {(isDashboardLoading ? [] : pqrsByType).map((item) => {
+                    const colorMap: Record<string, string> = {
+                      Petición: "bg-blue-500",
+                      Queja: "bg-red-500",
+                      Reclamo: "bg-orange-500",
+                      Sugerencia: "bg-green-500",
+                      Felicitación: "bg-purple-500",
+                    }
+                    const color = colorMap[item.typeName] || "bg-gray-400"
+                    return (
+                      <div key={item.typeName} className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium">{item.typeName}</span>
+                            <span className="text-sm text-muted-foreground">{item.count}</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className={`h-full ${color}`}
+                              style={{ width: `${(item.count / pqrsByTypeTotal) * 100}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -155,16 +240,20 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    { area: "Área Responsable", tiempo: "3.2 días", color: "text-green-600" },
-                    { area: "Servicio al Cliente", tiempo: "1.8 días", color: "text-blue-600" },
-                    { area: "Administración", tiempo: "2.5 días", color: "text-purple-600" },
-                  ].map((item) => (
-                    <div key={item.area} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <span className="text-sm font-medium">{item.area}</span>
-                      <span className={`text-sm font-bold ${item.color}`}>{item.tiempo}</span>
-                    </div>
-                  ))}
+                  {avgResponseByArea.length === 0 && !isDashboardLoading && (
+                    <div className="text-sm text-muted-foreground">Sin datos disponibles.</div>
+                  )}
+                  {(isDashboardLoading ? [] : avgResponseByArea.slice(0, 3)).map((item, index) => {
+                    const colors = ["text-green-600", "text-blue-600", "text-purple-600"]
+                    return (
+                      <div key={item.areaId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm font-medium">{item.areaName}</span>
+                        <span className={`text-sm font-bold ${colors[index] || "text-muted-foreground"}`}>
+                          {item.avgDays} días
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -182,20 +271,10 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
               <div className="space-y-4">
-                {[
-                  {
-                    radicado: "PQRSF-2023-045",
-                    cliente: "Carlos Méndez",
-                    ultimoMensaje: "Gracias por la respuesta, quedé satisfecho",
-                    fecha: "Hace 2 horas",
-                  },
-                  {
-                    radicado: "PQRSF-2023-051",
-                    cliente: "Ana López",
-                    ultimoMensaje: "Necesito más información sobre mi solicitud",
-                    fecha: "Hace 5 horas",
-                  },
-                ].map((chat, index) => (
+                {chatItems.length === 0 && !isDashboardLoading && (
+                  <div className="text-sm text-muted-foreground">Sin chats recientes.</div>
+                )}
+                {(isDashboardLoading ? [] : chatItems).map((chat, index) => (
                   <div
                     key={index}
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
