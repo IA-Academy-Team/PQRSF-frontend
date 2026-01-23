@@ -20,12 +20,12 @@ export default function LoginPage() {
     setError("")
     setIsLoading(true)
 
-    const success = await login(correo, password)
+    const result = await login(correo, password)
 
-    if (success) {
+    if (result.ok) {
       navigate("/dashboard")
     } else {
-      setError("Credenciales incorrectas")
+      setError(result.message || "Credenciales incorrectas")
       setIsLoading(false)
     }
   }

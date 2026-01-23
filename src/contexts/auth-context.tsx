@@ -1,9 +1,11 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import type { AuthUser } from "@/types"
+import { authService, type AuthSessionResponse } from "@/services/auth.service"
+import { HttpError } from "@/lib/api"
 
 interface AuthContextType {
   user: AuthUser | null
-  login: (correo: string, password: string) => Promise<boolean>
+  login: (correo: string, password: string) => Promise<{ ok: boolean; message?: string }>
   logout: () => void
   isLoading: boolean
 }
@@ -14,48 +16,93 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("auth_user")
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
+  const mapAuthUser = (payload?: AuthSessionResponse | null): AuthUser | null => {
+    const rawUser =
+      payload?.user ||
+      (payload as any)?.data?.user ||
+      (payload as any)?.session?.user ||
+      (payload as any)?.data?.session?.user
+    if (!rawUser) return null
+    const roleId = rawUser.roleId ?? rawUser.role_id
+    const rol = roleId === 2 ? "Administrador" : "Usuario de Área Responsable"
+    return {
+      id: String(rawUser.id),
+      nombre: rawUser.name || rawUser.email || "Usuario",
+      correo: rawUser.email || "",
+      rol,
     }
-    setIsLoading(false)
+  }
+
+  const getErrorMessage = (error: unknown): string => {
+    if (error instanceof HttpError) {
+      const data = error.data || {}
+      return (
+        data.message ||
+        data.error ||
+        data.errors ||
+        error.message ||
+        "No se pudo completar la solicitud."
+      )
+    }
+    if (error instanceof Error) return error.message
+    return "No se pudo completar la solicitud."
+  }
+
+  useEffect(() => {
+    const hydrate = async () => {
+      const storedUser = localStorage.getItem("auth_user")
+      if (storedUser) {
+        setUser(JSON.parse(storedUser))
+      }
+
+      try {
+        const session = await authService.me()
+        const authUser = mapAuthUser(session)
+        if (authUser) {
+          setUser(authUser)
+          localStorage.setItem("auth_user", JSON.stringify(authUser))
+        }
+      } catch {
+        // ignore session errors on startup
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    void hydrate()
   }, [])
 
-  const login = async (correo: string, password: string): Promise<boolean> => {
-    // For demo: admin@campuslands.com / admin123
-    if (correo === "admin@campuslands.com" && password === "admin123") {
-      const authUser: AuthUser = {
-        id: "1",
-        nombre: "Administrador Principal",
-        correo: "admin@campuslands.com",
-        rol: "Administrador",
+  const login = async (correo: string, password: string): Promise<{ ok: boolean; message?: string }> => {
+    try {
+      const response = await authService.login(correo, password)
+      const authUser = mapAuthUser(response)
+
+      if (!authUser) {
+        return { ok: false, message: "No se pudo obtener el usuario autenticado." }
       }
+
       setUser(authUser)
       localStorage.setItem("auth_user", JSON.stringify(authUser))
-      return true
-    }
 
-    // For demo: area@campuslands.com / area123
-    if (correo === "area@campuslands.com" && password === "area123") {
-      const authUser: AuthUser = {
-        id: "2",
-        nombre: "Usuario Área Operativa",
-        correo: "area@campuslands.com",
-        rol: "Usuario de Área Responsable",
-        area: "Área Responsable (Operativa)",
+      if ((response as any)?.token) {
+        localStorage.setItem("token", String((response as any).token))
       }
-      setUser(authUser)
-      localStorage.setItem("auth_user", JSON.stringify(authUser))
-      return true
-    }
 
-    return false
+      return { ok: true }
+    } catch (error) {
+      const message = getErrorMessage(error)
+      console.error("[auth] login error", error)
+      return { ok: false, message }
+    }
   }
 
   const logout = () => {
+    void authService.logout().catch((error) => {
+      console.error("[auth] logout error", error)
+    })
     setUser(null)
     localStorage.removeItem("auth_user")
+    localStorage.removeItem("token")
   }
 
   return <AuthContext.Provider value={{ user, login, logout, isLoading }}>{children}</AuthContext.Provider>

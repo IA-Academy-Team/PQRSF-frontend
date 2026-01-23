@@ -51,8 +51,8 @@ export const API_BASE = getApiBaseUrl()
 const PUBLIC_ROUTES = [
   '/auth/login',
   '/auth/register',
-  '/auth/forgot-password',
-  '/auth/reset-password',
+  '/auth/password/request',
+  '/auth/password/reset',
   '/public/',
   '/health',
 ]
@@ -123,6 +123,7 @@ async function request<T>(
     // Hacer la petición
     const response = await fetch(fullUrl, {
       ...init,
+      credentials: 'include',
       headers,
     })
 
