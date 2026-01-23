@@ -38,6 +38,25 @@ export interface PQRSFListQuery {
   sort?: 'recent' | 'oldest' | 'ticket'
 }
 
+export interface SeguimientoItem {
+  id: number
+  ticketNumber: string
+  createdAt: string | null
+  statusId: number
+  statusName: string
+  typeName: string
+  areaName: string
+  clientName: string | null
+  responseContent: string | null
+  responseSentAt: string | null
+  q1Clarity: number | null
+  q2Timeliness: number | null
+  q3Quality: number | null
+  q4Attention: number | null
+  q5Overall: number | null
+  surveyComment: string | null
+}
+
 export const pqrsfService = {
   // PQRSF CRUD
   getAll: async (): Promise<DBPQRSF[]> => {
@@ -77,6 +96,18 @@ export const pqrsfService = {
     const qs = params.toString()
     const path = qs ? `/pqrsf?${qs}` : '/pqrsf'
     return api.get<PQRSFListItem[]>(path)
+  },
+
+  getSeguimiento: async (): Promise<SeguimientoItem[]> => {
+    return api.get<SeguimientoItem[]>('/pqrsf/seguimiento')
+  },
+
+  finalize: async (id: number): Promise<void> => {
+    return api.post<void>(`/pqrsf/${id}/finalize`)
+  },
+
+  appeal: async (id: number): Promise<void> => {
+    return api.post<void>(`/pqrsf/${id}/appeal`)
   },
 
   getByStatus: async (statusId: number): Promise<DBPQRSF[]> => {

@@ -3,7 +3,6 @@ import { AuthProvider } from '@/contexts/auth-context'
 import { SidebarProvider } from '@/contexts/sidebar-context'
 // Login views
 import LoginPage from '@/views/login/LoginPage'
-import AdminLogin from '@/views/login/AdminLogin'
 import Register from '@/views/login/Register'
 import ForgotPassword from '@/views/login/ForgotPassword'
 import ResetPassword from '@/views/ResetPassword'
