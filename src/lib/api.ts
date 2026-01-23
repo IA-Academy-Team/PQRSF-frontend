@@ -54,6 +54,8 @@ const PUBLIC_ROUTES = [
   '/auth/password/request',
   '/auth/password/reset',
   '/public/',
+  '/survey/',
+  '/surver/',
   '/health',
 ]
 

@@ -6,6 +6,9 @@ import type {
   PQRSStatus,
   CreatePQRSStatus,
   UpdatePQRSStatus,
+  TypeDocument,
+  CreateTypeDocument,
+  UpdateTypeDocument,
 } from '@/types/database'
 
 export const catalogService = {
@@ -49,5 +52,26 @@ export const catalogService = {
 
   deletePQRSStatus: async (id: number): Promise<void> => {
     return api.del<void>(`/pqrs-status/${id}`)
+  },
+
+  // Type Document
+  getTypeDocuments: async (): Promise<TypeDocument[]> => {
+    return api.get<TypeDocument[]>('/type-document')
+  },
+
+  getTypeDocumentById: async (id: number): Promise<TypeDocument> => {
+    return api.get<TypeDocument>(`/type-document/${id}`)
+  },
+
+  createTypeDocument: async (data: CreateTypeDocument): Promise<TypeDocument> => {
+    return api.post<TypeDocument>('/type-document', data)
+  },
+
+  updateTypeDocument: async (id: number, data: UpdateTypeDocument): Promise<TypeDocument> => {
+    return api.put<TypeDocument>(`/type-document/${id}`, data)
+  },
+
+  deleteTypeDocument: async (id: number): Promise<void> => {
+    return api.del<void>(`/type-document/${id}`)
   },
 }

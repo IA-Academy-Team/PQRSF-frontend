@@ -15,6 +15,9 @@ export interface AuthSessionResponse {
 }
 
 export const authService = {
+  register: async (name: string, email: string, password: string): Promise<void> => {
+    return api.post<void>('/auth/register', { name, email, password })
+  },
   login: async (email: string, password: string): Promise<AuthSessionResponse> => {
     return api.post<AuthSessionResponse>('/auth/login', { email, password })
   },

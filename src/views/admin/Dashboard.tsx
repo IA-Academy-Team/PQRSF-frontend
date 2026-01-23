@@ -15,7 +15,15 @@ import { useAuth } from "@/contexts/auth-context"
 import { useSidebar } from "@/contexts/sidebar-context"
 import { useEffect, useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
-import { dashboardService, type AdminChat, type AdminMetrics } from "@/services/dashboard.service"
+import {
+  dashboardService,
+  type AdminChat,
+  type AdminMetrics,
+  type AreaAppealItem,
+  type AreaMetrics,
+  type AreaPendingItem,
+} from "@/services/dashboard.service"
+import { areaService } from "@/services/area.service"
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth()
@@ -25,6 +33,12 @@ export default function Dashboard() {
   const [chats, setChats] = useState<AdminChat[]>([])
   const [isDashboardLoading, setIsDashboardLoading] = useState(false)
   const [dashboardError, setDashboardError] = useState("")
+  const [areaMetrics, setAreaMetrics] = useState<AreaMetrics | null>(null)
+  const [areaPending, setAreaPending] = useState<AreaPendingItem[]>([])
+  const [areaAppeals, setAreaAppeals] = useState<AreaAppealItem[]>([])
+  const [areaName, setAreaName] = useState("")
+  const [areaError, setAreaError] = useState("")
+  const [isAreaLoading, setIsAreaLoading] = useState(false)
   const chatItems = useMemo(() => {
     const rtf = new Intl.RelativeTimeFormat("es", { numeric: "auto" })
     const formatRelative = (value?: string | null) => {
@@ -79,6 +93,54 @@ export default function Dashboard() {
     }
 
     void loadDashboard()
+    return () => {
+      active = false
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (!user || user.rol !== "Usuario de Área Responsable") return
+
+    let active = true
+    const loadAreaDashboard = async () => {
+      setIsAreaLoading(true)
+      setAreaError("")
+      try {
+        const userId = Number(user.id)
+        if (!userId) {
+          throw new Error("Usuario inválido")
+        }
+        const responsable = await areaService.getResponsibleByUser(userId)
+        if (!responsable.areaId) {
+          throw new Error("No tienes un área asignada")
+        }
+        const [metricsResponse, pendingResponse, appealsResponse] = await Promise.all([
+          dashboardService.getAreaMetrics(responsable.areaId),
+          dashboardService.getAreaPending(responsable.areaId),
+          dashboardService.getAreaAppeals(responsable.areaId),
+        ])
+        if (!active) return
+        setAreaMetrics(metricsResponse)
+        setAreaPending(pendingResponse)
+        setAreaAppeals(appealsResponse)
+        if (pendingResponse[0]?.areaName) {
+          setAreaName(pendingResponse[0].areaName)
+        } else if (appealsResponse[0]?.areaName) {
+          setAreaName(appealsResponse[0].areaName)
+        } else {
+          const area = await areaService.getById(responsable.areaId)
+          if (active) setAreaName(area.name)
+        }
+      } catch (err) {
+        if (!active) return
+        console.error("[dashboard] area load error", err)
+        setAreaError("No se pudo cargar el panel del área. Intenta nuevamente.")
+      } finally {
+        if (active) setIsAreaLoading(false)
+      }
+    }
+
+    void loadAreaDashboard()
     return () => {
       active = false
     }
@@ -307,6 +369,45 @@ export default function Dashboard() {
   }
 
   if (user.rol === "Usuario de Área Responsable") {
+    const getAreaStatusCount = (statusId: number) =>
+      areaMetrics?.byStatus?.find((status) => status.statusId === statusId)?.count ?? 0
+    const totalAssigned = areaMetrics?.totalPqrs ?? 0
+    const pendingCount = (areaMetrics?.byStatus ?? []).reduce((acc, item) => {
+      if (item.statusId === 4) return acc
+      return acc + item.count
+    }, 0)
+    const appealsCount = getAreaStatusCount(3)
+    const respondedCount = getAreaStatusCount(4)
+
+    const getPriorityLabel = (dueDate?: string | null, createdAt?: string | null) => {
+      if (dueDate) {
+        const due = new Date(dueDate)
+        if (!Number.isNaN(due.getTime())) {
+          const diffDays = Math.ceil((due.getTime() - Date.now()) / 86400000)
+          if (diffDays <= 2) return "Alta"
+          if (diffDays <= 5) return "Media"
+          return "Baja"
+        }
+      }
+      if (createdAt) {
+        const created = new Date(createdAt)
+        if (!Number.isNaN(created.getTime())) {
+          const elapsed = Math.floor((Date.now() - created.getTime()) / 86400000)
+          if (elapsed >= 10) return "Alta"
+          if (elapsed >= 5) return "Media"
+          return "Baja"
+        }
+      }
+      return "Media"
+    }
+
+    const getDaysElapsed = (createdAt?: string | null) => {
+      if (!createdAt) return 0
+      const created = new Date(createdAt)
+      if (Number.isNaN(created.getTime())) return 0
+      return Math.max(0, Math.floor((Date.now() - created.getTime()) / 86400000))
+    }
+
     return (
       <div className="flex h-screen bg-background overflow-hidden">
         <Sidebar />
@@ -331,6 +432,12 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {areaError && (
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+              {areaError}
+            </div>
+          )}
+
           <div className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4 mb-3 shrink-0">
             <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
               <CardContent className="p-3">
@@ -340,7 +447,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <h3 className="text-xs font-medium mb-1 opacity-90">PQRSF Asignadas</h3>
-                <p className="text-2xl font-bold mb-0.5">24</p>
+                <p className="text-2xl font-bold mb-0.5">{isAreaLoading ? "..." : totalAssigned}</p>
               </CardContent>
             </Card>
 
@@ -352,7 +459,9 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <h3 className="text-xs font-medium text-muted-foreground mb-1">Pendientes</h3>
-                <p className="text-2xl font-bold text-foreground mb-0.5">8</p>
+                <p className="text-2xl font-bold text-foreground mb-0.5">
+                  {isAreaLoading ? "..." : pendingCount}
+                </p>
               </CardContent>
             </Card>
 
@@ -364,7 +473,9 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <h3 className="text-xs font-medium text-muted-foreground mb-1">Apelaciones</h3>
-                <p className="text-2xl font-bold text-foreground mb-0.5">3</p>
+                <p className="text-2xl font-bold text-foreground mb-0.5">
+                  {isAreaLoading ? "..." : appealsCount}
+                </p>
               </CardContent>
             </Card>
 
@@ -376,7 +487,9 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <h3 className="text-xs font-medium text-muted-foreground mb-1">Respondidas</h3>
-                <p className="text-2xl font-bold text-foreground mb-0.5">13</p>
+                <p className="text-2xl font-bold text-foreground mb-0.5">
+                  {isAreaLoading ? "..." : respondedCount}
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -394,85 +507,72 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="p-3 flex-1 min-h-0 overflow-y-auto">
                 <div className="space-y-2">
-                  {[
-                    {
-                      radicado: "PQRSF-2023-001",
-                      tipo: "Petición",
-                      solicitante: "Carlos Mendoza",
-                      descripcion: "Solicitud de cambio de horario de clase",
-                      fecha: "Dic 15, 2023",
-                      prioridad: "Media",
-                      diasTranscurridos: 5,
-                      borderColor: "border-l-orange-500",
-                    },
-                    {
-                      radicado: "PQRSF-2023-005",
-                      tipo: "Queja",
-                      solicitante: "Ana García",
-                      descripcion: "Falta de equipos en sala de cómputo",
-                      fecha: "Dic 16, 2023",
-                      prioridad: "Alta",
-                      diasTranscurridos: 4,
-                      borderColor: "border-l-red-500",
-                    },
-                    {
-                      radicado: "PQRSF-2023-008",
-                      tipo: "Sugerencia",
-                      solicitante: "Luis Rodríguez",
-                      descripcion: "Mejoras en material didáctico",
-                      fecha: "Dic 17, 2023",
-                      prioridad: "Baja",
-                      diasTranscurridos: 3,
-                      borderColor: "border-l-blue-500",
-                    },
-                  ].slice(0, 2).map((item, index) => (
-                    <div
-                      key={index}
-                      className={`flex flex-col lg:flex-row lg:items-center justify-between p-2.5 border-l-4 ${item.borderColor} bg-card rounded-lg hover:shadow-md transition-shadow gap-2`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-mono text-xs font-semibold text-primary">{item.radicado}</span>
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                            {item.tipo}
-                          </span>
-                        </div>
-                        <h4 className="font-semibold text-foreground text-xs mb-0.5 truncate">{item.descripcion}</h4>
-                        <p className="text-[10px] text-muted-foreground truncate">
-                          {item.solicitante} • {item.fecha}
-                        </p>
-                      </div>
+                  {isAreaLoading ? (
+                    <div className="text-xs text-muted-foreground">Cargando pendientes...</div>
+                  ) : areaPending.length === 0 ? (
+                    <div className="text-xs text-muted-foreground">Sin PQRSF pendientes.</div>
+                  ) : (
+                    areaPending.slice(0, 2).map((item) => {
+                      const prioridad = getPriorityLabel(item.dueDate, item.createdAt)
+                      const diasTranscurridos = getDaysElapsed(item.createdAt)
+                      const borderColor =
+                        prioridad === "Alta"
+                          ? "border-l-red-500"
+                          : prioridad === "Media"
+                            ? "border-l-orange-500"
+                            : "border-l-blue-500"
+                      return (
+                        <div
+                          key={item.id}
+                          className={`flex flex-col lg:flex-row lg:items-center justify-between p-2.5 border-l-4 ${borderColor} bg-card rounded-lg hover:shadow-md transition-shadow gap-2`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-mono text-xs font-semibold text-primary">{item.ticketNumber}</span>
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                                {item.typeName}
+                              </span>
+                            </div>
+                            <h4 className="font-semibold text-foreground text-xs mb-0.5 truncate">
+                              {item.description}
+                            </h4>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {item.clientName || areaName || "Cliente"} • {item.createdAt?.split("T")[0] ?? ""}
+                            </p>
+                          </div>
 
-                      <div className="flex flex-row items-center gap-2">
-                        <div className="text-left">
-                          <p className="text-[10px] text-muted-foreground mb-0.5">PRIORIDAD</p>
-                          <span
-                            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
-                              item.prioridad === "Alta"
-                                ? "bg-red-100 text-red-700"
-                                : item.prioridad === "Media"
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : "bg-green-100 text-green-700"
-                            }`}
-                          >
-                            {item.prioridad}
-                          </span>
-                        </div>
+                          <div className="flex flex-row items-center gap-2">
+                            <div className="text-left">
+                              <p className="text-[10px] text-muted-foreground mb-0.5">PRIORIDAD</p>
+                              <span
+                                className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                                  prioridad === "Alta"
+                                    ? "bg-red-100 text-red-700"
+                                    : prioridad === "Media"
+                                      ? "bg-yellow-100 text-yellow-700"
+                                      : "bg-green-100 text-green-700"
+                                }`}
+                              >
+                                {prioridad}
+                              </span>
+                            </div>
 
-                        <div className="text-left">
-                          <p className="text-[10px] text-muted-foreground mb-0.5">TIEMPO</p>
-                          <p className="text-xs font-medium">{item.diasTranscurridos}d</p>
-                        </div>
+                            <div className="text-left">
+                              <p className="text-[10px] text-muted-foreground mb-0.5">TIEMPO</p>
+                              <p className="text-xs font-medium">{diasTranscurridos}d</p>
+                            </div>
 
-                        <Link to={`/pqrsf/${item.radicado}`}>
-                          <Button size="sm" className="h-7 text-xs px-2">
-                            <ClipboardList className="h-3 w-3 mr-1" />
-                            Responder
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
+                            <Link to={`/pqrsf/${item.id}`}>
+                              <Button size="sm" className="h-7 text-xs px-2">
+                                <ClipboardList className="h-3 w-3 mr-1" />
+                                Responder
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -489,31 +589,42 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="p-4 sm:p-6 flex-1 min-h-0 overflow-y-auto">
                 <div className="space-y-4">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between p-4 border-l-4 border-l-red-500 bg-card rounded-lg gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <span className="font-mono text-sm font-semibold text-primary">PQRSF-2023-010</span>
-                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-red-100 text-red-700">
-                          Apelada
-                        </span>
-                      </div>
-                      <h4 className="font-semibold text-foreground text-sm sm:text-base mb-1">
-                        Solicitud rechazada - Usuario apela decisión
-                      </h4>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
-                        María Pérez • Requiere reanálisis urgente
-                      </p>
-                    </div>
+                  {isAreaLoading ? (
+                    <div className="text-xs text-muted-foreground">Cargando apelaciones...</div>
+                  ) : areaAppeals.length === 0 ? (
+                    <div className="text-xs text-muted-foreground">Sin apelaciones recientes.</div>
+                  ) : (
+                    areaAppeals.slice(0, 1).map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex flex-col lg:flex-row lg:items-center justify-between p-4 border-l-4 border-l-red-500 bg-card rounded-lg gap-4"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 sm:gap-4">
+                            <span className="font-mono text-sm font-semibold text-primary">{item.ticketNumber}</span>
+                            <span className="text-xs font-medium px-2 py-1 rounded-full bg-red-100 text-red-700">
+                              Apelada
+                            </span>
+                          </div>
+                          <h4 className="font-semibold text-foreground text-sm sm:text-base mb-1">
+                            {item.description}
+                          </h4>
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            {item.clientName || areaName || "Cliente"} • {item.responseContent || "Requiere reanálisis"}
+                          </p>
+                        </div>
 
-                    <div className="flex items-center gap-3">
-                      <Link to="/pqrsf/PQRSF-2023-010">
-                        <Button size="sm" variant="outline" className="w-full sm:w-auto bg-transparent">
-                          <AlertCircle className="h-4 w-4 sm:mr-1" />
-                          <span className="hidden sm:inline">Reanalizar</span>
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
+                        <div className="flex items-center gap-3">
+                          <Link to={`/pqrsf/${item.id}`}>
+                            <Button size="sm" variant="outline" className="w-full sm:w-auto bg-transparent">
+                              <AlertCircle className="h-4 w-4 sm:mr-1" />
+                              <span className="hidden sm:inline">Reanalizar</span>
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>

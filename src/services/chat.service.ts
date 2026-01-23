@@ -12,10 +12,24 @@ import type {
   CreateSummary,
 } from '@/types/database'
 
+export interface ChatSummary {
+  id: number
+  mode: number | null
+  clientId: number | null
+  clientName: string | null
+  clientPhone: string | null
+  lastMessage: string | null
+  lastMessageAt: string | null
+}
+
 export const chatService = {
   // Chat CRUD
   getAll: async (): Promise<Chat[]> => {
     return api.get<Chat[]>('/chat')
+  },
+
+  getSummaries: async (): Promise<ChatSummary[]> => {
+    return api.get<ChatSummary[]>('/chat/summary')
   },
 
   getById: async (id: number): Promise<Chat> => {

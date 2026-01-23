@@ -1,0 +1,182 @@
+import { useEffect, useMemo, useState } from "react"
+import { Search, Star } from "lucide-react"
+import { Sidebar } from "@/components/sidebar"
+import { useAuth } from "@/contexts/auth-context"
+import { useSidebar } from "@/contexts/sidebar-context"
+import { cn } from "@/lib/utils"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent } from "@/components/ui/card"
+import { surveyService } from "@/services/survey.service"
+import type { PQRSFSurveyDetailed } from "@/types/database"
+import { useNavigate } from "react-router-dom"
+
+const computeAverage = (survey: PQRSFSurveyDetailed) => {
+  const values = [
+    survey.q1Clarity,
+    survey.q2Timeliness,
+    survey.q3Quality,
+    survey.q4Attention,
+    survey.q5Overall,
+  ].filter((value): value is number => typeof value === "number")
+  if (values.length === 0) return null
+  return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
+export default function Surveys() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const { isCollapsed } = useSidebar()
+  const [searchTerm, setSearchTerm] = useState("")
+  const [items, setItems] = useState<PQRSFSurveyDetailed[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  if (!user || user.rol !== "Administrador") {
+    navigate("/dashboard")
+    return null
+  }
+
+  useEffect(() => {
+    let active = true
+    const loadSurveys = async () => {
+      setIsLoading(true)
+      setError("")
+      try {
+        const data = await surveyService.listAdmin()
+        if (!active) return
+        setItems(data)
+      } catch (err) {
+        if (!active) return
+        console.error("[surveys] load error", err)
+        setError("No se pudieron cargar las encuestas.")
+      } finally {
+        if (active) setIsLoading(false)
+      }
+    }
+
+    void loadSurveys()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const filteredItems = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase()
+    if (!term) return items
+    return items.filter((item) => {
+      const ticket = item.ticketNumber.toLowerCase()
+      const client = (item.clientName || "").toLowerCase()
+      const area = (item.areaName || "").toLowerCase()
+      return ticket.includes(term) || client.includes(term) || area.includes(term)
+    })
+  }, [items, searchTerm])
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      <Sidebar />
+
+      <main
+        className={cn(
+          "flex-1 p-4 sm:p-6 lg:p-8 h-screen transition-all duration-300 flex flex-col",
+          isCollapsed ? "lg:ml-24" : "lg:ml-64",
+        )}
+      >
+        <div className="mb-6 sm:mb-8 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Encuestas PQRSF</h1>
+              <p className="text-sm text-muted-foreground">
+                Consulta el nivel de satisfaccion reportado por los usuarios.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <CardContent className="pb-6 px-0 mb-6 shrink-0">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por radicado, solicitante o area..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+        </CardContent>
+
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="grid gap-4">
+            {isLoading && (
+              <Card className="border-dashed">
+                <CardContent className="p-4 text-sm text-muted-foreground">Cargando encuestas...</CardContent>
+              </Card>
+            )}
+            {!isLoading && filteredItems.length === 0 && (
+              <Card className="border-dashed">
+                <CardContent className="p-4 text-sm text-muted-foreground">No hay encuestas registradas.</CardContent>
+              </Card>
+            )}
+
+            {filteredItems.map((item) => {
+              const average = computeAverage(item)
+              const createdAt = item.createdAt ? new Date(item.createdAt) : null
+              return (
+                <Card key={item.id} className="hover:shadow-sm transition-shadow">
+                  <CardContent className="p-4 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-primary">{item.ticketNumber}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {item.clientName || "Anonimo"} • {item.areaName}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-amber-500" />
+                        <span className="text-sm font-semibold text-foreground">
+                          {average !== null ? average.toFixed(1) : "Sin puntaje"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-muted-foreground">
+                      <div>
+                        <p className="font-semibold text-foreground">Tipo</p>
+                        <p>{item.typeName}</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">Estado</p>
+                        <p>{item.statusName}</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">Fecha</p>
+                        <p>{createdAt ? createdAt.toLocaleDateString("es-CO") : "Sin fecha"}</p>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">Contacto</p>
+                        <p>{item.clientEmail || "Sin correo"}</p>
+                      </div>
+                    </div>
+
+                    {item.comment && (
+                      <div className="rounded-lg border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+                        "{item.comment}"
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}

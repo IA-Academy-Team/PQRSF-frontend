@@ -6,6 +6,7 @@ export { userService } from './user.service'
 export { areaService } from './area.service'
 export { catalogService } from './catalog.service'
 export { dashboardService } from './dashboard.service'
+export { surveyService } from './survey.service'
 
 // Exportar tipos
 export * from '@/types/database'
