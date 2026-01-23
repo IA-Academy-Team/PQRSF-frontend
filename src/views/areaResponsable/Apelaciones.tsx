@@ -4,13 +4,16 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sidebar } from "@/components/sidebar"
+import { useSidebar } from "@/contexts/sidebar-context"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "@/contexts/auth-context"
 import { useEffect } from "react"
+import { cn } from "@/lib/utils"
 
 export default function Apelaciones() {
   const { user, isLoading } = useAuth()
   const navigate = useNavigate()
+  const { isCollapsed } = useSidebar()
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -77,7 +80,12 @@ export default function Apelaciones() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
 
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-64 overflow-y-auto min-h-screen">
+      <main
+        className={cn(
+          "flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto min-h-screen transition-all duration-300",
+          isCollapsed ? "lg:ml-24" : "lg:ml-64"
+        )}
+      >
         <div className="mb-6 sm:mb-8">
           <div className="flex items-center gap-3 mb-2">
             <AlertCircle className="h-8 w-8 text-red-600" />

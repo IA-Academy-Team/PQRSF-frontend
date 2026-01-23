@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useAuth } from "@/contexts/auth-context"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -15,6 +15,17 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [remember, setRemember] = useState(false)
+
+  // Generar partículas de forma estable
+  const particles = useMemo(() => {
+    return Array.from({ length: 80 }).map((_, i) => ({
+      id: i,
+      left: Math.random() * 120, // Extender hasta 120% para que algunas partículas se vean más a la derecha
+      top: Math.random() * 100,
+      delay: Math.random() * 15,
+      duration: 12 + Math.random() * 8,
+    }))
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,21 +64,38 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-background">
-      <div className="flex flex-col md:flex-row min-h-screen">
-        {/* Left Side - Icon */}
-        <div className="flex items-center justify-center bg-background p-6 sm:p-8 md:p-10 lg:p-12 md:w-1/2 min-h-[40vh] md:min-h-screen">
-          <div className="relative">
+      <div className="flex flex-col lg:flex-row min-h-screen">
+        {/* Left Side - Icon with Particles */}
+        <div className="flex items-center justify-center bg-background p-6 sm:p-8 md:p-10 lg:p-12 lg:w-1/2 min-h-[60vh] lg:min-h-screen relative overflow-visible clip-diagonal-left">
+          {/* Particles Background */}
+          <div className="particles-container absolute inset-0 w-full h-full">
+            {particles.map((particle) => (
+              <div
+                key={particle.id}
+                className="particle"
+                style={{
+                  left: `${particle.left}%`,
+                  top: `${particle.top}%`,
+                  animationDelay: `${particle.delay}s`,
+                  animationDuration: `${particle.duration}s`,
+                }}
+              />
+            ))}
+          </div>
+          
+          {/* Logo */}
+          <div className="relative z-10">
             <img
-              src="/images/image.png"
+              src="/images/CASCO + CAMPUS.svg"
               alt="Admin Login"
-              className="drop-shadow-2xl w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-[280px] lg:h-[280px] xl:w-[300px] xl:h-[300px]"
+              className="drop-shadow-2xl w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-[320x] lg:h-[320px] xl:w-[380px] xl:h-[380px]"
             />
           </div>
         </div>
 
         {/* Right Side - Login Form with diagonal clip */}
-        <div className="flex items-center justify-center bg-primary p-6 sm:p-8 md:p-10 lg:p-12 md:w-1/2 md:clip-diagonal min-h-[60vh] md:min-h-screen">
-          <div className="w-full max-w-md space-y-6 md:space-y-8">
+        <div className="flex items-center justify-center bg-primary p-6 sm:p-8 md:p-10 lg:p-12 lg:w-3/5 clip-diagonal min-h-[70vh] lg:min-h-screen">
+          <div className="w-full max-w-md space-y-6 md:space-y-8 lg:ml-30">
             <div className="space-y-2 text-center text-primary-foreground">
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">Admin Access</h1>
               <p className="text-primary-foreground/80 text-sm sm:text-base">Ingresa tus credenciales para continuar</p>
@@ -80,7 +108,7 @@ export default function LoginPage() {
                 </Label>
                 <Input
                   id="email"
-                  type="email"
+                  type="email" 
                   placeholder="Enter your email"
                   className="bg-white text-foreground h-10 md:h-11"
                   value={correo}

@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Sidebar } from "@/components/sidebar"
 import { useAuth } from "@/contexts/auth-context"
+import { useSidebar } from "@/contexts/sidebar-context"
 import { useNavigate } from "react-router-dom"
+import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { User, UserRole, UserArea } from "@/types"
@@ -15,6 +17,7 @@ import type { User, UserRole, UserArea } from "@/types"
 export default function Usuarios() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { isCollapsed } = useSidebar()
   const [usuarios, setUsuarios] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -96,14 +99,16 @@ export default function Usuarios() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
 
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-64 overflow-y-auto min-h-screen">
+      <main
+        className={cn(
+          "flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto min-h-screen transition-all duration-300",
+          isCollapsed ? "lg:ml-24" : "lg:ml-64"
+        )}
+      >
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Gestión de Usuarios</h1>
-              <p className="text-sm sm:text-base text-muted-foreground">
-                Crea, edita y gestiona usuarios con sus roles y cargos
-              </p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Gestión de Responsables</h1>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
@@ -132,8 +137,7 @@ export default function Usuarios() {
           </div>
         </div>
 
-        <Card className="mb-6">
-          <CardContent className="p-4 sm:p-6">
+          <CardContent className="pb-6 px-0 mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -144,7 +148,6 @@ export default function Usuarios() {
               />
             </div>
           </CardContent>
-        </Card>
 
         <Card>
           <CardHeader>
@@ -160,8 +163,6 @@ export default function Usuarios() {
                   <tr>
                     <th className="text-left p-4 font-semibold text-sm">Nombre</th>
                     <th className="text-left p-4 font-semibold text-sm">Correo</th>
-                    <th className="text-left p-4 font-semibold text-sm">Rol</th>
-                    <th className="text-left p-4 font-semibold text-sm">Área</th>
                     <th className="text-left p-4 font-semibold text-sm">Cargo</th>
                     <th className="text-left p-4 font-semibold text-sm">Estado</th>
                     <th className="text-right p-4 font-semibold text-sm">Acciones</th>
@@ -265,7 +266,7 @@ function UserForm({
   return (
     <form onSubmit={handleSubmit}>
       <DialogHeader>
-        <DialogTitle>{user ? "Editar Usuario" : "Crear Nuevo Usuario"}</DialogTitle>
+        <DialogTitle>{user ? "Editar Usuario" : "Crear Nuevo Responsable"}</DialogTitle>
       </DialogHeader>
       <div className="space-y-4 py-4">
         <div className="space-y-2">
@@ -299,7 +300,7 @@ function UserForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="rol">Rol</Label>
+          <Label htmlFor="rol">Cargo</Label>
           <Select value={formData.rol} onValueChange={(value) => setFormData({ ...formData, rol: value as UserRole })}>
             <SelectTrigger>
               <SelectValue placeholder="Seleccione un rol" />

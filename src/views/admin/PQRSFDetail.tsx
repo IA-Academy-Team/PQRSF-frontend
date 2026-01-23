@@ -15,14 +15,17 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Sidebar } from "@/components/sidebar"
+import { useSidebar } from "@/contexts/sidebar-context"
 import { Link, useParams, useNavigate } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
 import { useEffect, useState } from "react"
+import { cn } from "@/lib/utils"
 
 export default function PQRSFDetail() {
   const { id } = useParams<{ id: string }>()
   const { user, isLoading } = useAuth()
+  const { isCollapsed } = useSidebar()
   const navigate = useNavigate()
   const [analisis, setAnalisis] = useState("")
   const [evidencias, setEvidencias] = useState<File[]>([])
@@ -70,7 +73,12 @@ export default function PQRSFDetail() {
       <div className="flex min-h-screen bg-background">
         <Sidebar />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-64 overflow-y-auto min-h-screen">
+        <main
+          className={cn(
+            "flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto min-h-screen transition-all duration-300",
+            isCollapsed ? "lg:ml-24" : "lg:ml-64"
+          )}
+        >
           <div className="mb-6">
             <Link to="/analisis-pendientes">
               <Button variant="ghost" size="sm">
@@ -372,7 +380,12 @@ export default function PQRSFDetail() {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
 
-      <main className="flex-1 p-8 lg:ml-64 overflow-y-auto min-h-screen">
+      <main
+        className={cn(
+          "flex-1 p-8 overflow-y-auto min-h-screen transition-all duration-300",
+          isCollapsed ? "lg:ml-24" : "lg:ml-64"
+        )}
+      >
         <div className="mb-6">
           <Link to="/pqrsf">
             <Button variant="ghost" size="sm">

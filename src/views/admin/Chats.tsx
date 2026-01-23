@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { Sidebar } from "@/components/sidebar"
+import { useSidebar } from "@/contexts/sidebar-context"
 import { Search, Phone, Video, MoreVertical, Send, Paperclip, Smile, CheckCheck, MessageCircle } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -165,6 +167,7 @@ const chatsData = [
 ]
 
 export default function Chats() {
+  const { isCollapsed } = useSidebar()
   const [selectedChat, setSelectedChat] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [message, setMessage] = useState("")
@@ -181,7 +184,12 @@ export default function Chats() {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <div className="flex-1 flex ml-64 h-screen">
+      <div
+        className={cn(
+          "flex-1 flex h-screen transition-all duration-300",
+          isCollapsed ? "lg:ml-24" : "lg:ml-64"
+        )}
+      >
         {/* Lista de chats */}
         <div className="w-96 border-r border-border bg-card flex flex-col">
           <div className="p-4 border-b border-border">
@@ -252,17 +260,6 @@ export default function Chats() {
                   <h3 className="font-semibold text-foreground">{currentChat?.name}</h3>
                   <p className="text-xs text-muted-foreground">{currentChat?.phone}</p>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon">
-                  <Phone className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon">
-                  <Video className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-5 w-5" />
-                </Button>
               </div>
             </div>
 
