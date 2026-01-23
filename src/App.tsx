@@ -5,6 +5,7 @@ import Dashboard from '@/views/Dashboard'
 import PQRSFList from '@/views/PQRSFList'
 import PQRSFDetail from '@/views/PQRSFDetail'
 import ForgotPassword from '@/views/ForgotPassword'
+import ResetPassword from '@/views/ResetPassword'
 import Register from '@/views/Register'
 import AdminLogin from '@/views/AdminLogin'
 import AnalisisPendientes from '@/views/AnalisisPendientes'
@@ -22,9 +23,9 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<LoginPage />} />
-          <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/pqrsf" element={<PQRSFList />} />
           <Route path="/pqrsf/:id" element={<PQRSFDetail />} />

@@ -14,18 +14,39 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [remember, setRemember] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setIsLoading(true)
 
-    const success = await login(correo, password)
+    const normalizeMessage = (value: unknown): string => {
+      if (typeof value === "string" && value.trim()) return value
+      if (value && typeof value === "object") {
+        const record = value as Record<string, unknown>
+        if (typeof record.message === "string" && record.message.trim()) return record.message
+        try {
+          return JSON.stringify(value)
+        } catch {
+          return "Credenciales incorrectas"
+        }
+      }
+      return "Credenciales incorrectas"
+    }
 
-    if (success) {
-      navigate("/dashboard")
-    } else {
-      setError("Credenciales incorrectas")
+    try {
+      const result = await login(correo, password, remember)
+
+      if (result.ok) {
+        navigate("/dashboard")
+      } else {
+        setError(normalizeMessage(result.message))
+        setIsLoading(false)
+      }
+    } catch (err) {
+      console.error("[auth] login unexpected error", err)
+      setError("No se pudo iniciar sesion. Intenta nuevamente.")
       setIsLoading(false)
     }
   }
@@ -91,7 +112,12 @@ export default function LoginPage() {
 
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="remember" className="border-primary-foreground bg-white" />
+                  <Checkbox
+                    id="remember"
+                    checked={remember}
+                    onCheckedChange={(checked) => setRemember(Boolean(checked))}
+                    className="border-primary-foreground bg-white"
+                  />
                   <label htmlFor="remember" className="text-xs sm:text-sm text-primary-foreground cursor-pointer">
                     Remember me
                   </label>

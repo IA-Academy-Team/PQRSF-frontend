@@ -12,6 +12,32 @@ import type {
   CreatePQRSFSurvey,
 } from '@/types/database'
 
+export interface PQRSFListItem {
+  id: number
+  ticketNumber: string
+  description: string | null
+  createdAt: string | null
+  statusId: number
+  statusName: string
+  typeId: number
+  typeName: string
+  areaId: number
+  areaName: string
+  clientId: number
+  clientName: string | null
+  clientEmail: string | null
+}
+
+export interface PQRSFListQuery {
+  q?: string
+  pqrsStatusId?: number
+  typePqrsId?: number
+  areaId?: number
+  fromDate?: string
+  toDate?: string
+  sort?: 'recent' | 'oldest' | 'ticket'
+}
+
 export const pqrsfService = {
   // PQRSF CRUD
   getAll: async (): Promise<DBPQRSF[]> => {
@@ -39,6 +65,20 @@ export const pqrsfService = {
   },
 
   // Filtros y búsquedas
+  getAdminList: async (query: PQRSFListQuery = {}): Promise<PQRSFListItem[]> => {
+    const params = new URLSearchParams()
+    if (query.q) params.set('q', query.q)
+    if (query.pqrsStatusId) params.set('pqrsStatusId', String(query.pqrsStatusId))
+    if (query.typePqrsId) params.set('typePqrsId', String(query.typePqrsId))
+    if (query.areaId) params.set('areaId', String(query.areaId))
+    if (query.fromDate) params.set('fromDate', query.fromDate)
+    if (query.toDate) params.set('toDate', query.toDate)
+    if (query.sort) params.set('sort', query.sort)
+    const qs = params.toString()
+    const path = qs ? `/pqrsf?${qs}` : '/pqrsf'
+    return api.get<PQRSFListItem[]>(path)
+  },
+
   getByStatus: async (statusId: number): Promise<DBPQRSF[]> => {
     return api.get<DBPQRSF[]>(`/pqrsf/status/${statusId}`)
   },
