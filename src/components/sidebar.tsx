@@ -46,9 +46,8 @@ export function Sidebar() {
   const getAdminItems = () => {
     if (user?.rol === "Administrador") {
       return [
-        { name: "Usuarios", href: "/usuarios", icon: Users },
-        { name: "Cargos", href: "/cargos", icon: Briefcase },
-        { name: "Perfil", href: "/profile", icon: Settings },
+        { name: "Responsables", href: "/Responsables", icon: Users }, // responsables son personas como Jerson, Alexa, jefes de areas
+        { name: "areas", href: "/areas", icon: Briefcase }, // areas son áreas de campuslands
       ]
     } else if (user?.rol === "Usuario de Área Responsable") {
       return [{ name: "Perfil", href: "/profile", icon: Settings }]
