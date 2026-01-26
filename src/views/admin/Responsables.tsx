@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { HttpError } from "@/lib/api"
+import { notifyError, notifySuccess } from "@/lib/toast"
 import { areaService, type ResponsibleSummary } from "@/services/area.service"
 import { authService } from "@/services/auth.service"
 import { userService } from "@/services/user.service"
@@ -23,6 +24,14 @@ type ResponsableFormValues = {
   email: string
   password: string
   areaId: number | null
+}
+
+const isAllowedResponsibleEmail = (email: string) => {
+  const normalized = email.trim().toLowerCase()
+  return (
+    normalized.endsWith("@campuslands.com") ||
+    normalized.endsWith("@fundacioncampuslands.com")
+  )
 }
 
 export default function Usuarios() {
@@ -112,6 +121,14 @@ export default function Usuarios() {
           )
         )
       } else {
+        if (!isAllowedResponsibleEmail(formData.email)) {
+          const message =
+            "El correo debe terminar en @campuslands.com o @fundacioncampuslands.com."
+          setError(message)
+          notifyError(message)
+          return
+        }
+
         let dbUser: DBUser | null = null
         try {
           dbUser = await userService.getByEmail(formData.email)
@@ -151,10 +168,12 @@ export default function Usuarios() {
           },
         ])
       }
+      notifySuccess(editingResponsable ? "Responsable actualizado correctamente." : "Responsable creado correctamente.")
       setIsDialogOpen(false)
       setEditingResponsable(null)
     } catch (err) {
       console.error("[admin-responsables] save error", err)
+      notifyError("No pudimos guardar el responsable. Verifica los datos e intenta de nuevo.")
       setError("No pudimos guardar el responsable. Verifica los datos e intenta de nuevo.")
     } finally {
       setIsSaving(false)
@@ -170,8 +189,10 @@ export default function Usuarios() {
           item.id === responsable.id ? { ...item, userIsActive: updated.isActive ?? item.userIsActive } : item
         )
       )
+      notifySuccess("Estado del responsable actualizado.")
     } catch (err) {
       console.error("[admin-responsables] status error", err)
+      notifyError("No pudimos actualizar el estado del responsable.")
       setError("No pudimos actualizar el estado del responsable.")
     }
   }
@@ -181,8 +202,10 @@ export default function Usuarios() {
     try {
       await areaService.deleteResponsible(responsableId)
       setResponsables((prev) => prev.filter((item) => item.id !== responsableId))
+      notifySuccess("Responsable eliminado correctamente.")
     } catch (err) {
       console.error("[admin-responsables] delete error", err)
+      notifyError("No pudimos eliminar el responsable.")
       setError("No pudimos eliminar el responsable.")
     }
   }
@@ -355,14 +378,46 @@ function UserForm({
     password: "",
     areaId: responsable?.areaId ?? null,
   })
+  const [formError, setFormError] = useState<string | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    const name = formData.name.trim()
+    const email = formData.email.trim()
+    const password = formData.password
+    const areaId = formData.areaId
+
+    if (!name) {
+      const message = "El nombre completo es obligatorio."
+      setFormError(message)
+      notifyError(message)
+      return
+    }
+    if (!email) {
+      const message = "El correo electrónico es obligatorio."
+      setFormError(message)
+      notifyError(message)
+      return
+    }
+    if (!responsable && !password.trim()) {
+      const message = "La contraseña es obligatoria."
+      setFormError(message)
+      notifyError(message)
+      return
+    }
+    if (!areaId) {
+      const message = "Debe asignar un área."
+      setFormError(message)
+      notifyError(message)
+      return
+    }
+
+    setFormError(null)
     onSubmit({
-      name: formData.name.trim(),
-      email: formData.email.trim(),
-      password: formData.password,
-      areaId: formData.areaId,
+      name,
+      email,
+      password,
+      areaId,
     })
   }
 
@@ -372,6 +427,11 @@ function UserForm({
         <DialogTitle>{responsable ? "Editar Responsable" : "Crear Nuevo Responsable"}</DialogTitle>
       </DialogHeader>
       <div className="space-y-4 py-4">
+        {formError && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            {formError}
+          </div>
+        )}
         <div className="space-y-2">
           <Label htmlFor="nombre">Nombre Completo</Label>
           <Input

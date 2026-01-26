@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 import type { AuthUser } from "@/types"
 import { authService, type AuthSessionResponse } from "@/services/auth.service"
 import { HttpError } from "@/lib/api"
+import { notifyError, notifyInfo, notifySuccess } from "@/lib/toast"
 
 interface AuthContextType {
   user: AuthUser | null
@@ -109,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("auth_remember")
         sessionStorage.removeItem("auth_user")
         sessionStorage.removeItem("auth_session")
+        notifyError("No se pudo obtener el usuario autenticado.")
         return { ok: false, message: "No se pudo obtener el usuario autenticado." }
       }
 
@@ -129,6 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("token", String((response as any).token))
       }
 
+      notifySuccess("Inicio de sesión exitoso.")
       return { ok: true }
     } catch (error) {
       let message = getErrorMessage(error)
@@ -162,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("auth_remember")
       sessionStorage.removeItem("auth_user")
       sessionStorage.removeItem("auth_session")
+      notifyError(message)
       return { ok: false, message }
     }
   }
@@ -176,6 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessionStorage.removeItem("auth_user")
     sessionStorage.removeItem("auth_session")
     localStorage.removeItem("token")
+    notifyInfo("Sesión cerrada.")
   }
 
   return <AuthContext.Provider value={{ user, login, logout, isLoading }}>{children}</AuthContext.Provider>

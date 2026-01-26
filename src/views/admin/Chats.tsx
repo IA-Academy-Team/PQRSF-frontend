@@ -10,6 +10,7 @@ import { chatService, type ChatSummary } from "@/services/chat.service"
 import type { Message } from "@/types/database"
 import { API_BASE } from "@/lib/api"
 import { io } from "socket.io-client"
+import { notifyError, notifySuccess } from "@/lib/toast"
 
 // Función para formatear fechas tipo WhatsApp
 function formatWhatsAppDate(date: Date) {
@@ -213,8 +214,10 @@ export default function Chats() {
       const updated = await chatService.update(currentChat.id, { mode: nextMode })
       const mode = updated.mode ?? currentChat.mode ?? 1
       setChats((prev) => prev.map((chat) => (chat.id === currentChat.id ? { ...chat, mode } : chat)))
+      notifySuccess(checked ? "Modo Administrador activado." : "Modo IA activado.")
     } catch (error) {
       console.error("[admin-chats] mode update error", error)
+      notifyError("No pudimos actualizar el modo del chat.")
     } finally {
       setIsUpdatingMode(false)
     }
@@ -242,6 +245,7 @@ export default function Chats() {
     } catch (error) {
       console.error("[admin-chats] send error", error)
       setMessageError("No pudimos enviar el mensaje. Intenta nuevamente.")
+      notifyError("No pudimos enviar el mensaje.")
       setMessage(content)
     }
   }
