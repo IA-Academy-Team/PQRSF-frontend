@@ -19,23 +19,242 @@ import { useSidebar } from "@/contexts/sidebar-context"
 import { Link, useParams, useNavigate } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
+import { areaService } from "@/services/area.service"
+import { catalogService } from "@/services/catalog.service"
+import {
+  pqrsfService,
+  type PQRSFDetailItem,
+} from "@/services/pqrsf.service"
+import type { Document, Response as ResponseItem, PQRSFAnalysis } from "@/types/database"
+
+const DAY_MS = 1000 * 60 * 60 * 24
+
+const formatDate = (value?: string | null) => {
+  if (!value) return ""
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ""
+  return date.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })
+}
+
+const getElapsedDays = (value?: string | null) => {
+  if (!value) return 0
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 0
+  return Math.max(0, Math.floor((Date.now() - date.getTime()) / DAY_MS))
+}
 
 export default function PQRSFDetail() {
   const { id } = useParams<{ id: string }>()
   const { user, isLoading } = useAuth()
   const { isCollapsed } = useSidebar()
   const navigate = useNavigate()
+  const [detail, setDetail] = useState<PQRSFDetailItem | null>(null)
+  const [analysisList, setAnalysisList] = useState<PQRSFAnalysis[]>([])
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [responses, setResponses] = useState<ResponseItem[]>([])
   const [analisis, setAnalisis] = useState("")
   const [evidencias, setEvidencias] = useState<File[]>([])
   const [respuestaCliente, setRespuestaCliente] = useState("")
+  const [responsibleId, setResponsibleId] = useState<number | null>(null)
+  const [responseDocTypeId, setResponseDocTypeId] = useState<number | null>(null)
+  const [isLoadingData, setIsLoadingData] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !user) {
       navigate("/")
     }
   }, [user, isLoading, navigate])
+
+  useEffect(() => {
+    if (!user || !id) return
+
+    let active = true
+    const loadDetail = async () => {
+      setIsLoadingData(true)
+      setError(null)
+      try {
+        let resolvedId = Number(id)
+        if (Number.isNaN(resolvedId)) {
+          const pqrs = await pqrsfService.getByRadicado(id)
+          resolvedId = pqrs.id
+        }
+
+        const [detailResponse, analysisResponse, documentsResponse, responsesResponse, typeDocuments] =
+          await Promise.all([
+            pqrsfService.getDetail(resolvedId),
+            pqrsfService.getAnalysis(resolvedId),
+            pqrsfService.getDocuments(resolvedId),
+            pqrsfService.getResponses(resolvedId),
+            catalogService.getTypeDocuments(),
+          ])
+
+        if (!active) return
+        setDetail(detailResponse)
+        setAnalysisList(analysisResponse)
+        setDocuments(documentsResponse)
+        setResponses(responsesResponse)
+
+        const responseType = typeDocuments.find((item) => item.name.toLowerCase() === "respuesta")
+        setResponseDocTypeId(responseType?.id ?? typeDocuments[0]?.id ?? null)
+
+        if (analysisResponse[0]?.answer) {
+          setAnalisis(analysisResponse[0].answer ?? "")
+        }
+
+        if (user.rol === "Usuario de Área Responsable") {
+          const responsable = await areaService.getResponsibleByUser(Number(user.id))
+          if (!active) return
+          setResponsibleId(responsable.id)
+        }
+      } catch (err) {
+        console.error("[pqrsf-detail] load error", err)
+        if (active) {
+          setError("No pudimos cargar la PQRSF solicitada.")
+          setDetail(null)
+        }
+      } finally {
+        if (active) setIsLoadingData(false)
+      }
+    }
+
+    void loadDetail()
+
+    return () => {
+      active = false
+    }
+  }, [user, id])
+
+  const timelineItems = useMemo(() => {
+    if (!detail) return []
+    const items = [
+      {
+        title: "PQRSF Radicada",
+        date: detail.createdAt,
+        description: `Solicitud radicada y asignada a ${detail.areaName}.`,
+        icon: FileText,
+        iconClass: "text-primary",
+        bgClass: "bg-primary/10",
+      },
+    ]
+
+    if (analysisList.length > 0) {
+      items.push({
+        title: "Análisis registrado",
+        date: analysisList[0]?.createdAt ?? detail.updatedAt,
+        description: "Análisis técnico registrado por el área.",
+        icon: User,
+        iconClass: "text-blue-600",
+        bgClass: "bg-blue-100",
+      })
+    }
+
+    if (responses.length > 0) {
+      items.push({
+        title: "Respuesta enviada",
+        date: responses[0]?.sentAt ?? detail.updatedAt,
+        description: "Respuesta comunicada al solicitante.",
+        icon: CheckCircle2,
+        iconClass: "text-green-600",
+        bgClass: "bg-green-100",
+      })
+    }
+
+    return items
+  }, [detail, analysisList, responses])
+
+  const handleDownloadDocument = async (documentId: number) => {
+    try {
+      const response = await pqrsfService.downloadDocument(documentId)
+      if (response?.url) {
+        window.open(response.url, "_blank", "noopener,noreferrer")
+      }
+    } catch (err) {
+      console.error("[pqrsf-detail] download error", err)
+      setError("No pudimos abrir el documento seleccionado.")
+    }
+  }
+
+  const handleEnviarRespuestaCliente = async () => {
+    if (!detail) return
+    if (!respuestaCliente.trim()) {
+      setError("Por favor ingresa una respuesta para el cliente.")
+      return
+    }
+    if (!responsibleId) {
+      setError("No se pudo identificar el responsable del área.")
+      return
+    }
+    if (!responseDocTypeId) {
+      setError("No se pudo identificar el tipo de documento de respuesta.")
+      return
+    }
+
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      const analysis = analysisList[0]
+      if (analysis) {
+        await pqrsfService.updateAnalysis(analysis.id, {
+          answer: analisis || null,
+          actionTaken: analisis || null,
+        })
+      } else {
+        await pqrsfService.createAnalysis({
+          pqrsId: detail.id,
+          responsibleId,
+          answer: analisis || null,
+          actionTaken: analisis || null,
+        })
+      }
+
+      const responseDoc = await pqrsfService.createDocument(detail.id, {
+        url: `respuesta://pqrs/${detail.id}/${Date.now()}`,
+        typeDocumentId: responseDocTypeId,
+        pqrsId: detail.id,
+      })
+
+      const createdResponse = await pqrsfService.createResponse(detail.id, {
+        content: respuestaCliente.trim(),
+        channel: 3,
+        documentId: responseDoc.id,
+        pqrsId: detail.id,
+        responsibleId,
+      })
+
+      setResponses((prev) => [createdResponse, ...prev])
+      setDocuments((prev) => [responseDoc, ...prev])
+      navigate("/analisis-pendientes")
+    } catch (err) {
+      console.error("[pqrsf-detail] submit error", err)
+      setError("No pudimos enviar la respuesta. Intenta nuevamente.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleAdminDecision = async (action: "finalize" | "appeal") => {
+    if (!detail) return
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      if (action === "finalize") {
+        await pqrsfService.finalize(detail.id)
+      } else {
+        await pqrsfService.appeal(detail.id)
+      }
+      const updated = await pqrsfService.getDetail(detail.id)
+      setDetail(updated)
+    } catch (err) {
+      console.error("[pqrsf-detail] admin action error", err)
+      setError("No pudimos completar la acción seleccionada.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   if (isLoading || !user) {
     return (
@@ -47,25 +266,24 @@ export default function PQRSFDetail() {
     )
   }
 
-  const handleEnviarRespuestaCliente = () => {
-    if (!respuestaCliente.trim()) {
-      alert("Por favor ingresa una respuesta para el cliente")
-      return
-    }
-
-    console.log("[v0] Enviando respuesta directa al cliente:", respuestaCliente)
-    console.log("[v0] Análisis técnico:", analisis)
-    console.log("[v0] Evidencias adjuntas:", evidencias)
-
-    // Simula el envío de respuesta al cliente
-    alert(
-      `Respuesta enviada exitosamente al cliente.\n\n` +
-        `La PQRSF ha sido marcada como "Respondida".\n` +
-        `Se enviará notificación por correo y WhatsApp.`,
+  if (!detail && isLoadingData) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Cargando detalle...</p>
+        </div>
+      </div>
     )
+  }
 
-    // Redirigir al listado de análisis pendientes
-    navigate("/analisis-pendientes")
+  if (!detail) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">No se encontró la PQRSF.</p>
+        </div>
+      </div>
+    )
   }
 
   if (user.rol === "Usuario de Área Responsable") {
@@ -88,6 +306,12 @@ export default function PQRSFDetail() {
             </Link>
           </div>
 
+          {error && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               <Card>
@@ -95,90 +319,62 @@ export default function PQRSFDetail() {
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="font-mono text-lg font-bold text-primary">{id}</span>
-                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Petición</Badge>
-                        <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">En Análisis</Badge>
+                        <span className="font-mono text-lg font-bold text-primary">{detail.ticketNumber}</span>
+                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">{detail.typeName}</Badge>
+                        <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">{detail.statusName}</Badge>
                       </div>
-                      <CardTitle className="text-2xl">Solicitud de cambio de horario de clase</CardTitle>
+                      <CardTitle className="text-2xl">{detail.description}</CardTitle>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-6 space-y-6">
                   <div>
                     <h3 className="font-semibold text-sm text-muted-foreground mb-2">DESCRIPCIÓN DE LA SOLICITUD</h3>
-                    <p className="text-foreground leading-relaxed">
-                      Solicito respetuosamente un cambio en el horario de la clase de Desarrollo Web Avanzado.
-                      Actualmente estoy inscrito en el grupo de las 2:00 PM y necesito cambiar al grupo de las 9:00 AM
-                      debido a compromisos laborales que he adquirido recientemente.
-                    </p>
-                    <p className="text-foreground leading-relaxed mt-4">
-                      He hablado con algunos compañeros del grupo matutino y están de acuerdo con el cambio. Adjunto
-                      carta de mi empleador como soporte de la solicitud.
-                    </p>
+                    <p className="text-foreground leading-relaxed">{detail.description}</p>
                   </div>
 
                   <div className="border-t pt-6">
                     <h3 className="font-semibold text-sm text-muted-foreground mb-4">DOCUMENTOS ADJUNTOS</h3>
                     <div className="space-y-2">
-                      <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors">
-                        <FileText className="h-5 w-5 text-primary" />
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">carta-empleador.pdf</p>
-                          <p className="text-xs text-muted-foreground">245 KB</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer transition-colors">
-                        <FileText className="h-5 w-5 text-primary" />
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">horario-laboral.pdf</p>
-                          <p className="text-xs text-muted-foreground">180 KB</p>
-                        </div>
-                      </div>
+                      {documents.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Sin documentos adjuntos.</p>
+                      ) : (
+                        documents.map((doc) => (
+                          <button
+                            key={doc.id}
+                            type="button"
+                            onClick={() => handleDownloadDocument(doc.id)}
+                            className="w-full flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+                          >
+                            <FileText className="h-5 w-5 text-primary" />
+                            <div className="flex-1 text-left">
+                              <p className="font-medium text-sm">Documento #{doc.id}</p>
+                              <p className="text-xs text-muted-foreground">{doc.url}</p>
+                            </div>
+                          </button>
+                        ))
+                      )}
                     </div>
                   </div>
 
                   <div className="border-t pt-6">
                     <h3 className="font-semibold text-sm text-muted-foreground mb-4">HISTORIAL DE ACTIVIDAD</h3>
                     <div className="space-y-4">
-                      <div className="flex gap-4">
-                        <div className="flex flex-col items-center">
-                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <FileText className="h-5 w-5 text-primary" />
+                      {timelineItems.map((item, index) => (
+                        <div key={`${item.title}-${index}`} className="flex gap-4">
+                          <div className="flex flex-col items-center">
+                            <div className={`h-10 w-10 rounded-full ${item.bgClass} flex items-center justify-center`}>
+                              <item.icon className={`h-5 w-5 ${item.iconClass}`} />
+                            </div>
+                            {index < timelineItems.length - 1 && <div className="w-px h-full bg-border mt-2" />}
                           </div>
-                          <div className="w-px h-full bg-border mt-2" />
-                        </div>
-                        <div className="pb-6">
-                          <p className="font-semibold">PQRSF Radicada</p>
-                          <p className="text-sm text-muted-foreground">15 de diciembre, 2023 - 10:30 AM</p>
-                          <p className="text-sm mt-1">
-                            La solicitud ha sido registrada en el sistema y asignada al área de Formación.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-4">
-                        <div className="flex flex-col items-center">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <User className="h-5 w-5 text-blue-600" />
+                          <div className="pb-6">
+                            <p className="font-semibold">{item.title}</p>
+                            <p className="text-sm text-muted-foreground">{formatDate(item.date) || "Sin fecha"}</p>
+                            <p className="text-sm mt-1">{item.description}</p>
                           </div>
-                          <div className="w-px h-full bg-border mt-2" />
                         </div>
-                        <div className="pb-6">
-                          <p className="font-semibold">Asignada a revisor</p>
-                          <p className="text-sm text-muted-foreground">15 de diciembre, 2023 - 11:00 AM</p>
-                          <p className="text-sm mt-1">María González - Coordinadora de Formación</p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-4">
-                        <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                          <Clock className="h-5 w-5 text-orange-600" />
-                        </div>
-                        <div>
-                          <p className="font-semibold">En espera de respuesta</p>
-                          <p className="text-sm text-muted-foreground">Tiempo estimado: 10 días hábiles restantes</p>
-                        </div>
-                      </div>
+                      ))}
                     </div>
                   </div>
                 </CardContent>
@@ -200,13 +396,12 @@ export default function PQRSFDetail() {
                       Análisis Técnico Interno (Opcional)
                     </Label>
                     <p className="text-xs text-muted-foreground mb-2">
-                      Documenta tu análisis técnico, antecedentes normativos y consideraciones internas. Este campo es
-                      para registro interno del área.
+                      Documenta tu análisis técnico, antecedentes normativos y consideraciones internas.
                     </p>
                     <Textarea
                       id="analisis"
-                      placeholder="Ejemplo: Después de revisar la solicitud y la documentación adjunta, se verifica disponibilidad de cupos en el grupo matutino..."
-                      className="min-h-[150px]"
+                      placeholder="Describe tu análisis técnico..."
+                      className="min-h-37.5"
                       value={analisis}
                       onChange={(e) => setAnalisis(e.target.value)}
                     />
@@ -217,13 +412,12 @@ export default function PQRSFDetail() {
                       Respuesta al Cliente *
                     </Label>
                     <p className="text-xs text-muted-foreground mb-2">
-                      Redacta la respuesta oficial que será enviada directamente al solicitante por correo y WhatsApp.
-                      Esta será la respuesta final de la PQRSF.
+                      Redacta la respuesta oficial que será enviada directamente al solicitante.
                     </p>
                     <Textarea
                       id="respuestaCliente"
-                      placeholder="Ejemplo: Estimado(a) solicitante, informamos que su petición ha sido aprobada. El cambio de horario quedará efectivo a partir del próximo lunes..."
-                      className="min-h-[200px] border-2 border-primary/30"
+                      placeholder="Ejemplo: Estimado(a) solicitante..."
+                      className="min-h-50 border-2 border-primary/30"
                       value={respuestaCliente}
                       onChange={(e) => setRespuestaCliente(e.target.value)}
                       required
@@ -235,27 +429,36 @@ export default function PQRSFDetail() {
                       Adjuntar Evidencias (Opcional)
                     </Label>
                     <p className="text-xs text-muted-foreground mb-2">
-                      Adjunta documentos o archivos que soporten tu respuesta (contratos, aprobaciones, certificados,
-                      etc.).
+                      Adjunta documentos o archivos que soporten tu respuesta.
                     </p>
-                    <div className="border-2 border-dashed rounded-lg p-6 text-center hover:bg-accent/50 cursor-pointer transition-colors">
+                    <label className="border-2 border-dashed rounded-lg p-6 text-center hover:bg-accent/50 cursor-pointer transition-colors block">
                       <Paperclip className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                       <p className="text-sm font-medium mb-1">Click para adjuntar archivos</p>
                       <p className="text-xs text-muted-foreground">PDF, DOC, IMG hasta 10MB</p>
-                    </div>
+                      <input
+                        id="evidencias"
+                        type="file"
+                        multiple
+                        className="hidden"
+                        onChange={(event) => setEvidencias(Array.from(event.target.files ?? []))}
+                      />
+                    </label>
+                    {evidencias.length > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        {evidencias.map((file) => file.name).join(", ")}
+                      </div>
+                    )}
                   </div>
 
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div className="flex items-start gap-3">
-                      <div className="bg-green-500 rounded-lg p-2 flex-shrink-0">
+                      <div className="bg-green-500 rounded-lg p-2 shrink-0">
                         <Send className="h-5 w-5 text-white" />
                       </div>
                       <div>
                         <p className="font-semibold text-sm text-foreground mb-1">Envío Directo al Cliente</p>
                         <p className="text-xs text-muted-foreground">
-                          Al confirmar el envío, la respuesta será comunicada automáticamente al solicitante por correo
-                          electrónico y WhatsApp. El estado de la PQRSF cambiará a "Respondida" y se registrará en el
-                          historial.
+                          Al confirmar el envío, la respuesta será comunicada automáticamente al solicitante.
                         </p>
                       </div>
                     </div>
@@ -265,10 +468,10 @@ export default function PQRSFDetail() {
                     <Button
                       className="flex-1 bg-green-600 hover:bg-green-700"
                       onClick={handleEnviarRespuestaCliente}
-                      disabled={!respuestaCliente.trim()}
+                      disabled={!respuestaCliente.trim() || isSubmitting}
                     >
                       <Send className="h-4 w-4 mr-2" />
-                      Enviar Respuesta al Cliente
+                      {isSubmitting ? "Enviando..." : "Enviar Respuesta al Cliente"}
                     </Button>
                   </div>
                 </CardContent>
@@ -286,8 +489,8 @@ export default function PQRSFDetail() {
                       <User className="h-7 w-7 text-primary" />
                     </div>
                     <div>
-                      <p className="font-semibold text-foreground">Carlos Mendoza</p>
-                      <p className="text-sm text-muted-foreground">Camper</p>
+                      <p className="font-semibold text-foreground">{detail.clientName || "Sin nombre"}</p>
+                      <p className="text-sm text-muted-foreground">{detail.stakeholderName || "Sin rol"}</p>
                     </div>
                   </div>
 
@@ -295,8 +498,8 @@ export default function PQRSFDetail() {
                     <div className="flex items-center gap-3 text-sm">
                       <User className="h-4 w-4 text-muted-foreground" />
                       <div>
-                        <p className="text-xs text-muted-foreground">Código</p>
-                        <p className="font-medium">CMP-2023-156</p>
+                        <p className="text-xs text-muted-foreground">Documento</p>
+                        <p className="font-medium">{detail.clientDocument || "N/A"}</p>
                       </div>
                     </div>
 
@@ -304,7 +507,7 @@ export default function PQRSFDetail() {
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <p className="text-xs text-muted-foreground">Fecha de radicación</p>
-                        <p className="font-medium">15 de diciembre, 2023</p>
+                        <p className="font-medium">{formatDate(detail.createdAt)}</p>
                       </div>
                     </div>
 
@@ -312,7 +515,7 @@ export default function PQRSFDetail() {
                       <Building2 className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <p className="text-xs text-muted-foreground">Área asignada</p>
-                        <p className="font-medium">{user.area}</p>
+                        <p className="font-medium">{detail.areaName}</p>
                       </div>
                     </div>
 
@@ -320,7 +523,7 @@ export default function PQRSFDetail() {
                       <Clock className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <p className="text-xs text-muted-foreground">Tiempo transcurrido</p>
-                        <p className="font-medium text-orange-600">5 días</p>
+                        <p className="font-medium text-orange-600">{getElapsedDays(detail.createdAt)} días</p>
                       </div>
                     </div>
                   </div>
@@ -334,22 +537,22 @@ export default function PQRSFDetail() {
                 <CardContent className="space-y-3">
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Tipo de usuario</p>
-                    <Badge variant="outline">Persona Natural</Badge>
+                    <Badge variant="outline">{detail.typePersonName || "Sin definir"}</Badge>
                   </div>
 
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Prioridad</p>
-                    <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">Media</Badge>
+                    <p className="text-xs text-muted-foreground mb-1">Estado</p>
+                    <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">{detail.statusName}</Badge>
                   </div>
 
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Canal de recepción</p>
-                    <p className="text-sm font-medium">WhatsApp - Chatbot n8n</p>
+                    <p className="text-sm font-medium">Web / Chatbot</p>
                   </div>
 
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Consecutivo</p>
-                    <p className="text-sm font-mono font-semibold">#2023-001</p>
+                    <p className="text-xs text-muted-foreground mb-1">Radicado</p>
+                    <p className="text-sm font-mono font-semibold">{detail.ticketNumber}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -363,7 +566,7 @@ export default function PQRSFDetail() {
                     <div>
                       <p className="font-semibold text-sm text-foreground mb-1">Plazo de Respuesta</p>
                       <p className="text-xs text-muted-foreground">
-                        Esta solicitud debe ser respondida antes del 30 de diciembre, 2023 (10 días hábiles).
+                        Esta solicitud debe ser respondida antes del {formatDate(detail.dueDate) || "por definir"}.
                       </p>
                     </div>
                   </div>
@@ -395,37 +598,58 @@ export default function PQRSFDetail() {
           </Link>
         </div>
 
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader className="border-b bg-muted/30">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="font-mono text-lg font-bold text-primary">{id}</span>
-                    <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Petición</Badge>
+                    <span className="font-mono text-lg font-bold text-primary">{detail.ticketNumber}</span>
+                    <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">{detail.typeName}</Badge>
+                    <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">{detail.statusName}</Badge>
                   </div>
-                  <CardTitle className="text-2xl">Solicitud de cambio de horario de clase</CardTitle>
+                  <CardTitle className="text-2xl">{detail.description}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                <p className="text-foreground">Contenido de la solicitud...</p>
+                <p className="text-foreground">{detail.description}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Respuesta y Análisis</CardTitle>
+                <CardTitle>Decisión Administrativa</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Textarea placeholder="Análisis..." className="min-h-[120px]" />
+                <Textarea
+                  placeholder="Comentarios o soporte de la decisión..."
+                  className="min-h-[120px]"
+                  value={analisis}
+                  onChange={(e) => setAnalisis(e.target.value)}
+                />
                 <div className="flex gap-3">
-                  <Button className="flex-1 bg-green-600 hover:bg-green-700">
+                  <Button
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={() => handleAdminDecision("finalize")}
+                    disabled={isSubmitting}
+                  >
                     <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Aprobar
+                    Aprobar y Cerrar
                   </Button>
-                  <Button variant="outline" className="flex-1 bg-transparent">
+                  <Button
+                    variant="outline"
+                    className="flex-1 bg-transparent"
+                    onClick={() => handleAdminDecision("appeal")}
+                    disabled={isSubmitting}
+                  >
                     <XCircle className="h-4 w-4 mr-2" />
-                    Rechazar
+                    Enviar a Reanálisis
                   </Button>
                 </div>
               </CardContent>
@@ -438,7 +662,8 @@ export default function PQRSFDetail() {
                 <CardTitle className="text-lg">Información del Solicitante</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm">Carlos Mendoza</p>
+                <p className="text-sm font-medium">{detail.clientName || "Sin nombre"}</p>
+                <p className="text-xs text-muted-foreground">{detail.clientEmail || "Sin correo"}</p>
               </CardContent>
             </Card>
           </div>

@@ -10,6 +10,10 @@ import type {
   CreatePQRSFReanalysis,
   PQRSFSurvey,
   CreatePQRSFSurvey,
+  Document,
+  CreateDocument,
+  Response,
+  CreateResponse,
 } from '@/types/database'
 
 export interface PQRSFListItem {
@@ -26,6 +30,31 @@ export interface PQRSFListItem {
   clientId: number
   clientName: string | null
   clientEmail: string | null
+}
+
+export interface PQRSFDetailItem {
+  id: number
+  ticketNumber: string
+  description: string
+  isAutoResolved: boolean
+  dueDate: string | null
+  createdAt: string | null
+  updatedAt: string | null
+  statusId: number
+  statusName: string
+  typeId: number
+  typeName: string
+  areaId: number
+  areaName: string
+  clientId: number
+  clientName: string | null
+  clientEmail: string | null
+  clientDocument: string | null
+  clientPhone: string | null
+  typePersonId: number | null
+  typePersonName: string | null
+  stakeholderId: number | null
+  stakeholderName: string | null
 }
 
 export interface PQRSFListQuery {
@@ -132,6 +161,10 @@ export const pqrsfService = {
     return api.get<PQRSFListItem[]>(path)
   },
 
+  getDetail: async (id: number): Promise<PQRSFDetailItem> => {
+    return api.get<PQRSFDetailItem>(`/pqrsf/${id}/detail`)
+  },
+
   getSeguimiento: async (): Promise<SeguimientoItem[]> => {
     return api.get<SeguimientoItem[]>('/pqrsf/seguimiento')
   },
@@ -181,6 +214,23 @@ export const pqrsfService = {
     return api.put<PQRSFAnalysis>(`/pqrsf/analysis/${id}`, data)
   },
 
+  // PQRSF Documents
+  getDocuments: async (pqrsfId: number): Promise<Document[]> => {
+    return api.get<Document[]>(`/pqrsf/${pqrsfId}/documents`)
+  },
+
+  createDocument: async (pqrsfId: number, data: CreateDocument): Promise<Document> => {
+    return api.post<Document>(`/pqrsf/${pqrsfId}/documents`, data)
+  },
+
+  deleteDocument: async (id: number): Promise<void> => {
+    return api.del<void>(`/pqrsf/documents/${id}`)
+  },
+
+  downloadDocument: async (id: number): Promise<{ url: string }> => {
+    return api.get<{ url: string }>(`/pqrsf/documents/${id}/download`)
+  },
+
   // PQRSF Reanalysis
   getReanalysis: async (id: number): Promise<PQRSFReanalysis> => {
     return api.get<PQRSFReanalysis>(`/pqrsf/reanalysis/${id}`)
@@ -192,6 +242,15 @@ export const pqrsfService = {
 
   updateReanalysis: async (id: number, data: Partial<CreatePQRSFReanalysis>): Promise<PQRSFReanalysis> => {
     return api.put<PQRSFReanalysis>(`/pqrsf/reanalysis/${id}`, data)
+  },
+
+  // PQRSF Responses
+  getResponses: async (pqrsfId: number): Promise<Response[]> => {
+    return api.get<Response[]>(`/pqrsf/${pqrsfId}/responses`)
+  },
+
+  createResponse: async (pqrsfId: number, data: CreateResponse): Promise<Response> => {
+    return api.post<Response>(`/pqrsf/${pqrsfId}/responses`, data)
   },
 
   // PQRSF Survey

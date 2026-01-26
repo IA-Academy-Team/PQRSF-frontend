@@ -31,6 +31,10 @@ export const userService = {
     return api.put<DBUser>(`/users/${id}`, data)
   },
 
+  updateStatus: async (id: number, isActive?: boolean): Promise<DBUser> => {
+    return api.patch<DBUser>(`/users/${id}/status`, { isActive })
+  },
+
   delete: async (id: number): Promise<void> => {
     return api.del<void>(`/users/${id}`)
   },

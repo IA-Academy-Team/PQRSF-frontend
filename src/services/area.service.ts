@@ -8,6 +8,18 @@ import type {
   UpdateResponsible,
 } from '@/types/database'
 
+export interface ResponsibleSummary {
+  id: number
+  userId: number
+  areaId: number | null
+  userName: string | null
+  userEmail: string | null
+  userIsActive: boolean
+  roleId: number
+  areaName: string | null
+  areaCode: string | null
+}
+
 export const areaService = {
   // Area CRUD
   getAll: async (): Promise<Area[]> => {
@@ -33,6 +45,14 @@ export const areaService = {
   // Responsible CRUD
   getAllResponsibles: async (): Promise<Responsible[]> => {
     return api.get<Responsible[]>('/area/responsible')
+  },
+
+  getResponsibleByUser: async (userId: number): Promise<Responsible> => {
+    return api.get<Responsible>(`/responsables/user/${userId}`)
+  },
+
+  getResponsiblesSummary: async (): Promise<ResponsibleSummary[]> => {
+    return api.get<ResponsibleSummary[]>('/area/responsible/summary')
   },
 
   getResponsibleById: async (id: number): Promise<Responsible> => {

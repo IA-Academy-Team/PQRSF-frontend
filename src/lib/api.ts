@@ -54,6 +54,8 @@ const PUBLIC_ROUTES = [
   '/auth/password/request',
   '/auth/password/reset',
   '/public/',
+  '/survey/',
+  '/surver/',
   '/health',
 ]
 
@@ -109,14 +111,14 @@ async function request<T>(
   const token = getToken()
 
   // Configurar headers
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(init.headers || {}),
+  const headers = new Headers(init.headers || {})
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
   }
 
   // Agregar token si existe y NO es ruta pública
   if (token && !isPublic) {
-    headers['Authorization'] = `Bearer ${token}`
+    headers.set('Authorization', `Bearer ${token}`)
   }
 
   try {
@@ -165,9 +167,15 @@ async function request<T>(
         }
       }
 
-      // Lanzar error HTTP
+      const normalizedMessage =
+        typeof errorMessage === 'string'
+          ? errorMessage
+          : errorData?.error?.message ||
+            errorData?.message ||
+            'Error en la petición'
+
       throw new HttpError(
-        typeof errorMessage === 'string' ? errorMessage : 'Error en la petición',
+        normalizedMessage,
         response.status,
         errorData
       )

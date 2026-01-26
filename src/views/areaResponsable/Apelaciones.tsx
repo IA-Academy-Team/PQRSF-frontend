@@ -7,13 +7,39 @@ import { Sidebar } from "@/components/sidebar"
 import { useSidebar } from "@/contexts/sidebar-context"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "@/contexts/auth-context"
-import { useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
+import { areaService } from "@/services/area.service"
+import { dashboardService, type AreaAppealItem } from "@/services/dashboard.service"
+
+const DAY_MS = 1000 * 60 * 60 * 24
+
+const formatDate = (value?: string | null) => {
+  if (!value) return ""
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ""
+  return date.toISOString().split("T")[0]
+}
+
+const isUrgent = (dueDate?: string | null) => {
+  if (!dueDate) return false
+  const due = new Date(dueDate)
+  if (Number.isNaN(due.getTime())) return false
+  const diffDays = Math.ceil((due.getTime() - Date.now()) / DAY_MS)
+  return diffDays <= 1
+}
 
 export default function Apelaciones() {
   const { user, isLoading } = useAuth()
   const navigate = useNavigate()
   const { isCollapsed } = useSidebar()
+  const [appeals, setAppeals] = useState<AreaAppealItem[]>([])
+  const [areaName, setAreaName] = useState("")
+  const [isLoadingData, setIsLoadingData] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [typeFilter, setTypeFilter] = useState("todos")
+  const [dateFilter, setDateFilter] = useState("")
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -24,42 +50,60 @@ export default function Apelaciones() {
     }
   }, [user, isLoading, navigate])
 
-  if (isLoading || !user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground">Cargando...</p>
-        </div>
-      </div>
-    )
-  }
+  useEffect(() => {
+    if (!user || user.rol !== "Usuario de Área Responsable") return
 
-  const apelaciones = [
-    {
-      id: "PQRSF-2023-010",
-      solicitante: "María Pérez",
-      tipo: "Petición",
-      area: user.area || "Formación",
-      fechaOriginal: "2023-12-10",
-      fechaApelacion: "2023-12-18",
-      descripcion: "Solicitud rechazada - Usuario apela decisión sobre certificado",
-      motivoApelacion: "Considera que cumple con todos los requisitos documentados",
-      analisisAnterior: "Rechazada por documentación incompleta",
-      urgente: true,
-    },
-    {
-      id: "PQRSF-2023-013",
-      solicitante: "Pedro Gómez",
-      tipo: "Queja",
-      area: user.area || "Formación",
-      fechaOriginal: "2023-12-12",
-      fechaApelacion: "2023-12-19",
-      descripcion: "Apelación sobre tiempo de respuesta en solicitud anterior",
-      motivoApelacion: "La respuesta no abordó el problema principal planteado",
-      analisisAnterior: "Cerrada como resuelta",
-      urgente: false,
-    },
-  ]
+    let active = true
+    const loadAppeals = async () => {
+      setIsLoadingData(true)
+      setError(null)
+      try {
+        const userId = Number(user.id)
+        if (!userId) {
+          throw new Error("Usuario inválido")
+        }
+        const responsable = await areaService.getResponsibleByUser(userId)
+        if (!responsable.areaId) {
+          throw new Error("No tienes un área asignada")
+        }
+        const appealsItems = await dashboardService.getAreaAppeals(responsable.areaId)
+        if (!active) return
+        setAppeals(appealsItems)
+        if (appealsItems[0]?.areaName) {
+          setAreaName(appealsItems[0].areaName)
+        } else {
+          const area = await areaService.getById(responsable.areaId)
+          if (active) setAreaName(area.name)
+        }
+      } catch (err) {
+        console.error("[area-apelaciones] load error", err)
+        if (active) {
+          setError("No pudimos cargar las apelaciones.")
+        }
+      } finally {
+        if (active) setIsLoadingData(false)
+      }
+    }
+
+    void loadAppeals()
+
+    return () => {
+      active = false
+    }
+  }, [user])
+
+  const filteredAppeals = useMemo(() => {
+    const query = searchTerm.toLowerCase()
+    return appeals.filter((item) => {
+      const matchesType = typeFilter === "todos" || item.typeName.toLowerCase() === typeFilter
+      const matchesQuery =
+        item.ticketNumber.toLowerCase().includes(query) ||
+        (item.clientName ?? "").toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query)
+      const matchesDate = dateFilter ? formatDate(item.createdAt) === dateFilter : true
+      return matchesType && matchesQuery && matchesDate
+    })
+  }, [appeals, searchTerm, typeFilter, dateFilter])
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -74,6 +118,16 @@ export default function Apelaciones() {
       default:
         return "bg-gray-50 text-gray-700 border-gray-200"
     }
+  }
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -92,7 +146,7 @@ export default function Apelaciones() {
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Apelaciones</h1>
           </div>
           <p className="text-sm sm:text-base text-muted-foreground">
-            PQRSF que requieren reanálisis por apelación del usuario
+            PQRSF de {areaName || "tu área"} que requieren reanálisis por apelación del usuario
           </p>
         </div>
 
@@ -101,98 +155,123 @@ export default function Apelaciones() {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar por radicado o solicitante..." className="pl-10" />
+                <Input
+                  placeholder="Buscar por radicado o solicitante..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                />
               </div>
 
-              <Select defaultValue="todos">
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="w-full sm:w-[200px]">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos los tipos</SelectItem>
-                  <SelectItem value="peticion">Petición</SelectItem>
+                  <SelectItem value="petición">Petición</SelectItem>
                   <SelectItem value="queja">Queja</SelectItem>
                   <SelectItem value="reclamo">Reclamo</SelectItem>
+                  <SelectItem value="sugerencia">Sugerencia</SelectItem>
+                  <SelectItem value="felicitación">Felicitación</SelectItem>
                 </SelectContent>
               </Select>
 
               <div className="relative w-full sm:w-[200px]">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="date" className="pl-10" />
+                <Input
+                  type="date"
+                  className="pl-10"
+                  value={dateFilter}
+                  onChange={(event) => setDateFilter(event.target.value)}
+                />
               </div>
             </div>
           </CardContent>
         </Card>
 
+        {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
+
         <div className="mb-4">
-          <p className="text-sm text-muted-foreground">Mostrando {apelaciones.length} apelaciones activas</p>
+          <p className="text-sm text-muted-foreground">Mostrando {filteredAppeals.length} apelaciones activas</p>
         </div>
 
         <div className="space-y-4">
-          {apelaciones.map((item) => (
-            <Card
-              key={item.id}
-              className={`hover:shadow-lg transition-shadow ${item.urgente ? "border-2 border-red-300" : ""}`}
-            >
-              <CardContent className="p-4 sm:p-6">
-                {item.urgente && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
-                    <p className="text-sm font-medium text-red-700">Apelación Urgente - Requiere atención inmediata</p>
-                  </div>
-                )}
+          {isLoadingData ? (
+            <p className="text-sm text-muted-foreground">Cargando apelaciones...</p>
+          ) : filteredAppeals.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No hay apelaciones registradas.</p>
+          ) : (
+            filteredAppeals.map((item) => {
+              const urgent = isUrgent(item.dueDate)
+              const motivo = item.responseContent ?? item.analysisAnswer ?? "Sin información registrada"
+              const analisisAnterior = item.analysisAnswer ?? "Sin análisis registrado"
+              return (
+                <Card
+                  key={item.id}
+                  className={`hover:shadow-lg transition-shadow ${urgent ? "border-2 border-red-300" : ""}`}
+                >
+                  <CardContent className="p-4 sm:p-6">
+                    {urgent && (
+                      <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-red-600" />
+                        <p className="text-sm font-medium text-red-700">Apelación Urgente - Requiere atención inmediata</p>
+                      </div>
+                    )}
 
-                <div className="flex flex-col lg:flex-row items-start justify-between gap-4">
-                  <div className="flex-1 w-full">
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
-                      <span className="font-mono text-sm font-semibold text-primary">{item.id}</span>
-                      <span className={`text-xs font-medium px-3 py-1 rounded-full border ${getTypeColor(item.tipo)}`}>
-                        {item.tipo}
-                      </span>
-                      <span className="text-xs font-medium px-3 py-1 rounded-full bg-red-100 text-red-700">
-                        Apelada
-                      </span>
-                    </div>
-
-                    <h3 className="font-semibold text-base sm:text-lg text-foreground mb-2">{item.descripcion}</h3>
-
-                    <div className="space-y-2 mb-4">
-                      <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
-                        <div>
-                          <span className="font-medium">Solicitante:</span> {item.solicitante}
+                    <div className="flex flex-col lg:flex-row items-start justify-between gap-4">
+                      <div className="flex-1 w-full">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
+                          <span className="font-mono text-sm font-semibold text-primary">{item.ticketNumber}</span>
+                          <span className={`text-xs font-medium px-3 py-1 rounded-full border ${getTypeColor(item.typeName)}`}>
+                            {item.typeName}
+                          </span>
+                          <span className="text-xs font-medium px-3 py-1 rounded-full bg-red-100 text-red-700">
+                            Apelada
+                          </span>
                         </div>
-                        <div>
-                          <span className="font-medium">Radicación original:</span> {item.fechaOriginal}
+
+                        <h3 className="font-semibold text-base sm:text-lg text-foreground mb-2">{item.description}</h3>
+
+                        <div className="space-y-2 mb-4">
+                          <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
+                            <div>
+                              <span className="font-medium">Solicitante:</span> {item.clientName || "Sin nombre"}
+                            </div>
+                            <div>
+                              <span className="font-medium">Radicación original:</span> {formatDate(item.createdAt)}
+                            </div>
+                            <div>
+                              <span className="font-medium">Fecha apelación:</span> {formatDate(item.updatedAt || item.createdAt)}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <span className="font-medium">Fecha apelación:</span> {item.fechaApelacion}
+
+                        <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground mb-1">MOTIVO DE APELACIÓN</p>
+                            <p className="text-sm">{motivo}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground mb-1">ANÁLISIS ANTERIOR</p>
+                            <p className="text-sm">{analisisAnterior}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground mb-1">MOTIVO DE APELACIÓN</p>
-                        <p className="text-sm">{item.motivoApelacion}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground mb-1">ANÁLISIS ANTERIOR</p>
-                        <p className="text-sm">{item.analisisAnterior}</p>
-                      </div>
+                      <Link to={`/pqrsf/${item.id}`} className="w-full lg:w-auto">
+                        <Button className="w-full lg:w-auto bg-red-600 hover:bg-red-700">
+                          <AlertCircle className="h-4 w-4 mr-2" />
+                          Reanalizar
+                        </Button>
+                      </Link>
                     </div>
-                  </div>
-
-                  <Link to={`/pqrsf/${item.id}`} className="w-full lg:w-auto">
-                    <Button className="w-full lg:w-auto bg-red-600 hover:bg-red-700">
-                      <AlertCircle className="h-4 w-4 mr-2" />
-                      Reanalizar
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  </CardContent>
+                </Card>
+              )
+            })
+          )}
         </div>
       </main>
     </div>

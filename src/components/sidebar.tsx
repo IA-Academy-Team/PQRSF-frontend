@@ -31,13 +31,14 @@ export function Sidebar() {
         { name: "Seguimiento", href: "/seguimiento", icon: Clock },
         { name: "En Apelación", href: "/en-apelacion", icon: AlertCircle },
         { name: "Cerradas", href: "/cerradas", icon: CheckCircle },
+        { name: "Encuestas", href: "/encuestas", icon: ClipboardList },
         { name: "Chats", href: "/chats", icon: MessageCircle },
       ]
     } else if (user?.rol === "Usuario de Área Responsable") {
       return [
         { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
         { name: "PQRSF", href: "/pqrsf", icon: FileText },
-        { name: "Análisis Pendientes", href: "/analisis-pendientes", icon: ClipboardList },
+        { name: "Análisis pendientes", href: "/analisis-pendientes", icon: ClipboardList },
         { name: "Apelaciones", href: "/apelaciones", icon: AlertCircle },
       ]
     } else {
@@ -51,7 +52,7 @@ export function Sidebar() {
   const getAdminItems = () => {
     if (user?.rol === "Administrador") {
       return [
-        { name: "Responsables", href: "/Responsables", icon: Users }, // responsables son personas como Jerson, Alexa, jefes de areas
+        { name: "Responsables", href: "/responsables", icon: Users }, // responsables son personas como Jerson, Alexa, jefes de areas
         { name: "Areas", href: "/areas", icon: Briefcase }, // areas son áreas de campuslands
       ]
     } else if (user?.rol === "Usuario de Área Responsable") {
@@ -104,7 +105,7 @@ export function Sidebar() {
 
       <hr />
 
-      <nav className={cn("flex-1 overflow-y-auto flex flex-col", isCollapsed ? "px-2 gap-2" : "px-4 gap-2")}>
+      <nav className={cn("flex-1 overflow-y-auto flex flex-col mt-2", isCollapsed ? "px-2 gap-2" : "px-4 gap-2")}>
         <div className="flex flex-col gap-2">
           {navigation.map((item) => (
             <Link

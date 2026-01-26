@@ -1,10 +1,15 @@
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { useSidebar } from "@/contexts/sidebar-context"
-import { Search, Phone, Video, MoreVertical, Send, Paperclip, Smile, CheckCheck, MessageCircle } from "lucide-react"
+import { Search, Send, Paperclip, Smile, CheckCheck, MessageCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
+import { chatService, type ChatSummary } from "@/services/chat.service"
+import type { Message } from "@/types/database"
+import { API_BASE } from "@/lib/api"
+import { io } from "socket.io-client"
 
 // Función para formatear fechas tipo WhatsApp
 function formatWhatsAppDate(date: Date) {
@@ -23,163 +28,225 @@ function formatWhatsAppDate(date: Date) {
   }
 }
 
-const chatsData = [
-  {
-    id: 1,
-    name: "Juan Pérez",
-    phone: "+57 312 456 7890",
-    lastMessage: "Necesito información sobre mi solicitud",
-    time: new Date(2024, 0, 7, 14, 30),
-    unread: 2,
-    avatar: "/images/image.png",
-    messages: [
-      {
-        id: 1,
-        text: "Hola, buenos días",
-        sender: "user",
-        time: new Date(2024, 0, 7, 14, 20),
-        status: "read",
-      },
-      {
-        id: 2,
-        text: "Hola Juan, bienvenido. ¿En qué puedo ayudarte hoy?",
-        sender: "bot",
-        time: new Date(2024, 0, 7, 14, 21),
-      },
-      {
-        id: 3,
-        text: "Necesito información sobre mi solicitud de PQRSF #12345",
-        sender: "user",
-        time: new Date(2024, 0, 7, 14, 25),
-        status: "read",
-      },
-      {
-        id: 4,
-        text: "Claro, déjame revisar tu solicitud. Tu PQRSF #12345 está en estado 'Pendiente de Revisión' y será procesada en las próximas 24 horas.",
-        sender: "bot",
-        time: new Date(2024, 0, 7, 14, 26),
-      },
-      {
-        id: 5,
-        text: "Necesito información sobre mi solicitud",
-        sender: "user",
-        time: new Date(2024, 0, 7, 14, 30),
-        status: "delivered",
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "María García",
-    phone: "+57 300 123 4567",
-    lastMessage: "Gracias por la información",
-    time: new Date(2024, 0, 6, 16, 45),
-    unread: 0,
-    avatar: null,
-    initials: "MG",
-    messages: [
-      {
-        id: 1,
-        text: "Hola, quiero hacer una petición",
-        sender: "user",
-        time: new Date(2024, 0, 6, 16, 30),
-        status: "read",
-      },
-      {
-        id: 2,
-        text: "Con gusto te ayudo. ¿Qué tipo de petición deseas realizar?",
-        sender: "bot",
-        time: new Date(2024, 0, 6, 16, 31),
-      },
-      {
-        id: 3,
-        text: "Gracias por la información",
-        sender: "user",
-        time: new Date(2024, 0, 6, 16, 45),
-        status: "read",
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: "Carlos Rodríguez",
-    phone: "+57 315 789 0123",
-    lastMessage: "¿Cuánto tiempo toma el proceso?",
-    time: new Date(2024, 0, 5, 10, 15),
-    unread: 0,
-    avatar: null,
-    initials: "CR",
-    messages: [
-      {
-        id: 1,
-        text: "Buenos días",
-        sender: "user",
-        time: new Date(2024, 0, 5, 10, 10),
-        status: "read",
-      },
-      {
-        id: 2,
-        text: "Buenos días Carlos, ¿en qué puedo asistirte?",
-        sender: "bot",
-        time: new Date(2024, 0, 5, 10, 11),
-      },
-      {
-        id: 3,
-        text: "¿Cuánto tiempo toma el proceso?",
-        sender: "user",
-        time: new Date(2024, 0, 5, 10, 15),
-        status: "read",
-      },
-    ],
-  },
-  {
-    id: 4,
-    name: "Ana Martínez",
-    phone: "+57 318 654 3210",
-    lastMessage: "Perfecto, entendido",
-    time: new Date(2024, 0, 4, 9, 30),
-    unread: 0,
-    avatar: null,
-    initials: "AM",
-    messages: [
-      {
-        id: 1,
-        text: "Hola, tengo una queja",
-        sender: "user",
-        time: new Date(2024, 0, 4, 9, 20),
-        status: "read",
-      },
-      {
-        id: 2,
-        text: "Lamento escuchar eso. Por favor cuéntame más detalles para poder ayudarte.",
-        sender: "bot",
-        time: new Date(2024, 0, 4, 9, 21),
-      },
-      {
-        id: 3,
-        text: "Perfecto, entendido",
-        sender: "user",
-        time: new Date(2024, 0, 4, 9, 30),
-        status: "read",
-      },
-    ],
-  },
-]
+const getInitials = (name: string) => {
+  const parts = name.trim().split(" ").filter(Boolean)
+  if (parts.length === 0) return "?"
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+}
+
+const normalizeChatSearch = (chat: ChatSummary, query: string) => {
+  const name = chat.clientName?.toLowerCase() ?? ""
+  const phone = chat.clientPhone ?? ""
+  const lastMessage = chat.lastMessage?.toLowerCase() ?? ""
+  return name.includes(query) || phone.includes(query) || lastMessage.includes(query)
+}
 
 export default function Chats() {
   const { isCollapsed } = useSidebar()
   const [selectedChat, setSelectedChat] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [message, setMessage] = useState("")
+  const [chats, setChats] = useState<ChatSummary[]>([])
+  const [isLoadingChats, setIsLoadingChats] = useState(true)
+  const [chatError, setChatError] = useState<string | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
+  const [messageError, setMessageError] = useState<string | null>(null)
+  const [isUpdatingMode, setIsUpdatingMode] = useState(false)
 
-  const filteredChats = chatsData.filter(
-    (chat) =>
-      chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      chat.phone.includes(searchQuery) ||
-      chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+  const getSocketBase = () => {
+    try {
+      const apiUrl = new URL(API_BASE)
+      return `${apiUrl.protocol}//${apiUrl.host}`
+    } catch {
+      return "http://localhost:3000"
+    }
+  }
 
-  const currentChat = chatsData.find((chat) => chat.id === selectedChat)
+  useEffect(() => {
+    let active = true
+
+    const loadChats = async () => {
+      setIsLoadingChats(true)
+      setChatError(null)
+      try {
+        const data = await chatService.getSummaries()
+        if (active) {
+          setChats(data)
+        }
+      } catch (error) {
+        console.error("[admin-chats] load error", error)
+        if (active) {
+          setChatError("No pudimos cargar los chats. Intenta nuevamente.")
+        }
+      } finally {
+        if (active) {
+          setIsLoadingChats(false)
+        }
+      }
+    }
+
+    loadChats()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    const socket = io(getSocketBase(), {
+      path: "/ws",
+      transports: ["websocket"],
+      query: { scope: "summary" },
+    })
+
+    socket.on("chat_summary", (summary: Partial<ChatSummary> & { chatId?: number }) => {
+      const chatId = summary.chatId ?? summary.id
+      if (!chatId) return
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === chatId
+            ? {
+                ...chat,
+                lastMessage: summary.lastMessage ?? chat.lastMessage,
+                lastMessageAt: summary.lastMessageAt ?? chat.lastMessageAt,
+                mode: summary.mode ?? chat.mode,
+              }
+            : chat
+        )
+      )
+    })
+
+    socket.on("chat_mode", (payload: { chatId: number; mode: number | null }) => {
+      setChats((prev) => prev.map((chat) => (chat.id === payload.chatId ? { ...chat, mode: payload.mode } : chat)))
+    })
+
+    socket.on("connect_error", (error) => {
+      console.error("[admin-chats] socket summary error", error)
+    })
+
+    return () => {
+      socket.disconnect()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!selectedChat) {
+      setMessages([])
+      setMessageError(null)
+      return
+    }
+
+    let active = true
+    const loadMessages = async () => {
+      setIsLoadingMessages(true)
+      setMessageError(null)
+      try {
+        const data = await chatService.getMessages(selectedChat)
+        if (active) {
+          setMessages(data)
+        }
+      } catch (error) {
+        console.error("[admin-chats] messages error", error)
+        if (active) {
+          setMessageError("No pudimos cargar los mensajes de este chat.")
+        }
+      } finally {
+        if (active) {
+          setIsLoadingMessages(false)
+        }
+      }
+    }
+
+    loadMessages()
+
+    return () => {
+      active = false
+    }
+  }, [selectedChat])
+
+  useEffect(() => {
+    if (!selectedChat) return
+    const socket = io(getSocketBase(), {
+      path: "/ws",
+      transports: ["websocket"],
+      query: { chatId: String(selectedChat) },
+    })
+
+    socket.on("chat_message", (payload: { chatId: number; message: Message }) => {
+      if (payload.chatId !== selectedChat) return
+      const incoming = payload.message
+      setMessages((prev) => {
+        if (prev.some((msg) => msg.id === incoming.id)) return prev
+        return [...prev, incoming]
+      })
+    })
+
+    socket.on("chat_mode", (payload: { chatId: number; mode: number | null }) => {
+      if (payload.chatId !== selectedChat) return
+      setChats((prev) => prev.map((chat) => (chat.id === selectedChat ? { ...chat, mode: payload.mode } : chat)))
+    })
+
+    socket.on("connect_error", (error) => {
+      console.error("[admin-chats] socket chat error", error)
+    })
+
+    return () => {
+      socket.disconnect()
+    }
+  }, [selectedChat])
+
+  const filteredChats = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return chats
+    return chats.filter((chat) => normalizeChatSearch(chat, query))
+  }, [chats, searchQuery])
+
+  const currentChat = chats.find((chat) => chat.id === selectedChat)
+  const currentMode = currentChat?.mode ?? 1
+  const isAdminMode = currentMode === 2
+
+  const handleToggleMode = async (checked: boolean) => {
+    if (!currentChat) return
+    const nextMode = checked ? 2 : 1
+    setIsUpdatingMode(true)
+    try {
+      const updated = await chatService.update(currentChat.id, { mode: nextMode })
+      const mode = updated.mode ?? currentChat.mode ?? 1
+      setChats((prev) => prev.map((chat) => (chat.id === currentChat.id ? { ...chat, mode } : chat)))
+    } catch (error) {
+      console.error("[admin-chats] mode update error", error)
+    } finally {
+      setIsUpdatingMode(false)
+    }
+  }
+
+  const handleSendMessage = async () => {
+    if (!selectedChat || !message.trim()) return
+    const content = message.trim()
+    setMessage("")
+    setMessageError(null)
+    try {
+      const created = await chatService.createMessage({
+        chatId: selectedChat,
+        content,
+        type: 3,
+      })
+      setMessages((prev) => [...prev, created])
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === selectedChat
+            ? { ...chat, lastMessage: created.content ?? content, lastMessageAt: created.createdAt ?? null }
+            : chat
+        )
+      )
+    } catch (error) {
+      console.error("[admin-chats] send error", error)
+      setMessageError("No pudimos enviar el mensaje. Intenta nuevamente.")
+      setMessage(content)
+    }
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -206,36 +273,43 @@ export default function Chats() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {filteredChats.map((chat) => (
-              <button
-                key={chat.id}
-                onClick={() => setSelectedChat(chat.id)}
-                className={`w-full p-4 flex items-center gap-3 border-b border-border hover:bg-accent transition-colors ${
-                  selectedChat === chat.id ? "bg-accent" : ""
-                }`}
-              >
-                {chat.avatar ? (
-                  <img src={chat.avatar || "/placeholder.svg"} alt={chat.name} className="h-12 w-12 rounded-full" />
-                ) : (
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                    {chat.initials}
-                  </div>
-                )}
-                <div className="flex-1 text-left min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-foreground truncate">{chat.name}</h3>
-                    <span className="text-xs text-muted-foreground">{formatWhatsAppDate(chat.time)}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground truncate">{chat.lastMessage}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{chat.phone}</p>
-                </div>
-                {chat.unread > 0 && (
-                  <div className="bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-                    {chat.unread}
-                  </div>
-                )}
-              </button>
-            ))}
+            {isLoadingChats ? (
+              <div className="p-4 text-sm text-muted-foreground">Cargando chats...</div>
+            ) : chatError ? (
+              <div className="p-4 text-sm text-destructive">{chatError}</div>
+            ) : filteredChats.length === 0 ? (
+              <div className="p-4 text-sm text-muted-foreground">No hay chats que coincidan.</div>
+            ) : (
+              filteredChats.map((chat) => {
+                const chatName = chat.clientName ?? "Sin nombre"
+                const chatPhone = chat.clientPhone ?? "Sin teléfono"
+                const lastMessage = chat.lastMessage ?? "Sin mensajes aún"
+                const lastMessageAt = chat.lastMessageAt ? new Date(chat.lastMessageAt) : null
+                return (
+                  <button
+                    key={chat.id}
+                    onClick={() => setSelectedChat(chat.id)}
+                    className={`w-full p-4 flex items-center gap-3 border-b border-border hover:bg-accent transition-colors ${
+                      selectedChat === chat.id ? "bg-accent" : ""
+                    }`}
+                  >
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                      {getInitials(chatName)}
+                    </div>
+                    <div className="flex-1 text-left min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-foreground truncate">{chatName}</h3>
+                        <span className="text-xs text-muted-foreground">
+                          {lastMessageAt ? formatWhatsAppDate(lastMessageAt) : ""}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">{lastMessage}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{chatPhone}</p>
+                    </div>
+                  </button>
+                )
+              })
+            )}
           </div>
         </div>
 
@@ -245,51 +319,61 @@ export default function Chats() {
             {/* Header del chat */}
             <div className="bg-card border-b border-border p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {currentChat?.avatar ? (
-                  <img
-                    src={currentChat.avatar || "/placeholder.svg"}
-                    alt={currentChat.name}
-                    className="h-10 w-10 rounded-full"
-                  />
-                ) : (
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                    {currentChat?.initials}
-                  </div>
-                )}
-                <div>
-                  <h3 className="font-semibold text-foreground">{currentChat?.name}</h3>
-                  <p className="text-xs text-muted-foreground">{currentChat?.phone}</p>
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                  {currentChat ? getInitials(currentChat.clientName ?? "Sin nombre") : "?"}
                 </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">{currentChat?.clientName ?? "Sin nombre"}</h3>
+                  <p className="text-xs text-muted-foreground">{currentChat?.clientPhone ?? "Sin teléfono"}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>{isAdminMode ? "Administrador" : "IA"}</span>
+                <Switch
+                  checked={isAdminMode}
+                  onCheckedChange={handleToggleMode}
+                  disabled={isUpdatingMode}
+                />
               </div>
             </div>
 
             {/* Mensajes */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {currentChat?.messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                      msg.sender === "user" ? "bg-[#d9fdd3] rounded-tr-none" : "bg-white rounded-tl-none shadow-sm"
-                    }`}
-                  >
-                    <p className="text-sm text-foreground break-words">{msg.text}</p>
-                    <div className="flex items-center justify-end gap-1 mt-1">
-                      <span className="text-[10px] text-muted-foreground">
-                        {msg.time.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                      {msg.sender === "user" && (
-                        <span className="text-muted-foreground">
-                          {msg.status === "read" ? (
-                            <CheckCheck className="h-3 w-3 text-blue-500" />
-                          ) : (
-                            <CheckCheck className="h-3 w-3" />
+              {isLoadingMessages ? (
+                <div className="text-sm text-muted-foreground">Cargando mensajes...</div>
+              ) : messageError ? (
+                <div className="text-sm text-destructive">{messageError}</div>
+              ) : messages.length === 0 ? (
+                <div className="text-sm text-muted-foreground">Este chat no tiene mensajes.</div>
+              ) : (
+                messages.map((msg) => {
+                  const sender = msg.type === 1 ? "user" : "bot"
+                  const createdAt = msg.createdAt ? new Date(msg.createdAt) : null
+                  return (
+                    <div key={msg.id} className={`flex ${sender === "user" ? "justify-end" : "justify-start"}`}>
+                      <div
+                        className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                          sender === "user"
+                            ? "bg-[#d9fdd3] rounded-tr-none"
+                            : "bg-white rounded-tl-none shadow-sm"
+                        }`}
+                      >
+                        <p className="text-sm text-foreground break-words">{msg.content ?? ""}</p>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <span className="text-[10px] text-muted-foreground">
+                            {createdAt ? createdAt.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}
+                          </span>
+                          {sender === "user" && (
+                            <span className="text-muted-foreground">
+                              <CheckCheck className="h-3 w-3 text-blue-500" />
+                            </span>
                           )}
-                        </span>
-                      )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  )
+                })
+              )}
             </div>
 
             {/* Input de mensaje */}
@@ -308,15 +392,26 @@ export default function Chats() {
                   className="flex-1"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && message.trim()) {
-                      console.log("[v0] Sending message:", message)
-                      setMessage("")
+                      handleSendMessage()
                     }
                   }}
+                  disabled={!isAdminMode}
                 />
-                <Button size="icon" className="bg-green-600 hover:bg-green-700">
+                <Button
+                  size="icon"
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={handleSendMessage}
+                  disabled={!isAdminMode}
+                >
                   <Send className="h-5 w-5" />
                 </Button>
               </div>
+              {!isAdminMode && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  El modo IA esta activo. Cambia a modo Administrador para responder manualmente.
+                </p>
+              )}
+              {messageError && <p className="mt-2 text-xs text-destructive">{messageError}</p>}
             </div>
           </div>
         ) : (

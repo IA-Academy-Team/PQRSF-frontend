@@ -18,6 +18,23 @@ export interface Message {
   chatId: number
 }
 
+export interface Document {
+  id: number
+  url: string
+  typeDocumentId: number
+  pqrsId: number
+}
+
+export interface Response {
+  id: number
+  content: string
+  channel: number
+  sentAt: string | null
+  documentId: number
+  pqrsId: number
+  responsibleId: number
+}
+
 export interface Summary {
   id: number
   id_chat: number
@@ -114,7 +131,43 @@ export interface PQRSFSurvey {
   createdAt?: string | null
 }
 
+export interface SurveyPublicInfo {
+  pqrs: {
+    id: number
+    ticketNumber: string
+    description?: string | null
+    createdAt?: string | null
+    areaName?: string | null
+    typeName?: string | null
+    statusName?: string | null
+    clientName?: string | null
+  }
+}
+
+export interface PQRSFSurveyDetailed extends PQRSFSurvey {
+  ticketNumber: string
+  pqrsDescription: string
+  pqrsCreatedAt?: string | null
+  pqrsUpdatedAt?: string | null
+  statusId: number
+  statusName: string
+  typeId: number
+  typeName: string
+  areaId: number
+  areaName: string
+  clientId: number
+  clientName?: string | null
+  clientEmail?: string | null
+  clientDocument?: string | null
+  clientPhone?: string | null
+}
+
 export interface TypePQRSF {
+  id: number
+  name: string
+}
+
+export interface TypeDocument {
   id: number
   name: string
 }
@@ -184,6 +237,10 @@ export type UpdateSummary = Partial<Omit<Summary, "id" | "created_at" | "updated
 
 export type CreateChat = Omit<Chat, "id">
 export type UpdateChat = Partial<Omit<Chat, "id">>
+export type CreateDocument = Omit<Document, "id">
+export type UpdateDocument = Partial<Omit<Document, "id">>
+export type CreateResponse = Omit<Response, "id" | "sentAt">
+export type UpdateResponse = Partial<Omit<Response, "id">>
 
 export type CreateArea = Omit<Area, "id">
 export type UpdateArea = Partial<Omit<Area, "id">>
@@ -211,9 +268,12 @@ export type UpdateDBPQRSF = Partial<Omit<DBPQRSF, "id" | "createdAt" | "updatedA
 
 export type CreatePQRSFSurvey = Omit<PQRSFSurvey, "id" | "createdAt">
 export type UpdatePQRSFSurvey = Partial<Omit<PQRSFSurvey, "id" | "createdAt">>
+export type CreatePublicSurvey = Omit<PQRSFSurvey, "id" | "createdAt" | "pqrsId">
 
 export type CreateTypePQRSF = Omit<TypePQRSF, "id">
 export type UpdateTypePQRSF = Partial<Omit<TypePQRSF, "id">>
+export type CreateTypeDocument = Omit<TypeDocument, "id">
+export type UpdateTypeDocument = Partial<Omit<TypeDocument, "id">>
 
 export type CreatePQRSStatus = Omit<PQRSStatus, "id">
 export type UpdatePQRSStatus = Partial<Omit<PQRSStatus, "id">>
