@@ -346,12 +346,13 @@ export default function Chats() {
               ) : (
                 messages.map((msg) => {
                   const sender = msg.type === 1 ? "user" : msg.type === 2 ? "bot" : "admin"
+                  const isOutgoing = sender === "admin" || sender === "bot"
                   const createdAt = msg.createdAt ? new Date(msg.createdAt) : null
                   return (
-                    <div key={msg.id} className={`flex ${sender === "user" ? "justify-end" : "justify-start"}`}>
+                    <div key={msg.id} className={`flex ${isOutgoing ? "justify-end" : "justify-start"}`}>
                       <div
                         className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                          sender === "admin"
+                          isOutgoing
                             ? "bg-[#d9fdd3] rounded-tr-none"
                             : "bg-white rounded-tl-none shadow-sm"
                         }`}
