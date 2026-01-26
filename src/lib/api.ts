@@ -167,12 +167,18 @@ async function request<T>(
         }
       }
 
-      // // Lanzar error HTTP
-      // throw new HttpError(
-      //   typeof errorMessage === 'string' ? errorMessage : 'Error en la petición',
-      //   response.status,
-      //   errorData
-      // )
+      const normalizedMessage =
+        typeof errorMessage === 'string'
+          ? errorMessage
+          : errorData?.error?.message ||
+            errorData?.message ||
+            'Error en la petición'
+
+      throw new HttpError(
+        normalizedMessage,
+        response.status,
+        errorData
+      )
     }
 
     // Si la respuesta está vacía (204 No Content)

@@ -5,8 +5,11 @@ import { Search, Send, Paperclip, Smile, CheckCheck, MessageCircle } from "lucid
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import { chatService, type ChatSummary } from "@/services/chat.service"
 import type { Message } from "@/types/database"
+import { API_BASE } from "@/lib/api"
+import { io } from "socket.io-client"
 
 // Función para formatear fechas tipo WhatsApp
 function formatWhatsAppDate(date: Date) {
@@ -50,6 +53,16 @@ export default function Chats() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const [messageError, setMessageError] = useState<string | null>(null)
+  const [isUpdatingMode, setIsUpdatingMode] = useState(false)
+
+  const getSocketBase = () => {
+    try {
+      const apiUrl = new URL(API_BASE)
+      return `${apiUrl.protocol}//${apiUrl.host}`
+    } catch {
+      return "http://localhost:3000"
+    }
+  }
 
   useEffect(() => {
     let active = true
@@ -78,6 +91,43 @@ export default function Chats() {
 
     return () => {
       active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    const socket = io(getSocketBase(), {
+      path: "/ws",
+      transports: ["websocket"],
+      query: { scope: "summary" },
+    })
+
+    socket.on("chat_summary", (summary: Partial<ChatSummary> & { chatId?: number }) => {
+      const chatId = summary.chatId ?? summary.id
+      if (!chatId) return
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === chatId
+            ? {
+                ...chat,
+                lastMessage: summary.lastMessage ?? chat.lastMessage,
+                lastMessageAt: summary.lastMessageAt ?? chat.lastMessageAt,
+                mode: summary.mode ?? chat.mode,
+              }
+            : chat
+        )
+      )
+    })
+
+    socket.on("chat_mode", (payload: { chatId: number; mode: number | null }) => {
+      setChats((prev) => prev.map((chat) => (chat.id === payload.chatId ? { ...chat, mode: payload.mode } : chat)))
+    })
+
+    socket.on("connect_error", (error) => {
+      console.error("[admin-chats] socket summary error", error)
+    })
+
+    return () => {
+      socket.disconnect()
     }
   }, [])
 
@@ -116,6 +166,37 @@ export default function Chats() {
     }
   }, [selectedChat])
 
+  useEffect(() => {
+    if (!selectedChat) return
+    const socket = io(getSocketBase(), {
+      path: "/ws",
+      transports: ["websocket"],
+      query: { chatId: String(selectedChat) },
+    })
+
+    socket.on("chat_message", (payload: { chatId: number; message: Message }) => {
+      if (payload.chatId !== selectedChat) return
+      const incoming = payload.message
+      setMessages((prev) => {
+        if (prev.some((msg) => msg.id === incoming.id)) return prev
+        return [...prev, incoming]
+      })
+    })
+
+    socket.on("chat_mode", (payload: { chatId: number; mode: number | null }) => {
+      if (payload.chatId !== selectedChat) return
+      setChats((prev) => prev.map((chat) => (chat.id === selectedChat ? { ...chat, mode: payload.mode } : chat)))
+    })
+
+    socket.on("connect_error", (error) => {
+      console.error("[admin-chats] socket chat error", error)
+    })
+
+    return () => {
+      socket.disconnect()
+    }
+  }, [selectedChat])
+
   const filteredChats = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
     if (!query) return chats
@@ -123,6 +204,22 @@ export default function Chats() {
   }, [chats, searchQuery])
 
   const currentChat = chats.find((chat) => chat.id === selectedChat)
+  const currentMode = currentChat?.mode ?? 1
+  const isAdminMode = currentMode === 2
+
+  const handleToggleMode = async (checked: boolean) => {
+    if (!currentChat) return
+    const nextMode = checked ? 2 : 1
+    setIsUpdatingMode(true)
+    try {
+      const updated = await chatService.update(currentChat.id, { mode: nextMode })
+      setChats((prev) => prev.map((chat) => (chat.id === currentChat.id ? { ...chat, mode: updated.mode } : chat)))
+    } catch (error) {
+      console.error("[admin-chats] mode update error", error)
+    } finally {
+      setIsUpdatingMode(false)
+    }
+  }
 
   const handleSendMessage = async () => {
     if (!selectedChat || !message.trim()) return
@@ -229,6 +326,14 @@ export default function Chats() {
                   <p className="text-xs text-muted-foreground">{currentChat?.clientPhone ?? "Sin teléfono"}</p>
                 </div>
               </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>{isAdminMode ? "Administrador" : "IA"}</span>
+                <Switch
+                  checked={isAdminMode}
+                  onCheckedChange={handleToggleMode}
+                  disabled={isUpdatingMode}
+                />
+              </div>
             </div>
 
             {/* Mensajes */}
@@ -289,11 +394,22 @@ export default function Chats() {
                       handleSendMessage()
                     }
                   }}
+                  disabled={!isAdminMode}
                 />
-                <Button size="icon" className="bg-green-600 hover:bg-green-700" onClick={handleSendMessage}>
+                <Button
+                  size="icon"
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={handleSendMessage}
+                  disabled={!isAdminMode}
+                >
                   <Send className="h-5 w-5" />
                 </Button>
               </div>
+              {!isAdminMode && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  El modo IA esta activo. Cambia a modo Administrador para responder manualmente.
+                </p>
+              )}
               {messageError && <p className="mt-2 text-xs text-destructive">{messageError}</p>}
             </div>
           </div>
