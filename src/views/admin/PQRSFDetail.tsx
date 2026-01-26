@@ -63,8 +63,6 @@ export default function PQRSFDetail() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const pqrsId = id ? Number(id) : NaN
-
   useEffect(() => {
     if (!isLoading && !user) {
       navigate("/")
@@ -72,19 +70,25 @@ export default function PQRSFDetail() {
   }, [user, isLoading, navigate])
 
   useEffect(() => {
-    if (!user || Number.isNaN(pqrsId)) return
+    if (!user || !id) return
 
     let active = true
     const loadDetail = async () => {
       setIsLoadingData(true)
       setError(null)
       try {
+        let resolvedId = Number(id)
+        if (Number.isNaN(resolvedId)) {
+          const pqrs = await pqrsfService.getByRadicado(id)
+          resolvedId = pqrs.id
+        }
+
         const [detailResponse, analysisResponse, documentsResponse, responsesResponse, typeDocuments] =
           await Promise.all([
-            pqrsfService.getDetail(pqrsId),
-            pqrsfService.getAnalysis(pqrsId),
-            pqrsfService.getDocuments(pqrsId),
-            pqrsfService.getResponses(pqrsId),
+            pqrsfService.getDetail(resolvedId),
+            pqrsfService.getAnalysis(resolvedId),
+            pqrsfService.getDocuments(resolvedId),
+            pqrsfService.getResponses(resolvedId),
             catalogService.getTypeDocuments(),
           ])
 
@@ -110,6 +114,7 @@ export default function PQRSFDetail() {
         console.error("[pqrsf-detail] load error", err)
         if (active) {
           setError("No pudimos cargar la PQRSF solicitada.")
+          setDetail(null)
         }
       } finally {
         if (active) setIsLoadingData(false)
@@ -121,7 +126,7 @@ export default function PQRSFDetail() {
     return () => {
       active = false
     }
-  }, [user, pqrsId])
+  }, [user, id])
 
   const timelineItems = useMemo(() => {
     if (!detail) return []

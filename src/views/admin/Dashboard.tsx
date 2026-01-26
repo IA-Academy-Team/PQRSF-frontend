@@ -298,7 +298,7 @@ export default function Dashboard() {
             {/* Columna Derecha */}
             <div className="flex flex-col gap-4 lg:gap-6 min-h-0 overflow-hidden">
               {/* Fila 1: PQRSF por Tipo */}
-              <Card className="flex-[2] min-h-0 flex flex-col">
+              <Card className="flex-2 min-h-0 flex flex-col">
                 <CardHeader className="shrink-0">
                   <CardTitle className="text-lg">PQRSF por Tipo</CardTitle>
                 </CardHeader>
@@ -338,7 +338,7 @@ export default function Dashboard() {
               </Card>
 
               {/* Fila 2: Tiempo Promedio de Respuesta */}
-              <Card className="flex-[1] min-h-0 flex flex-col">
+              <Card className="flex-1 min-h-0 flex flex-col">
                 <CardHeader className="shrink-0">
                   <CardTitle className="text-lg">Tiempo Promedio de Respuesta</CardTitle>
                 </CardHeader>
@@ -439,7 +439,7 @@ export default function Dashboard() {
           )}
 
           <div className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4 mb-3 shrink-0">
-            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
+            <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="bg-white/20 rounded-lg p-1.5">
