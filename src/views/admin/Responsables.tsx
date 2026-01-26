@@ -127,6 +127,9 @@ export default function Usuarios() {
           await authService.register(formData.name, formData.email, formData.password)
           dbUser = await userService.getByEmail(formData.email)
         }
+        if (!dbUser) {
+          throw new Error("No se pudo crear el usuario del responsable.")
+        }
 
         const createdResponsable = await areaService.createResponsible({
           userId: dbUser.id,

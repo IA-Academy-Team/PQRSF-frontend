@@ -111,14 +111,14 @@ async function request<T>(
   const token = getToken()
 
   // Configurar headers
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(init.headers || {}),
+  const headers = new Headers(init.headers || {})
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
   }
 
   // Agregar token si existe y NO es ruta pública
   if (token && !isPublic) {
-    headers['Authorization'] = `Bearer ${token}`
+    headers.set('Authorization', `Bearer ${token}`)
   }
 
   try {

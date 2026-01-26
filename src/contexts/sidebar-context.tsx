@@ -8,7 +8,7 @@ type SidebarContextType = {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [isCollapsed, setIsCollapsed] = useState(() => {
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     // Leer del localStorage si existe
     const saved = localStorage.getItem("sidebar-collapsed")
     return saved ? JSON.parse(saved) : false
@@ -20,7 +20,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
   }, [isCollapsed])
 
   const toggleSidebar = () => {
-    setIsCollapsed((prev) => !prev)
+    setIsCollapsed((prev: boolean) => !prev)
   }
 
   return (

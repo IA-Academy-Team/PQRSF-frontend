@@ -213,7 +213,8 @@ export default function Chats() {
     setIsUpdatingMode(true)
     try {
       const updated = await chatService.update(currentChat.id, { mode: nextMode })
-      setChats((prev) => prev.map((chat) => (chat.id === currentChat.id ? { ...chat, mode: updated.mode } : chat)))
+      const mode = updated.mode ?? currentChat.mode ?? 1
+      setChats((prev) => prev.map((chat) => (chat.id === currentChat.id ? { ...chat, mode } : chat)))
     } catch (error) {
       console.error("[admin-chats] mode update error", error)
     } finally {
