@@ -28,6 +28,7 @@ import {
   type PQRSFDetailItem,
 } from "@/services/pqrsf.service"
 import type { Document, Response as ResponseItem, PQRSFAnalysis } from "@/types/database"
+import { notifyError, notifySuccess } from "@/lib/toast"
 
 const DAY_MS = 1000 * 60 * 60 * 24
 
@@ -62,6 +63,7 @@ export default function PQRSFDetail() {
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const canAdminDecide = detail?.statusId === 3
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -227,10 +229,12 @@ export default function PQRSFDetail() {
 
       setResponses((prev) => [createdResponse, ...prev])
       setDocuments((prev) => [responseDoc, ...prev])
+      notifySuccess("Respuesta enviada al cliente.")
       navigate("/analisis-pendientes")
     } catch (err) {
       console.error("[pqrsf-detail] submit error", err)
       setError("No pudimos enviar la respuesta. Intenta nuevamente.")
+      notifyError("No pudimos enviar la respuesta.")
     } finally {
       setIsSubmitting(false)
     }
@@ -243,14 +247,17 @@ export default function PQRSFDetail() {
     try {
       if (action === "finalize") {
         await pqrsfService.finalize(detail.id)
+        notifySuccess("PQRSF cerrada correctamente.")
       } else {
         await pqrsfService.appeal(detail.id)
+        notifySuccess("PQRSF enviada a apelación.")
       }
       const updated = await pqrsfService.getDetail(detail.id)
       setDetail(updated)
     } catch (err) {
       console.error("[pqrsf-detail] admin action error", err)
       setError("No pudimos completar la acción seleccionada.")
+      notifyError("No pudimos completar la acción.")
     } finally {
       setIsSubmitting(false)
     }
@@ -627,6 +634,11 @@ export default function PQRSFDetail() {
                 <CardTitle>Decisión Administrativa</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {!canAdminDecide && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+                    Esta acción solo está disponible cuando la PQRSF está en reanálisis.
+                  </div>
+                )}
                 <Textarea
                   placeholder="Comentarios o soporte de la decisión..."
                   className="min-h-[120px]"
@@ -637,7 +649,7 @@ export default function PQRSFDetail() {
                   <Button
                     className="flex-1 bg-green-600 hover:bg-green-700"
                     onClick={() => handleAdminDecision("finalize")}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !canAdminDecide}
                   >
                     <CheckCircle2 className="h-4 w-4 mr-2" />
                     Aprobar y Cerrar
@@ -646,7 +658,7 @@ export default function PQRSFDetail() {
                     variant="outline"
                     className="flex-1 bg-transparent"
                     onClick={() => handleAdminDecision("appeal")}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !canAdminDecide}
                   >
                     <XCircle className="h-4 w-4 mr-2" />
                     Enviar a Reanálisis

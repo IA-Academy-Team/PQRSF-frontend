@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { surveyService } from "@/services/survey.service"
 import type { CreatePublicSurvey, SurveyPublicInfo } from "@/types/database"
 import { HttpError } from "@/lib/api"
+import { notifyError, notifySuccess } from "@/lib/toast"
 
 const QUESTION_LABELS = [
   {
@@ -122,6 +123,7 @@ export default function Survey() {
         comment: form.comment?.trim() ? form.comment?.trim() : null,
       })
       setSuccess("Gracias por responder la encuesta. Tu opinion es muy valiosa para nosotros.")
+      notifySuccess("Encuesta enviada correctamente.")
     } catch (err) {
       if (err instanceof HttpError) {
         const code = err.data?.error?.code ?? err.data?.code
@@ -135,6 +137,7 @@ export default function Survey() {
       } else {
         setError("No se pudo enviar la encuesta.")
       }
+      notifyError("No se pudo enviar la encuesta.")
     } finally {
       setIsSubmitting(false)
     }

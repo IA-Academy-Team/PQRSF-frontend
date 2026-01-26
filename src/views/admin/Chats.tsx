@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { useSidebar } from "@/contexts/sidebar-context"
-import { Search, Send, Paperclip, Smile, CheckCheck, MessageCircle } from "lucide-react"
+import { Search, Send, Paperclip, Smile, CheckCheck, MessageCircle, Bot, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,7 @@ import { chatService, type ChatSummary } from "@/services/chat.service"
 import type { Message } from "@/types/database"
 import { API_BASE } from "@/lib/api"
 import { io } from "socket.io-client"
+import { notifyError, notifySuccess } from "@/lib/toast"
 
 // Función para formatear fechas tipo WhatsApp
 function formatWhatsAppDate(date: Date) {
@@ -97,7 +98,6 @@ export default function Chats() {
   useEffect(() => {
     const socket = io(getSocketBase(), {
       path: "/ws",
-      transports: ["websocket"],
       query: { scope: "summary" },
     })
 
@@ -170,7 +170,6 @@ export default function Chats() {
     if (!selectedChat) return
     const socket = io(getSocketBase(), {
       path: "/ws",
-      transports: ["websocket"],
       query: { chatId: String(selectedChat) },
     })
 
@@ -215,8 +214,10 @@ export default function Chats() {
       const updated = await chatService.update(currentChat.id, { mode: nextMode })
       const mode = updated.mode ?? currentChat.mode ?? 1
       setChats((prev) => prev.map((chat) => (chat.id === currentChat.id ? { ...chat, mode } : chat)))
+      notifySuccess(checked ? "Modo Administrador activado." : "Modo IA activado.")
     } catch (error) {
       console.error("[admin-chats] mode update error", error)
+      notifyError("No pudimos actualizar el modo del chat.")
     } finally {
       setIsUpdatingMode(false)
     }
@@ -228,10 +229,10 @@ export default function Chats() {
     setMessage("")
     setMessageError(null)
     try {
-      const created = await chatService.createMessage({
+      const created = await chatService.sendMessage({
         chatId: selectedChat,
         content,
-        type: 3,
+        channel: "whatsapp",
       })
       setMessages((prev) => [...prev, created])
       setChats((prev) =>
@@ -244,6 +245,7 @@ export default function Chats() {
     } catch (error) {
       console.error("[admin-chats] send error", error)
       setMessageError("No pudimos enviar el mensaje. Intenta nuevamente.")
+      notifyError("No pudimos enviar el mensaje.")
       setMessage(content)
     }
   }
@@ -347,19 +349,22 @@ export default function Chats() {
                 <div className="text-sm text-muted-foreground">Este chat no tiene mensajes.</div>
               ) : (
                 messages.map((msg) => {
-                  const sender = msg.type === 1 ? "user" : "bot"
+                  const sender = msg.type === 1 ? "user" : msg.type === 2 ? "bot" : "admin"
+                  const isOutgoing = sender === "admin" || sender === "bot"
                   const createdAt = msg.createdAt ? new Date(msg.createdAt) : null
                   return (
-                    <div key={msg.id} className={`flex ${sender === "user" ? "justify-end" : "justify-start"}`}>
+                    <div key={msg.id} className={`flex ${isOutgoing ? "justify-end" : "justify-start"}`}>
                       <div
                         className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                          sender === "user"
+                          isOutgoing
                             ? "bg-[#d9fdd3] rounded-tr-none"
                             : "bg-white rounded-tl-none shadow-sm"
                         }`}
                       >
                         <p className="text-sm text-foreground break-words">{msg.content ?? ""}</p>
                         <div className="flex items-center justify-end gap-1 mt-1">
+                          {sender === "bot" && <Bot className="h-3 w-3 text-muted-foreground" />}
+                          {sender === "admin" && <User className="h-3 w-3 text-muted-foreground" />}
                           <span className="text-[10px] text-muted-foreground">
                             {createdAt ? createdAt.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}
                           </span>

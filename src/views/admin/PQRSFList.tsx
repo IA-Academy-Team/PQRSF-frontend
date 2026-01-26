@@ -7,9 +7,11 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sidebar } from "@/components/sidebar"
 import { useSidebar } from "@/contexts/sidebar-context"
+import { useAuth } from "@/contexts/auth-context"
 import { Link } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { pqrsfService, type PQRSFListItem, type PQRSFListQuery } from "@/services/pqrsf.service"
+import { areaService } from "@/services/area.service"
 import {
   Pagination,
   PaginationContent,
@@ -22,6 +24,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 
 export default function PQRSFList() {
   const { isCollapsed } = useSidebar()
+  const { user } = useAuth()
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 9
   const [items, setItems] = useState<PQRSFListItem[]>([])
@@ -31,10 +34,34 @@ export default function PQRSFList() {
   const [statusFilter, setStatusFilter] = useState("todos")
   const [dateFilter, setDateFilter] = useState("")
   const [sortFilter, setSortFilter] = useState("recent")
+  const [areaId, setAreaId] = useState<number | null>(null)
 
   useEffect(() => {
     setCurrentPage(1)
   }, [searchTerm, statusFilter, dateFilter, sortFilter])
+
+  useEffect(() => {
+    let active = true
+    const loadArea = async () => {
+      if (!user || user.rol !== "Usuario de Área Responsable") {
+        if (active) setAreaId(null)
+        return
+      }
+      try {
+        const responsable = await areaService.getResponsibleByUser(Number(user.id))
+        if (active) {
+          setAreaId(responsable.areaId ?? null)
+        }
+      } catch (err) {
+        console.error("[pqrsf] load area error", err)
+        if (active) setAreaId(null)
+      }
+    }
+    void loadArea()
+    return () => {
+      active = false
+    }
+  }, [user])
 
   useEffect(() => {
     let active = true
@@ -45,6 +72,9 @@ export default function PQRSFList() {
         const query: PQRSFListQuery = {
           q: searchTerm.trim() || undefined,
           sort: sortFilter as PQRSFListQuery["sort"],
+        }
+        if (user?.rol === "Usuario de Área Responsable") {
+          query.areaId = areaId ?? undefined
         }
         if (statusFilter !== "todos") {
           query.pqrsStatusId = Number(statusFilter)
@@ -70,7 +100,7 @@ export default function PQRSFList() {
       active = false
       clearTimeout(timeout)
     }
-  }, [searchTerm, statusFilter, dateFilter, sortFilter])
+  }, [searchTerm, statusFilter, dateFilter, sortFilter, user, areaId])
 
   const formattedItems = useMemo(
     () =>

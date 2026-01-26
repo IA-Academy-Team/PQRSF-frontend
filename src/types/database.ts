@@ -55,6 +55,7 @@ export interface Area {
   id: number
   name: string
   code?: string | null
+  description?: string | null
 }
 
 export interface Responsible {

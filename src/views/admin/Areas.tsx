@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { areaService } from "@/services/area.service"
 import type { Area } from "@/types/database"
+import { notifyError, notifySuccess } from "@/lib/toast"
 
 export default function Areas() {
   const { user } = useAuth()
@@ -65,35 +66,41 @@ export default function Areas() {
 
   const handleCreateOrUpdate = async (formData: Partial<Area>) => {
     try {
-      if (editingArea) {
+        if (editingArea) {
         const nextCode = formData.code?.trim()
         const updated = await areaService.update(editingArea.id, {
           name: formData.name ?? editingArea.name,
           code: nextCode ? nextCode : null,
+          description: formData.description?.trim() || null,
         })
         setAreas((prev) => prev.map((area) => (area.id === updated.id ? updated : area)))
-      } else {
+        } else {
         const nextCode = formData.code?.trim()
         const created = await areaService.create({
           name: formData.name ?? "",
           code: nextCode ? nextCode : null,
+          description: formData.description?.trim() || null,
         })
         setAreas((prev) => [...prev, created])
+        }
+        notifySuccess(editingArea ? "Área actualizada correctamente." : "Área creada correctamente.")
+        setIsDialogOpen(false)
+        setEditingArea(null)
+      } catch (err) {
+        console.error("[admin-areas] save error", err)
+        notifyError("No pudimos guardar el área. Revisa los datos e intenta de nuevo.")
+        setError("No pudimos guardar el área. Revisa los datos e intenta de nuevo.")
       }
-      setIsDialogOpen(false)
-      setEditingArea(null)
-    } catch (err) {
-      console.error("[admin-areas] save error", err)
-      setError("No pudimos guardar el área. Revisa los datos e intenta de nuevo.")
-    }
   }
 
   const handleDelete = async (id: number) => {
     try {
       await areaService.delete(id)
       setAreas((prev) => prev.filter((area) => area.id !== id))
+      notifySuccess("Área eliminada correctamente.")
     } catch (err) {
       console.error("[admin-areas] delete error", err)
+      notifyError("No pudimos eliminar el área.")
       setError("No pudimos eliminar el área.")
     }
   }
@@ -181,6 +188,9 @@ export default function Areas() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    {area.description?.trim() || "Sin descripción"}
+                  </p>
                   <div className="flex gap-2 pt-4 border-t">
                     <Button
                       size="sm"
@@ -226,6 +236,7 @@ function AreaForm({
   const [formData, setFormData] = useState({
     name: area?.name || "",
     code: area?.code || "",
+    description: area?.description || "",
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -254,6 +265,14 @@ function AreaForm({
             id="code"
             value={formData.code}
             onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="description">Descripción (opcional)</Label>
+          <Input
+            id="description"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           />
         </div>
       </div>
