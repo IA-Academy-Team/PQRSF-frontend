@@ -69,6 +69,11 @@ export default function PQRSFList() {
       setIsLoading(true)
       setError("")
       try {
+        if (user?.rol === "Usuario de Área Responsable" && !areaId) {
+          setItems([])
+          setError("No tienes un área asignada.")
+          return
+        }
         const query: PQRSFListQuery = {
           q: searchTerm.trim() || undefined,
           sort: sortFilter as PQRSFListQuery["sort"],
