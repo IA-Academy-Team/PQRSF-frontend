@@ -18,11 +18,12 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
 export default function PQRSFList() {
   const { isCollapsed } = useSidebar()
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 8
+  const itemsPerPage = 9
   const [items, setItems] = useState<PQRSFListItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -199,22 +200,22 @@ export default function PQRSFList() {
         )}
 
         <div className="flex-1 min-h-0 overflow-y-auto mb-6">
-          <div className="grid grid-cols-2 grid-rows-4 gap-4">
+          <div className="grid grid-cols-3 auto-rows-fr gap-4">
             {isLoading && (
-              <Card className="col-span-2 border-dashed p-5">
+              <Card className="col-span-3 border-dashed p-5">
                 <div className="text-sm text-muted-foreground">Cargando bandeja...</div>
               </Card>
             )}
             {!isLoading && paginatedItems.length === 0 && (
-              <Card className="col-span-2 border-dashed p-5">
+              <Card className="col-span-3 border-dashed p-5">
                 <div className="text-sm text-muted-foreground">No hay PQRSF para mostrar.</div>
               </Card>
             )}
             {paginatedItems.map((item) => (
-              <Card key={item.id} className="p-5 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0 space-y-3">
-                    <div className="flex items-center gap-2 flex-wrap">
+              <Card key={item.id} className="p-5 hover:shadow-md transition-shadow h-full flex flex-col">
+                <div className="flex items-start justify-between gap-4 flex-1 min-h-0">
+                  <div className="flex-1 min-w-0 space-y-3 flex flex-col">
+                    <div className="flex items-center gap-2 flex-wrap shrink-0">
                       <span className="text-xs font-mono text-muted-foreground">{item.id}</span>
                       <Badge variant="outline" className="text-xs font-medium">
                         {item.type}
@@ -224,30 +225,36 @@ export default function PQRSFList() {
                       </Badge>
                     </div>
 
-                    <h3 className="font-medium text-foreground leading-snug">{item.description}</h3>
+                    <h3 className="font-medium text-foreground leading-snug line-clamp-2 flex-1 min-h-10">{item.description}</h3>
 
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground shrink-0 flex-wrap">
                       <div className="flex items-center gap-1.5">
-                        <User className="h-3.5 w-3.5" />
-                        <span>{item.user}</span>
+                        <User className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{item.user}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Building2 className="h-3.5 w-3.5" />
-                        <span>{item.area}</span>
+                        <Building2 className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{item.area}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Calendar className="h-3.5 w-3.5" />
+                        <Calendar className="h-3.5 w-3.5 shrink-0" />
                         <span>{item.date}</span>
                       </div>
                     </div>
                   </div>
 
-                  <Link to={`/pqrsf/${item.id}`}>
-                    <Button variant="ghost" size="sm" className="shrink-0">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link to={`/pqrsf/${item.id}`}>
+                        <Button variant="ghost" size="sm" className="shrink-0">
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent>
                       Ver Detalle
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </Link>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </Card>
             ))}
