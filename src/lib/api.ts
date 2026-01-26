@@ -182,7 +182,7 @@ async function request<T>(
     }
 
     // Si la respuesta está vacía (204 No Content)
-    if (response.status === 204 || response.status === 201) {
+    if (response.status === 204) {
       return {} as T
     }
 

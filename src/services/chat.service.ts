@@ -25,81 +25,85 @@ export interface ChatSummary {
 export const chatService = {
   // Chat CRUD
   getAll: async (): Promise<Chat[]> => {
-    return api.get<Chat[]>('/chat')
+    return api.get<Chat[]>('/chats')
   },
 
   getSummaries: async (): Promise<ChatSummary[]> => {
-    return api.get<ChatSummary[]>('/chat/summary')
+    return api.get<ChatSummary[]>('/chats/summary')
   },
 
   getById: async (id: number): Promise<Chat> => {
-    return api.get<Chat>(`/chat/${id}`)
+    return api.get<Chat>(`/chats/${id}`)
   },
 
   getByUser: async (userId: number): Promise<Chat[]> => {
-    return api.get<Chat[]>(`/chat/user/${userId}`)
+    return api.get<Chat[]>(`/chats/user/${userId}`)
   },
 
   getByArea: async (areaId: number): Promise<Chat[]> => {
-    return api.get<Chat[]>(`/chat/area/${areaId}`)
+    return api.get<Chat[]>(`/chats/area/${areaId}`)
   },
 
   create: async (data: CreateChat): Promise<Chat> => {
-    return api.post<Chat>('/chat', data)
+    return api.post<Chat>('/chats', data)
   },
 
   update: async (id: number, data: UpdateChat): Promise<Chat> => {
-    return api.put<Chat>(`/chat/${id}`, data)
+    return api.put<Chat>(`/chats/${id}`, data)
   },
 
   delete: async (id: number): Promise<void> => {
-    return api.del<void>(`/chat/${id}`)
+    return api.del<void>(`/chats/${id}`)
   },
 
   // Messages
   getMessages: async (chatId: number): Promise<Message[]> => {
-    return api.get<Message[]>(`/chat/${chatId}/messages`)
+    return api.get<Message[]>(`/chats/${chatId}/messages`)
   },
 
   createMessage: async (data: CreateMessage): Promise<Message> => {
-    return api.post<Message>('/chat/messages', data)
+    return api.post<Message>('/chats/messages', data)
+  },
+
+  sendMessage: async (data: { chatId: number; content: string; channel?: 'whatsapp' | 'telegram' }): Promise<Message> => {
+    return api.post<Message>('/chats/messages/send', data)
   },
 
   updateMessage: async (id: number, data: UpdateMessage): Promise<Message> => {
-    return api.put<Message>(`/chat/messages/${id}`, data)
+    return api.put<Message>(`/chats/messages/${id}`, data)
   },
 
   deleteMessage: async (id: number): Promise<void> => {
-    return api.del<void>(`/chat/messages/${id}`)
+    return api.del<void>(`/chats/messages/${id}`)
   },
 
   // Message Storage
   getMessageStorage: async (id: number): Promise<MessageStorage> => {
-    return api.get<MessageStorage>(`/chat/message-storage/${id}`)
+    return api.get<MessageStorage>(`/chats/message-storage/${id}`)
   },
 
   createMessageStorage: async (data: CreateMessageStorage): Promise<MessageStorage> => {
-    return api.post<MessageStorage>('/chat/message-storage', data)
+    return api.post<MessageStorage>('/chats/message-storage', data)
   },
 
   updateMessageStorage: async (id: number, data: Partial<CreateMessageStorage>): Promise<MessageStorage> => {
-    return api.put<MessageStorage>(`/chat/message-storage/${id}`, data)
+    return api.put<MessageStorage>(`/chats/message-storage/${id}`, data)
   },
 
   // Summary
   getSummary: async (chatId: number): Promise<Summary | null> => {
-    return api.get<Summary | null>(`/chat/${chatId}/summary`)
+    return api.get<Summary | null>(`/chats/${chatId}/summary`)
   },
 
   createSummary: async (data: CreateSummary): Promise<Summary> => {
-    return api.post<Summary>('/chat/summary', data)
+    return api.post<Summary>('/chats/summary', data)
   },
 
   updateSummary: async (id: number, data: Partial<CreateSummary>): Promise<Summary> => {
-    return api.put<Summary>(`/chat/summary/${id}`, data)
+    return api.put<Summary>(`/chats/summary/${id}`, data)
   },
 
   deleteSummary: async (id: number): Promise<void> => {
-    return api.del<void>(`/chat/summary/${id}`)
+    return api.del<void>(`/chats/summary/${id}`)
   },
 }
