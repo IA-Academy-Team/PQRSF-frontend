@@ -157,6 +157,11 @@ export default function Seguimiento() {
     setError("")
     try {
       await pqrsfService.finalize(id)
+      try {
+        await pqrsfService.getBotResponse(id)
+      } catch (err) {
+        console.warn("[seguimiento] bot-response error", err)
+      }
       setItems((prev) => prev.filter((item) => item.id !== id))
     } catch (err) {
       console.error("[seguimiento] finalize error", err)

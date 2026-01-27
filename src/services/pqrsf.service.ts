@@ -120,6 +120,31 @@ export interface CerradaItem {
   surveyComment: string | null
 }
 
+export interface BotResponsePayload {
+  respuesta_pqrs: {
+    ticket_number: string
+    fecha_respuesta: string | null
+    tipo_pqrs: string
+    area: string
+    estado: string
+    solicitante: {
+      nombre: string
+      es_anonimo: boolean
+    }
+    descripcion_original: string
+    respuesta: string
+    acciones: string[]
+    responsable: {
+      nombre: string
+      cargo: string
+      email: string
+    }
+    canal_respuesta: {
+      chat_id: string
+    }
+  }
+}
+
 export const pqrsfService = {
   // PQRSF CRUD
   getAll: async (): Promise<DBPQRSF[]> => {
@@ -264,5 +289,9 @@ export const pqrsfService = {
 
   updateSurvey: async (id: number, data: Partial<CreatePQRSFSurvey>): Promise<PQRSFSurvey> => {
     return api.put<PQRSFSurvey>(`/pqrsf/survey/${id}`, data)
+  },
+
+  getBotResponse: async (pqrsId: number): Promise<BotResponsePayload> => {
+    return api.post<BotResponsePayload>('/pqrsf/bot-response', { pqrsId })
   },
 }

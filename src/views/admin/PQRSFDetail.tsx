@@ -227,6 +227,12 @@ export default function PQRSFDetail() {
         responsibleId,
       })
 
+      try {
+        await pqrsfService.getBotResponse(detail.id)
+      } catch (err) {
+        console.warn("[pqrsf-detail] bot-response error", err)
+      }
+
       setResponses((prev) => [createdResponse, ...prev])
       setDocuments((prev) => [responseDoc, ...prev])
       notifySuccess("Respuesta enviada al cliente.")
@@ -248,6 +254,11 @@ export default function PQRSFDetail() {
       if (action === "finalize") {
         await pqrsfService.finalize(detail.id)
         notifySuccess("PQRSF cerrada correctamente.")
+        try {
+          await pqrsfService.getBotResponse(detail.id)
+        } catch (err) {
+          console.warn("[pqrsf-detail] bot-response error", err)
+        }
       } else {
         await pqrsfService.appeal(detail.id)
         notifySuccess("PQRSF enviada a apelación.")
@@ -624,9 +635,6 @@ export default function PQRSFDetail() {
                   <CardTitle className="text-2xl">{detail.description}</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="p-6">
-                <p className="text-foreground">{detail.description}</p>
-              </CardContent>
             </Card>
 
             <Card>
