@@ -18,6 +18,7 @@ export interface ResponsibleSummary {
   roleId: number
   areaName: string | null
   areaCode: string | null
+  phoneNumber: string | null
 }
 
 export const areaService = {

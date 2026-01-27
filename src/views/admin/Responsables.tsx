@@ -23,6 +23,7 @@ type ResponsableFormValues = {
   name: string
   email: string
   password: string
+  phoneNumber: string
   areaId: number | null
 }
 
@@ -101,6 +102,7 @@ export default function Usuarios() {
         const updatedUser = await userService.update(editingResponsable.userId, {
           name: formData.name,
           email: formData.email,
+          phoneNumber: formData.phoneNumber.trim() || null,
         })
         const updatedResponsable = await areaService.updateResponsible(editingResponsable.id, {
           areaId: formData.areaId ?? null,
@@ -141,12 +143,20 @@ export default function Usuarios() {
         }
 
         if (!dbUser) {
-          await authService.register(formData.name, formData.email, formData.password)
+          await authService.register(
+            formData.name,
+            formData.email,
+            formData.password,
+            formData.phoneNumber
+          )
           dbUser = await userService.getByEmail(formData.email)
         }
         if (!dbUser) {
           throw new Error("No se pudo crear el usuario del responsable.")
         }
+        await userService.update(dbUser.id, {
+          phoneNumber: formData.phoneNumber.trim() || null,
+        })
 
         const createdResponsable = await areaService.createResponsible({
           userId: dbUser.id,
@@ -377,6 +387,7 @@ function UserForm({
     email: responsable?.userEmail || "",
     password: "",
     areaId: responsable?.areaId ?? null,
+    phoneNumber: responsable?.phoneNumber ?? "",
   })
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -385,6 +396,7 @@ function UserForm({
     const name = formData.name.trim()
     const email = formData.email.trim()
     const password = formData.password
+    const phoneNumber = formData.phoneNumber.trim()
     const areaId = formData.areaId
 
     if (!name) {
@@ -405,6 +417,18 @@ function UserForm({
       notifyError(message)
       return
     }
+    if (!responsable && password.trim().length < 8) {
+      const message = "La contraseña debe tener al menos 8 caracteres."
+      setFormError(message)
+      notifyError(message)
+      return
+    }
+    if (!responsable && !phoneNumber) {
+      const message = "El número de teléfono es obligatorio."
+      setFormError(message)
+      notifyError(message)
+      return
+    }
     if (!areaId) {
       const message = "Debe asignar un área."
       setFormError(message)
@@ -417,6 +441,7 @@ function UserForm({
       name,
       email,
       password,
+      phoneNumber,
       areaId,
     })
   }
@@ -424,7 +449,7 @@ function UserForm({
   return (
     <form onSubmit={handleSubmit}>
       <DialogHeader>
-        <DialogTitle>{responsable ? "Editar Responsable" : "Crear Nuevo Responsable"}</DialogTitle>
+        <DialogTitle>{responsable ? "Editar Responsable" : "Crear nuevo responsable"}</DialogTitle>
       </DialogHeader>
       <div className="space-y-4 py-4">
         {formError && (
@@ -439,6 +464,15 @@ function UserForm({
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="phoneNumber">Numero de telefono</Label>
+          <Input
+            id="phoneNumber"
+            value={formData.phoneNumber}
+            onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+            required={!responsable}
           />
         </div>
         <div className="space-y-2">

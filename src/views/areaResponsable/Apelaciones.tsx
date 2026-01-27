@@ -193,9 +193,13 @@ export default function Apelaciones() {
 
         {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
 
-        <div className="mb-4">
-          <p className="text-sm text-muted-foreground">Mostrando {filteredAppeals.length} apelaciones activas</p>
-        </div>
+        {!isLoadingData && filteredAppeals.length > 0 && (
+          <div className="mb-4">
+            <p className="text-sm text-muted-foreground">
+              Mostrando {filteredAppeals.length} apelaciones activas
+            </p>
+          </div>
+        )}
 
         <div className="space-y-4">
           {isLoadingData ? (
