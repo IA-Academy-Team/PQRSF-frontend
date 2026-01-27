@@ -183,7 +183,7 @@ export default function Cerradas() {
               />
             </div>
             <Select value={filtroTipo} onValueChange={setFiltroTipo}>
-              <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectTrigger className="w-full sm:w-50">
                 <SelectValue placeholder="Filtrar por tipo" />
               </SelectTrigger>
               <SelectContent>
@@ -279,7 +279,7 @@ export default function Cerradas() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-2 lg:min-w-[180px]">
+                    <div className="flex flex-col gap-2 lg:min-w-45">
                       <Link to={`/pqrsf/${pqrsf.radicado}`} className="w-full">
                         <Button variant="outline" className="w-full bg-transparent">
                           Ver Historial Completo

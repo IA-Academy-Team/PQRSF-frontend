@@ -201,7 +201,7 @@ export default function AnalisisPendientes() {
               </div>
 
               <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectTrigger className="w-full sm:w-50">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Prioridad" />
                 </SelectTrigger>
@@ -213,7 +213,7 @@ export default function AnalisisPendientes() {
                 </SelectContent>
               </Select>
 
-              <div className="relative w-full sm:w-[200px]">
+              <div className="relative w-full sm:w-50">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="date"

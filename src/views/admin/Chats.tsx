@@ -361,7 +361,7 @@ export default function Chats() {
                             : "bg-white rounded-tl-none shadow-sm"
                         }`}
                       >
-                        <p className="text-sm text-foreground break-words">{msg.content ?? ""}</p>
+                        <p className="text-sm text-foreground wrap-break-word">{msg.content ?? ""}</p>
                         <div className="flex items-center justify-end gap-1 mt-1">
                           {sender === "bot" && <Bot className="h-3 w-3 text-muted-foreground" />}
                           {sender === "admin" && <User className="h-3 w-3 text-muted-foreground" />}

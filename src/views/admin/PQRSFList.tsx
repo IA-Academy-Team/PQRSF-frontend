@@ -205,7 +205,7 @@ export default function PQRSFList() {
               </SelectContent>
             </Select>
 
-            <div className="relative w-full md:w-[200px]">
+            <div className="relative w-full md:w-50">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="date"
@@ -216,7 +216,7 @@ export default function PQRSFList() {
             </div>
 
             <Select value={sortFilter} onValueChange={setSortFilter}>
-              <SelectTrigger className="w-full md:w-[220px]">
+              <SelectTrigger className="w-full md:w-55">
                 <SelectValue placeholder="Ordenar por" />
               </SelectTrigger>
               <SelectContent>
