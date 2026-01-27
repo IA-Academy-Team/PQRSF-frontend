@@ -216,7 +216,7 @@ export default function Survey() {
                     value={form.comment ?? ""}
                     onChange={(event) => setForm((prev) => ({ ...prev, comment: event.target.value }))}
                     placeholder="Cuentanos tu experiencia..."
-                    className="min-h-[120px]"
+                    className="min-h-30"
                   />
                 </div>
 

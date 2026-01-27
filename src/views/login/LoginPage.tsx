@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useAuth } from "@/contexts/auth-context"
 import { useState, useMemo } from "react"
+import { userService } from "@/services/user.service"
+import { HttpError } from "@/lib/api"
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -15,6 +17,7 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [remember, setRemember] = useState(false)
+  const [userCheck, setUserCheck] = useState<"idle" | "checking" | "exists" | "not-found" | "error">("idle")
 
   // Generar partículas de forma estable
   const particles = useMemo(() => {
@@ -62,6 +65,26 @@ export default function LoginPage() {
     }
   }
 
+  const handleCheckUser = async () => {
+    const email = correo.trim()
+    if (!email) {
+      setUserCheck("idle")
+      return
+    }
+    setUserCheck("checking")
+    try {
+      const user = await userService.getByEmail(email)
+      setUserCheck(user ? "exists" : "not-found")
+    } catch (err) {
+      if (err instanceof HttpError && err.status === 404) {
+        setUserCheck("not-found")
+        return
+      }
+      console.error("[auth] user check error", err)
+      setUserCheck("error")
+    }
+  }
+
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-background">
       <div className="flex flex-col lg:flex-row min-h-screen">
@@ -88,7 +111,7 @@ export default function LoginPage() {
             <img
               src="/images/CASCO + CAMPUS.svg"
               alt="Admin Login"
-              className="drop-shadow-2xl w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-[320x] lg:h-[320px] xl:w-[380px] xl:h-[380px]"
+              className="drop-shadow-2xl w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-[320x] lg:h-80 xl:w-95 xl:h-95"
             />
           </div>
         </div>
@@ -112,9 +135,25 @@ export default function LoginPage() {
                   placeholder="Enter your email"
                   className="bg-white text-foreground h-10 md:h-11"
                   value={correo}
-                  onChange={(e) => setCorreo(e.target.value)}
+                  onChange={(e) => {
+                    setCorreo(e.target.value)
+                    setUserCheck("idle")
+                  }}
+                  onBlur={handleCheckUser}
                   required
                 />
+                {userCheck === "checking" && (
+                  <p className="text-xs text-primary-foreground/80">Verificando usuario...</p>
+                )}
+                {userCheck === "exists" && (
+                  <p className="text-xs text-emerald-200">Usuario encontrado.</p>
+                )}
+                {userCheck === "not-found" && (
+                  <p className="text-xs text-red-200">Este usuario no está registrado.</p>
+                )}
+                {userCheck === "error" && (
+                  <p className="text-xs text-red-200">No pudimos validar el usuario.</p>
+                )}
               </div>
 
               <div className="space-y-2">

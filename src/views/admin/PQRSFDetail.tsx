@@ -641,7 +641,7 @@ export default function PQRSFDetail() {
                 )}
                 <Textarea
                   placeholder="Comentarios o soporte de la decisión..."
-                  className="min-h-[120px]"
+                  className="min-h-30"
                   value={analisis}
                   onChange={(e) => setAnalisis(e.target.value)}
                 />

@@ -95,7 +95,7 @@ export default function ResetPassword() {
             <img
               src="/images/image.png"
               alt="Restablecer Contraseña"
-              className="drop-shadow-2xl w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-[280px] lg:h-[280px]"
+              className="drop-shadow-2xl w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-70 lg:h-70"
             />
           </div>
         </div>

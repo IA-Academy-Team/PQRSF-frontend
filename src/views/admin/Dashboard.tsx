@@ -24,6 +24,7 @@ import {
   type AreaPendingItem,
 } from "@/services/dashboard.service"
 import { areaService } from "@/services/area.service"
+import { HttpError } from "@/lib/api"
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth()
@@ -134,7 +135,11 @@ export default function Dashboard() {
       } catch (err) {
         if (!active) return
         console.error("[dashboard] area load error", err)
-        setAreaError("No se pudo cargar el panel del área. Intenta nuevamente.")
+        if (err instanceof HttpError && err.status === 404) {
+          setAreaError("No tienes un área asignada. Contacta al administrador.")
+        } else {
+          setAreaError("No se pudo cargar el panel del área. Intenta nuevamente.")
+        }
       } finally {
         if (active) setIsAreaLoading(false)
       }

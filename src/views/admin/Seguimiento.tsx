@@ -210,7 +210,7 @@ export default function Seguimiento() {
               />
             </div>
             <Select value={filtroEstado} onValueChange={setFiltroEstado}>
-              <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectTrigger className="w-full sm:w-50">
                 <SelectValue placeholder="Filtrar por estado" />
               </SelectTrigger>
               <SelectContent>
@@ -289,7 +289,7 @@ export default function Seguimiento() {
                       )}
                     </div>
 
-                    <div className="flex flex-col gap-2 lg:min-w-[180px]">
+                    <div className="flex flex-col gap-2 lg:min-w-45">
                       <Button
                         className="w-full bg-green-600 hover:bg-green-700"
                         onClick={() => handleFinalize(pqrsf.id)}

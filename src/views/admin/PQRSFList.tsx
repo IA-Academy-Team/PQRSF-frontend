@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react"
-import { Search, Filter, Calendar, User, Building2, ChevronRight } from "lucide-react"
+import { Search, Filter, Calendar, User, Building2, ChevronRight, ArrowUpRight } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -69,6 +69,11 @@ export default function PQRSFList() {
       setIsLoading(true)
       setError("")
       try {
+        if (user?.rol === "Usuario de Área Responsable" && !areaId) {
+          setItems([])
+          setError("No tienes un área asignada.")
+          return
+        }
         const query: PQRSFListQuery = {
           q: searchTerm.trim() || undefined,
           sort: sortFilter as PQRSFListQuery["sort"],
@@ -187,7 +192,7 @@ export default function PQRSFList() {
             </div>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-[200px]">
+              <SelectTrigger className="w-full md:w-50">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Todos los estados" />
               </SelectTrigger>
@@ -200,7 +205,7 @@ export default function PQRSFList() {
               </SelectContent>
             </Select>
 
-            <div className="relative w-full md:w-[200px]">
+            <div className="relative w-full md:w-50">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="date"
@@ -211,7 +216,7 @@ export default function PQRSFList() {
             </div>
 
             <Select value={sortFilter} onValueChange={setSortFilter}>
-              <SelectTrigger className="w-full md:w-[220px]">
+              <SelectTrigger className="w-full md:w-55">
                 <SelectValue placeholder="Ordenar por" />
               </SelectTrigger>
               <SelectContent>
@@ -257,19 +262,22 @@ export default function PQRSFList() {
 
                     <h3 className="font-medium text-foreground leading-snug line-clamp-2 flex-1 min-h-10">{item.description}</h3>
 
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground shrink-0 flex-wrap">
+                    <div className="flex items-column gap-4 text-sm text-muted-foreground shrink-0 flex-wrap">
                       <div className="flex items-center gap-1.5">
                         <User className="h-3.5 w-3.5 shrink-0" />
                         <span className="truncate">{item.user}</span>
                       </div>
+                      <br />
                       <div className="flex items-center gap-1.5">
                         <Building2 className="h-3.5 w-3.5 shrink-0" />
                         <span className="truncate">{item.area}</span>
                       </div>
+                      <br />
                       <div className="flex items-center gap-1.5">
                         <Calendar className="h-3.5 w-3.5 shrink-0" />
                         <span>{item.date}</span>
                       </div>
+                      <br />
                     </div>
                   </div>
 
@@ -277,7 +285,7 @@ export default function PQRSFList() {
                     <TooltipTrigger asChild>
                       <Link to={`/pqrsf/${item.id}`}>
                         <Button variant="ghost" size="sm" className="shrink-0">
-                          <ChevronRight className="h-4 w-4" />
+                          <ArrowUpRight className="h-4 w-4" />
                         </Button>
                       </Link>
                     </TooltipTrigger>
