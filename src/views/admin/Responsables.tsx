@@ -175,6 +175,7 @@ export default function Usuarios() {
             roleId: dbUser.roleId,
             areaName: area?.name ?? null,
             areaCode: area?.code ?? null,
+            phoneNumber: formData.phoneNumber.trim() || null,
           },
         ])
       }

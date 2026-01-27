@@ -69,7 +69,7 @@ export function transformCerradaItem(item: CerradaItem): UnifiedPQRSFItem {
  * Transforma un ApelacionItem a UnifiedPQRSFItem
  */
 export function transformApelacionItem(item: ApelacionItem): UnifiedPQRSFItem {
-  const daysOpen = calculateDaysElapsed(item.createdAt)
+  const daysOpen = calculateDaysElapsed(item.createdAt ?? null)
   const prioridad = calculatePriorityByDays(daysOpen)
 
   return {
@@ -95,7 +95,7 @@ export function transformApelacionItem(item: ApelacionItem): UnifiedPQRSFItem {
  * Transforma un AreaPendingItem a UnifiedPQRSFItem
  */
 export function transformAreaPendingItem(item: AreaPendingItem): UnifiedPQRSFItem {
-  const daysElapsed = calculateDaysElapsed(item.createdAt)
+  const daysElapsed = calculateDaysElapsed(item.createdAt ?? null)
   const priority = calculatePriority(item.dueDate, item.createdAt)
   
   return {

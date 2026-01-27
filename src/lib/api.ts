@@ -44,6 +44,7 @@ const getApiBaseUrl = (): string => {
  * URL base de la API
  */
 export const API_BASE = getApiBaseUrl()
+export const IS_LOCALHOST = isLocalhost()
 
 /**
  * Rutas públicas que NO requieren token de autenticación
