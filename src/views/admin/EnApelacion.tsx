@@ -178,6 +178,12 @@ export default function EnApelacion() {
           </div>
         )}
 
+        {!isLoading && filteredPQRSF.length > 0 && (
+          <div className="mb-4 text-sm text-muted-foreground">
+            Mostrando {filteredPQRSF.length} PQRSF en apelación
+          </div>
+        )}
+
         <div className="flex-1 min-h-0 overflow-hidden">
           <div className="grid grid-cols-2 grid-rows-2 gap-4">
             {isLoading && (
