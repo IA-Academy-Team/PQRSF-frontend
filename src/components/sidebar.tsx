@@ -28,18 +28,12 @@ export function Sidebar() {
       return [
         { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
         { name: "PQRSF - Bandeja General", href: "/pqrsf", icon: FileText },
-        { name: "Seguimiento", href: "/seguimiento", icon: Clock },
-        { name: "En Apelación", href: "/en-apelacion", icon: AlertCircle },
-        { name: "Cerradas", href: "/cerradas", icon: CheckCircle },
-        { name: "Encuestas", href: "/encuestas", icon: ClipboardList },
         { name: "Chats", href: "/chats", icon: MessageCircle },
       ]
     } else if (user?.rol === "Usuario de Área Responsable") {
       return [
         { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
         { name: "PQRSF", href: "/pqrsf", icon: FileText },
-        { name: "Análisis pendientes", href: "/analisis-pendientes", icon: ClipboardList },
-        { name: "Apelaciones", href: "/apelaciones", icon: AlertCircle },
       ]
     } else {
       return [

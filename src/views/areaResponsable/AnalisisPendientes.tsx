@@ -1,16 +1,24 @@
 import { Search, Filter, Calendar, ClipboardList } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sidebar } from "@/components/sidebar"
 import { useSidebar } from "@/contexts/sidebar-context"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/contexts/auth-context"
 import { useEffect, useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
 import { areaService } from "@/services/area.service"
 import { dashboardService, type AreaPendingItem } from "@/services/dashboard.service"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+import { PQRSFCard, type UnifiedPQRSFItem } from "@/components/PQRSFCard"
 
 const DAY_MS = 1000 * 60 * 60 * 24
 
@@ -61,6 +69,8 @@ export default function AnalisisPendientes() {
   const [searchTerm, setSearchTerm] = useState("")
   const [priorityFilter, setPriorityFilter] = useState("todos")
   const [dateFilter, setDateFilter] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 9
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -127,35 +137,40 @@ export default function AnalisisPendientes() {
     })
   }, [pending, searchTerm, priorityFilter, dateFilter])
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "Petición":
-        return "bg-blue-50 text-blue-700 border-blue-200"
-      case "Queja":
-        return "bg-red-50 text-red-700 border-red-200"
-      case "Reclamo":
-        return "bg-orange-50 text-orange-700 border-orange-200"
-      case "Sugerencia":
-        return "bg-green-50 text-green-700 border-green-200"
-      case "Felicitación":
-        return "bg-purple-50 text-purple-700 border-purple-200"
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200"
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, priorityFilter, dateFilter])
+
+  const totalPages = Math.ceil(filteredPending.length / itemsPerPage) || 1
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages)
     }
+  }, [totalPages, currentPage])
+
+  const getVisiblePages = (currentPage: number, totalPages: number, windowSize: number = 5): number[] => {
+    if (totalPages <= windowSize) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1)
+    }
+    let start = currentPage - Math.floor(windowSize / 2)
+    let end = start + windowSize - 1
+    if (start < 1) {
+      start = 1
+      end = windowSize
+    }
+    if (end > totalPages) {
+      end = totalPages
+      start = totalPages - windowSize + 1
+    }
+    return Array.from({ length: windowSize }, (_, i) => start + i)
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "Alta":
-        return "bg-red-100 text-red-700"
-      case "Media":
-        return "bg-yellow-100 text-yellow-700"
-      case "Baja":
-        return "bg-green-100 text-green-700"
-      default:
-        return "bg-gray-100 text-gray-700"
-    }
-  }
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages)
+  const startIndex = (safeCurrentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedItems = filteredPending.slice(startIndex, endIndex)
+  const visiblePages = getVisiblePages(safeCurrentPage, totalPages)
+
 
   if (isLoading || !user) {
     return (
@@ -173,126 +188,146 @@ export default function AnalisisPendientes() {
 
       <main
         className={cn(
-          "flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto min-h-screen transition-all duration-300",
+          "flex-1 p-8 h-screen transition-all duration-300 flex flex-col",
           isCollapsed ? "lg:ml-24" : "lg:ml-64"
         )}
       >
-        <div className="mb-6 sm:mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <ClipboardList className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">PQRSF Pendientes de Respuesta</h1>
-          </div>
-          <p className="text-sm sm:text-base text-muted-foreground">
+        <div className="mb-8 shrink-0">
+          <h1 className="text-3xl font-bold text-foreground mb-2">PQRSF Pendientes de Respuesta</h1>
+          <p className="text-sm text-muted-foreground">
             PQRSF asignadas a {areaName || "tu área"} que requieren respuesta directa al cliente
           </p>
         </div>
 
-        <Card className="mb-6">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por radicado, solicitante o descripción..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                />
-              </div>
-
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className="w-full sm:w-50">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Prioridad" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todas las prioridades</SelectItem>
-                  <SelectItem value="alta">Alta</SelectItem>
-                  <SelectItem value="media">Media</SelectItem>
-                  <SelectItem value="baja">Baja</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <div className="relative w-full sm:w-50">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="date"
-                  className="pl-10"
-                  value={dateFilter}
-                  onChange={(event) => setDateFilter(event.target.value)}
-                />
-              </div>
+        <CardContent className="pb-6 px-0 mb-6 shrink-0">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por radicado, solicitante o descripción..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-          </CardContent>
-        </Card>
 
-        {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+              <SelectTrigger className="w-full md:w-50">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Prioridad" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todas las prioridades</SelectItem>
+                <SelectItem value="alta">Alta</SelectItem>
+                <SelectItem value="media">Media</SelectItem>
+                <SelectItem value="baja">Baja</SelectItem>
+              </SelectContent>
+            </Select>
 
-        <div className="mb-4">
-          <p className="text-sm text-muted-foreground">
-            Mostrando {filteredPending.length} solicitudes pendientes de respuesta
-          </p>
-        </div>
+            <div className="relative w-full md:w-50">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="date"
+                className="pl-10"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+              />
+            </div>
+          </div>
+        </CardContent>
 
-        <div className="space-y-4">
-          {isLoadingData ? (
-            <p className="text-sm text-muted-foreground">Cargando pendientes...</p>
-          ) : filteredPending.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay PQRSF pendientes para mostrar.</p>
-          ) : (
-            filteredPending.map((item) => {
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        <div className="flex-1 min-h-0 overflow-y-auto mb-6">
+          <div className="grid grid-cols-3 auto-rows-fr gap-4">
+            {isLoadingData && (
+              <Card className="col-span-3 border-dashed p-5">
+                <div className="text-sm text-muted-foreground">Cargando pendientes...</div>
+              </Card>
+            )}
+            {!isLoadingData && paginatedItems.length === 0 && (
+              <Card className="col-span-3 border-dashed p-5">
+                <div className="text-sm text-muted-foreground">No hay PQRSF pendientes para mostrar.</div>
+              </Card>
+            )}
+            {paginatedItems.map((item) => {
               const priority = getPriority(item.dueDate, item.createdAt)
               const diasTranscurridos = getDaysElapsed(item.createdAt)
+              const unifiedItem: UnifiedPQRSFItem = {
+                id: item.id,
+                ticketNumber: item.ticketNumber,
+                typeName: item.typeName,
+                statusName: "Pendiente",
+                description: item.description || null,
+                clientName: item.clientName ?? null,
+                areaName: item.areaName,
+                createdAt: item.createdAt || null,
+                priority: priority as "Alta" | "Media" | "Baja",
+                responseSentAt: item.responseSentAt || null,
+                updatedAt: item.updatedAt || null,
+                daysElapsed: diasTranscurridos,
+                responseTime: null,
+                satisfaction: null,
+                dueDate: item.dueDate || null,
+              }
               return (
-                <Card key={item.id} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex flex-col lg:flex-row items-start justify-between gap-4">
-                      <div className="flex-1 w-full">
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
-                          <span className="font-mono text-sm font-semibold text-primary">{item.ticketNumber}</span>
-                          <span className={`text-xs font-medium px-3 py-1 rounded-full border ${getTypeColor(item.typeName)}`}>
-                            {item.typeName}
-                          </span>
-                          <span
-                            className={`text-xs font-medium px-3 py-1 rounded-full ${getPriorityColor(priority)}`}
-                          >
-                            Prioridad {priority}
-                          </span>
-                          <span className="text-xs font-medium px-3 py-1 rounded-full bg-orange-100 text-orange-700">
-                            Pendiente de Respuesta
-                          </span>
-                        </div>
-
-                        <h3 className="font-semibold text-base sm:text-lg text-foreground mb-2">{item.description}</h3>
-
-                        <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
-                          <div>
-                            <span className="font-medium">Solicitante:</span> {item.clientName || "Sin nombre"}
-                          </div>
-                          <div>
-                            <span className="font-medium">Área:</span> {item.areaName}
-                          </div>
-                          <div>
-                            <span className="font-medium">Radicado:</span> {formatDate(item.createdAt) || "-"}
-                          </div>
-                          <div>
-                            <span className="font-medium">Tiempo:</span>{" "}
-                            <span className="text-orange-600">{diasTranscurridos} días transcurridos</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <Link to={`/pqrsf/${item.id}`} className="w-full lg:w-auto">
-                        <Button className="w-full lg:w-auto">
-                          <ClipboardList className="h-4 w-4 mr-2" />
-                          Responder al Cliente
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
+                <PQRSFCard
+                  key={item.id}
+                  item={unifiedItem}
+                  actionLabel="Responder al Cliente"
+                  showPriority={true}
+                />
               )
-            })
+            })}
+          </div>
+        </div>
+
+        <div className="shrink-0 mt-auto">
+          {totalPages > 1 && (
+            <Pagination>
+              <PaginationContent>
+                {currentPage > 1 && (
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setCurrentPage(currentPage - 1)
+                      }}
+                    />
+                  </PaginationItem>
+                )}
+                {visiblePages.map((pageNum) => (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setCurrentPage(pageNum)
+                      }}
+                      isActive={currentPage === pageNum}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                {currentPage < totalPages && (
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        setCurrentPage(currentPage + 1)
+                      }}
+                    />
+                  </PaginationItem>
+                )}
+              </PaginationContent>
+            </Pagination>
           )}
         </div>
       </main>
