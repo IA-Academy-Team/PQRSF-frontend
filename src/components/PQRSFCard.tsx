@@ -145,14 +145,6 @@ export function PQRSFCard({
               </span>
             </div>
 
-            {/* Días transcurridos - SIEMPRE VISIBLE (vacío si no hay) */}
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 shrink-0 text-orange-600" />
-              <span className={item.daysElapsed !== null && item.daysElapsed !== undefined ? "text-orange-600" : "text-muted-foreground"}>
-                {item.daysElapsed !== null && item.daysElapsed !== undefined ? `${item.daysElapsed} días transcurridos` : "Sin días registrados"}
-              </span>
-            </div>
-
             {/* Satisfacción del cliente - SIEMPRE VISIBLE (vacío si no hay) */}
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-foreground shrink-0">Satisfacción:</span>

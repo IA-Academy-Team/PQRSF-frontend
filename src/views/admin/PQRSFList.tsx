@@ -937,6 +937,23 @@ function EncuestasTabContent() {
     return `${value} / 5`
   }
 
+  const computePercentage = (survey: PQRSFSurveyDetailed) => {
+    const totalStars = [
+      survey.q1Clarity,
+      survey.q2Timeliness,
+      survey.q3Quality,
+      survey.q4Attention,
+      survey.q5Overall,
+    ]
+      .filter((value): value is number => typeof value === "number")
+      .reduce((sum, value) => sum + value, 0)
+    
+    if (totalStars === 0) return null
+    // Fórmula: (número de estrellas / 25) * 5
+    const percentage = (totalStars / 25) * 5
+    return percentage
+  }
+
   const filteredItems = useMemo(() => {
     const term = searchTerm.trim().toLowerCase()
     if (!term) return formattedItems
@@ -994,6 +1011,8 @@ function EncuestasTabContent() {
             const originalItem = items.find((i) => i.id === unifiedItem.id)
             if (!originalItem) return null
             
+            const percentage = computePercentage(originalItem)
+            
             return (
               <div key={unifiedItem.id} className="relative">
                 <PQRSFCard
@@ -1004,8 +1023,8 @@ function EncuestasTabContent() {
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" className="gap-2 bg-background shadow-sm">
-                        <ListChecks className="h-4 w-4" />
-                        Puntajes
+                        <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                        {percentage !== null ? percentage.toFixed(1) : "Sin puntaje"}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-xl">

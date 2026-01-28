@@ -149,7 +149,13 @@ export default function Survey() {
     if (currentQuestionIndex > 0) {
       setIsTransitioning(true)
       setTimeout(() => {
-        setCurrentQuestionIndex((prev) => prev - 1)
+        setCurrentQuestionIndex((prev) => {
+          // Si está en comentarios, volver a la última pregunta
+          if (prev === QUESTION_LABELS.length) {
+            return QUESTION_LABELS.length - 1
+          }
+          return prev - 1
+        })
         setIsTransitioning(false)
       }, 300)
     }
@@ -228,11 +234,11 @@ export default function Survey() {
       </div>
 
       {/* Contenedor central fijo */}
-      <Card className="relative z-10 w-full max-w-xl border border-border/50 shadow-[0_20px_60px_rgba(0,0,0,0.25),0_8px_30px_rgba(0,0,0,0.15)] rounded-xl bg-card/95 backdrop-blur-md flex flex-col">
+      <Card className="relative z-10 w-full max-w-xl max-h-[900px] border border-border/50 shadow-[0_20px_60px_rgba(0,0,0,0.25),0_8px_30px_rgba(0,0,0,0.15)] rounded-xl bg-card/95 backdrop-blur-md flex flex-col">
         <CardHeader className="text-center pb-3 pt-4 shrink-0">
           <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">Encuesta PQRSF</CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Tu opinión es muy importante para nosotros
+            Tu opinión es muy importante para nosotros y nos ayuda a seguir mejorando, para ofrecerte una mejor experiencia.
           </p>
         </CardHeader>
 
@@ -245,8 +251,8 @@ export default function Survey() {
           )}
 
           {!isLoading && error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 text-center">
-              {error}
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+              <p className="text-red-700 font-medium">{error}</p>
             </div>
           )}
 
@@ -282,33 +288,49 @@ export default function Survey() {
                   </span>
                   <span className="text-xs font-semibold text-muted-foreground">{progress}%</span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-muted/60 overflow-hidden shadow-inner">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-700 ease-out shadow-sm"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                {/* Botones de navegación - solo en preguntas */}
-                {!showComments && currentQuestionIndex > 0 && (
-                  <div className="flex items-center justify-center mt-3">
+
+                <div className="flex items-center gap-2">
+                  {/* Flecha anterior a la izquierda de la barra */}
+                  {currentQuestionIndex > 0 && (
                     <Button
                       type="button"
                       variant="ghost"
-                      size="sm"
+                      size="icon"
                       onClick={handlePrevious}
-                      disabled={currentQuestionIndex === 0 || isSubmitting || isTransitioning}
-                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground h-7 px-2"
+                      disabled={isSubmitting || isTransitioning}
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
                     >
                       <ChevronLeft className="h-3 w-3" />
-                      Anterior
                     </Button>
+                  )}
+
+                  {/* Barra de progreso */}
+                  <div className="h-2 w-full rounded-full bg-muted/60 overflow-hidden shadow-inner">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-700 ease-out shadow-sm"
+                      style={{ width: `${progress}%` }}
+                    />
                   </div>
-                )}
+
+                  {/* Flecha siguiente a la derecha de la barra */}
+                  {!showComments && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleNext}
+                      disabled={currentQuestionIndex >= QUESTION_LABELS.length - 1 || isSubmitting || isTransitioning}
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    >
+                      <ChevronRight className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <form onSubmit={handleSubmit} className="relative flex flex-col">
                 {/* Contenedor del carrusel centrado verticalmente */}
-                <div className="relative overflow-hidden min-h-[400px] flex items-center justify-center py-4">
+                <div className="relative overflow-hidden min-h-[380px] flex items-center justify-center py-4">
                   {/* Preguntas */}
                   {QUESTION_LABELS.map((question, index) => {
                     const isActive = index === currentQuestionIndex
@@ -341,7 +363,7 @@ export default function Survey() {
 
                   {/* Sección de comentarios - Paso final */}
                   <div
-                    className={`absolute inset-0 transition-all duration-600 ease-in-out ${
+                    className={`absolute inset-5 transition-all duration-600 ease-in-out ${
                       showComments
                         ? "opacity-100 translate-x-0 z-10 scale-100"
                         : "opacity-0 translate-x-full z-0 scale-95"
