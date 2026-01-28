@@ -37,7 +37,9 @@ const getApiBaseUrl = (): string => {
   const prodUrl = import.meta.env.VITE_API_PROD || 'https://api.tudominio.com/api'
 
   // Seleccionar URL según entorno
-  return isDev ? devUrl : prodUrl
+  const rawBase = isDev ? devUrl : prodUrl
+  const normalizedBase = rawBase.replace(/\/+$/, '')
+  return normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
 }
 
 /**
