@@ -30,7 +30,7 @@ export interface Response {
   content: string
   channel: number
   sentAt: string | null
-  documentId: number
+  documentId: number | null
   pqrsId: number
   responsibleId: number
 }
@@ -240,7 +240,9 @@ export type CreateChat = Omit<Chat, "id">
 export type UpdateChat = Partial<Omit<Chat, "id">>
 export type CreateDocument = Omit<Document, "id">
 export type UpdateDocument = Partial<Omit<Document, "id">>
-export type CreateResponse = Omit<Response, "id" | "sentAt">
+export type CreateResponse = Omit<Response, "id" | "sentAt" | "documentId"> & {
+  documentId?: number | null
+}
 export type UpdateResponse = Partial<Omit<Response, "id">>
 
 export type CreateArea = Omit<Area, "id">

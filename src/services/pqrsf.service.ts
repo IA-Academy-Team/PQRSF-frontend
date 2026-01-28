@@ -248,6 +248,13 @@ export const pqrsfService = {
     return api.post<Document>(`/pqrsf/${pqrsfId}/documents`, data)
   },
 
+  uploadDocuments: async (pqrsfId: number, files: File[], typeDocumentId: number): Promise<Document[]> => {
+    const formData = new FormData()
+    files.forEach((file) => formData.append('files', file))
+    formData.append('typeDocumentId', String(typeDocumentId))
+    return api.post<Document[]>(`/pqrsf/${pqrsfId}/documents/upload`, formData)
+  },
+
   deleteDocument: async (id: number): Promise<void> => {
     return api.del<void>(`/pqrsf/documents/${id}`)
   },

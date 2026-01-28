@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { useSidebar } from "@/contexts/sidebar-context"
 import { Search, Send, Paperclip, Smile, CheckCheck, MessageCircle, Bot, User } from "lucide-react"
@@ -55,6 +55,7 @@ export default function Chats() {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const [messageError, setMessageError] = useState<string | null>(null)
   const [isUpdatingMode, setIsUpdatingMode] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
   const getSocketBase = () => {
     try {
@@ -165,6 +166,11 @@ export default function Chats() {
       active = false
     }
   }, [selectedChat])
+
+  useEffect(() => {
+    if (messages.length === 0) return
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" })
+  }, [messages, selectedChat])
 
   useEffect(() => {
     if (!selectedChat) return
@@ -379,6 +385,7 @@ export default function Chats() {
                   )
                 })
               )}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Input de mensaje */}

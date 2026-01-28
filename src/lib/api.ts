@@ -115,7 +115,8 @@ async function request<T>(
 
   // Configurar headers
   const headers = new Headers(init.headers || {})
-  if (!headers.has('Content-Type')) {
+  const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData
+  if (!headers.has('Content-Type') && !isFormData) {
     headers.set('Content-Type', 'application/json')
   }
 

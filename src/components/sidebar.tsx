@@ -50,7 +50,7 @@ export function Sidebar() {
         { name: "Areas", href: "/areas", icon: Briefcase }, // areas son áreas de campuslands
       ]
     } else if (user?.rol === "Usuario de Área Responsable") {
-      return [{ name: "Perfil", href: "/profile", icon: Settings }]
+      return []
     } else {
       return [{ name: "Perfil", href: "/profile", icon: Settings }]
     }
@@ -121,7 +121,7 @@ export function Sidebar() {
           <div className="flex flex-col gap-2">
             {!isCollapsed && (
               <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase mb-2">
-                {user?.rol === "Usuario de Área Responsable" ? "Configuración" : "Administración"}
+                {user?.rol === "Usuario de Área Responsable" ? "" : "Administración"}
               </h3>
             )}
             {admin.map((item) => (
