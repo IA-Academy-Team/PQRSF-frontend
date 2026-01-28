@@ -635,6 +635,57 @@ export default function PQRSFDetail() {
                   <CardTitle className="text-2xl">{detail.description}</CardTitle>
                 </div>
               </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-2">DESCRIPCIÓN DE LA SOLICITUD</h3>
+                  <p className="text-foreground leading-relaxed">{detail.description}</p>
+                </div>
+
+                <div className="border-t pt-6">
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-4">DOCUMENTOS ADJUNTOS</h3>
+                  <div className="space-y-2">
+                    {documents.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Sin documentos adjuntos.</p>
+                    ) : (
+                      documents.map((doc) => (
+                        <button
+                          key={doc.id}
+                          type="button"
+                          onClick={() => handleDownloadDocument(doc.id)}
+                          className="w-full flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+                        >
+                          <FileText className="h-5 w-5 text-primary" />
+                          <div className="flex-1 text-left">
+                            <p className="font-medium text-sm">Documento #{doc.id}</p>
+                            <p className="text-xs text-muted-foreground">{doc.url}</p>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t pt-6">
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-4">HISTORIAL DE ACTIVIDAD</h3>
+                  <div className="space-y-4">
+                    {timelineItems.map((item, index) => (
+                      <div key={`${item.title}-${index}`} className="flex gap-4">
+                        <div className="flex flex-col items-center">
+                          <div className={`h-10 w-10 rounded-full ${item.bgClass} flex items-center justify-center`}>
+                            <item.icon className={`h-5 w-5 ${item.iconClass}`} />
+                          </div>
+                          {index < timelineItems.length - 1 && <div className="w-px h-full bg-border mt-2" />}
+                        </div>
+                        <div className="pb-6">
+                          <p className="font-semibold">{item.title}</p>
+                          <p className="text-sm text-muted-foreground">{formatDate(item.date) || "Sin fecha"}</p>
+                          <p className="text-sm mt-1">{item.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
             </Card>
 
             <Card>
