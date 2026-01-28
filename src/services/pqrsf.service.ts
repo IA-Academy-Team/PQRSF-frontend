@@ -264,8 +264,8 @@ export const pqrsfService = {
   },
 
   // PQRSF Reanalysis
-  getReanalysis: async (id: number): Promise<PQRSFReanalysis> => {
-    return api.get<PQRSFReanalysis>(`/pqrsf/reanalysis/${id}`)
+  getReanalysis: async (pqrsfId: number): Promise<PQRSFReanalysis> => {
+    return api.get<PQRSFReanalysis>(`/pqrsf/${pqrsfId}/reanalysis`)
   },
 
   createReanalysis: async (data: CreatePQRSFReanalysis): Promise<PQRSFReanalysis> => {

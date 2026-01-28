@@ -57,6 +57,10 @@ export default function Chats() {
   const [isUpdatingMode, setIsUpdatingMode] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior })
+  }
+
   const getSocketBase = () => {
     try {
       const apiUrl = new URL(API_BASE)
@@ -169,7 +173,7 @@ export default function Chats() {
 
   useEffect(() => {
     if (messages.length === 0) return
-    messagesEndRef.current?.scrollIntoView({ behavior: "auto" })
+    scrollToBottom("auto")
   }, [messages, selectedChat])
 
   useEffect(() => {
@@ -248,6 +252,7 @@ export default function Chats() {
             : chat
         )
       )
+      scrollToBottom("smooth")
     } catch (error) {
       console.error("[admin-chats] send error", error)
       setMessageError("No pudimos enviar el mensaje. Intenta nuevamente.")

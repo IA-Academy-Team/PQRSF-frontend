@@ -6,6 +6,7 @@ import {
   FileText,
   Clock,
   CheckCircle2,
+  AlertCircle,
   XCircle,
   Send,
   Paperclip,
@@ -28,7 +29,13 @@ import {
   type PQRSFDetailItem,
 } from "@/services/pqrsf.service"
 
-import type { Document, Response as ResponseItem, PQRSFAnalysis } from "@/types/database"
+import type {
+  Document,
+  Response as ResponseItem,
+  PQRSFAnalysis,
+  PQRSFReanalysis,
+  TypeDocument,
+} from "@/types/database"
 import { notifyError, notifySuccess } from "@/lib/toast"
 
 const DAY_MS = 1000 * 60 * 60 * 24
@@ -53,6 +60,13 @@ const isAnonymousPerson = (typePersonName?: string | null) => {
   return normalized.includes("anónimo") || normalized.includes("anonimo")
 }
 
+const resolveDocumentOwner = (typeName?: string | null) => {
+  if (!typeName) return "Cliente"
+  const normalized = typeName.toLowerCase()
+  if (normalized === "solicitud" || normalized === "evidencia") return "Cliente"
+  return "Responsable"
+}
+
 export default function PQRSFDetail() {
   const { id } = useParams<{ id: string }>()
   const { user, isLoading } = useAuth()
@@ -60,6 +74,7 @@ export default function PQRSFDetail() {
   const navigate = useNavigate()
   const [detail, setDetail] = useState<PQRSFDetailItem | null>(null)
   const [analysisList, setAnalysisList] = useState<PQRSFAnalysis[]>([])
+  const [reanalysis, setReanalysis] = useState<PQRSFReanalysis | null>(null)
   const [documents, setDocuments] = useState<Document[]>([])
   const [responses, setResponses] = useState<ResponseItem[]>([])
   const [analisis, setAnalisis] = useState("")
@@ -68,6 +83,7 @@ export default function PQRSFDetail() {
   const [respuestaCliente, setRespuestaCliente] = useState("")
   const [responsibleId, setResponsibleId] = useState<number | null>(null)
   const [responseDocTypeId, setResponseDocTypeId] = useState<number | null>(null)
+  const [typeDocuments, setTypeDocuments] = useState<TypeDocument[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -106,8 +122,18 @@ export default function PQRSFDetail() {
         setAnalysisList(analysisResponse)
         setDocuments(documentsResponse)
         setResponses(responsesResponse)
+        setTypeDocuments(typeDocuments)
 
-        const responseType = typeDocuments.find((item) => item.name.toLowerCase() === "respuesta")
+        try {
+          const reanalysisResponse = await pqrsfService.getReanalysis(resolvedId)
+          if (!active) return
+          setReanalysis(reanalysisResponse)
+        } catch {
+          if (!active) return
+          setReanalysis(null)
+        }
+
+        const responseType = typeDocuments.find((item) => item.name.toLowerCase() === "análisis")
         setResponseDocTypeId(responseType?.id ?? typeDocuments[0]?.id ?? null)
 
         if (analysisResponse[0]?.answer) {
@@ -205,6 +231,20 @@ export default function PQRSFDetail() {
     return items
   }, [detail, analysisList, responses])
 
+  const reanalysisCutoff = useMemo(() => {
+    if (!reanalysis?.createdAt) return null
+    const date = new Date(reanalysis.createdAt)
+    return Number.isNaN(date.getTime()) ? null : date
+  }, [reanalysis])
+
+  const getResponseStage = (sentAt?: string | null) => {
+    if (!sentAt) return "Análisis"
+    if (!reanalysisCutoff) return "Análisis"
+    const sent = new Date(sentAt)
+    if (Number.isNaN(sent.getTime())) return "Análisis"
+    return sent.getTime() >= reanalysisCutoff.getTime() ? "Reanálisis" : "Análisis"
+  }
+
   const handleDownloadDocument = async (documentId: number) => {
     try {
       const response = await pqrsfService.downloadDocument(documentId)
@@ -241,13 +281,32 @@ export default function PQRSFDetail() {
           answer: analisis || null,
           actionTaken: analisis || null,
         })
-      } else {
+      } else if (detail.statusId !== 3) {
         await pqrsfService.createAnalysis({
           pqrsId: detail.id,
           responsibleId,
           answer: analisis || null,
           actionTaken: analisis || null,
         })
+      }
+
+      if (detail.statusId === 3 && analysis) {
+        try {
+          const existingReanalysis = await pqrsfService.getReanalysis(detail.id)
+          if (existingReanalysis?.id) {
+            await pqrsfService.updateReanalysis(existingReanalysis.id, {
+              answer: analisis || null,
+              actionTaken: analisis || null,
+            })
+          }
+        } catch {
+          await pqrsfService.createReanalysis({
+            analysisId: analysis.id,
+            responsibleId,
+            answer: analisis || null,
+            actionTaken: analisis || null,
+          })
+        }
       }
 
       let uploadedDocs: Document[] = []
@@ -264,10 +323,12 @@ export default function PQRSFDetail() {
       }
       const createdResponse = await pqrsfService.createResponse(detail.id, responsePayload)
 
-      try {
-        await pqrsfService.getBotResponse(detail.id)
-      } catch (err) {
-        console.warn("[pqrsf-detail] bot-response error", err)
+      if (detail.statusId !== 3) {
+        try {
+          await pqrsfService.getBotResponse(detail.id)
+        } catch (err) {
+          console.warn("[pqrsf-detail] bot-response error", err)
+        }
       }
 
       setResponses((prev) => [createdResponse, ...prev])
@@ -300,12 +361,12 @@ export default function PQRSFDetail() {
         } catch (err) {
           console.warn("[pqrsf-detail] bot-response error", err)
         }
+        navigate("/pqrsf?tab=cerradas")
       } else {
         await pqrsfService.appeal(detail.id)
         notifySuccess("PQRSF enviada a apelación.")
+        navigate("/pqrsf?tab=apelacion")
       }
-      const updated = await pqrsfService.getDetail(detail.id)
-      setDetail(updated)
     } catch (err) {
       console.error("[pqrsf-detail] admin action error", err)
       setError("No pudimos completar la acción seleccionada.")
@@ -352,7 +413,10 @@ export default function PQRSFDetail() {
     const isClosed = detail.statusId === 4
     const isReanalysis = detail.statusId === 3
     const hasResponse = responses.length > 0
-    const canRespond = !isClosed && (!hasResponse || isReanalysis)
+    const hasReanalysisResponse = isReanalysis
+      ? responses.some((item) => getResponseStage(item.sentAt) === "Reanálisis")
+      : false
+    const canRespond = !isClosed && (!hasResponse || (isReanalysis && !hasReanalysisResponse))
 
     return (
       <div className="flex min-h-screen bg-background">
@@ -396,34 +460,95 @@ export default function PQRSFDetail() {
                 </CardHeader>
                 <CardContent className="p-6 space-y-6">
                   <div>
-                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">DESCRIPCIÓN DE LA SOLICITUD</h3>
-                    <p className="text-foreground leading-relaxed">{detail.description}</p>
-                  </div>
-
-                  <div className="border-t pt-6">
                     <h3 className="font-semibold text-sm text-muted-foreground mb-4">DOCUMENTOS ADJUNTOS</h3>
                     <div className="space-y-2">
                       {documents.length === 0 ? (
                         <p className="text-sm text-muted-foreground">Sin documentos adjuntos.</p>
                       ) : (
-                        documents.map((doc) => (
-                          <button
-                            key={doc.id}
-                            type="button"
-                            onClick={() => handleDownloadDocument(doc.id)}
-                            className="w-full flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors"
-                          >
-                            <FileText className="h-5 w-5 text-primary" />
-                            <div className="flex-1 text-left">
-                              <p className="font-medium text-sm">Documento #{doc.id}</p>
-                              <p className="text-xs text-muted-foreground">{doc.url}</p>
-                            </div>
-                          </button>
-                        ))
+                        documents.map((doc) => {
+                          const typeName = typeDocuments.find((item) => item.id === doc.typeDocumentId)?.name ?? "Documento"
+                          const owner = resolveDocumentOwner(typeName)
+                          return (
+                            <button
+                              key={doc.id}
+                              type="button"
+                              onClick={() => handleDownloadDocument(doc.id)}
+                              className="w-full flex items-center gap-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors"
+                            >
+                              <FileText className="h-5 w-5 text-primary" />
+                              <div className="flex-1 text-left">
+                                <p className="font-medium text-sm">Documento #{doc.id}</p>
+                                <p className="text-xs text-muted-foreground">{typeName} • {owner}</p>
+                                <p className="text-xs text-muted-foreground">{doc.url}</p>
+                              </div>
+                            </button>
+                          )
+                        })
                       )}
                     </div>
                   </div>
 
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Historial de analisis de responsable</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">Analisis tecnico</h3>
+                    {analysisList.length === 0 ? (
+                      <p className="text-foreground leading-relaxed">Sin análisis registrado.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {analysisList.map((item, index) => (
+                          <div key={`analysis-${item.id}-${index}`} className="rounded-lg border p-3 bg-muted/20">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                              <span>{formatDate(item.createdAt) || "Sin fecha"}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Análisis</span>
+                            </div>
+                            <p className="text-sm text-foreground">{item.answer || "Sin análisis"}</p>
+                            {item.actionTaken && (
+                              <p className="text-xs text-muted-foreground mt-1">Acción: {item.actionTaken}</p>
+                            )}
+                          </div>
+                        ))}
+                        {reanalysis && (
+                          <div className="rounded-lg border p-3 bg-yellow-50">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                              <span>{formatDate(reanalysis.createdAt) || "Sin fecha"}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">Reanálisis</span>
+                            </div>
+                            <p className="text-sm text-foreground">{reanalysis.answer || "Sin análisis"}</p>
+                            {reanalysis.actionTaken && (
+                              <p className="text-xs text-muted-foreground mt-1">Acción: {reanalysis.actionTaken}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">Respuesta al cliente</h3>
+                    {responses.length === 0 ? (
+                      <p className="text-muted-foreground leading-relaxed">Sin respuesta registrada.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {responses.map((item, index) => (
+                          <div key={`respuesta-area-${item.id}-${index}`} className="rounded-lg border p-3">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                              <span>{formatDate(item.sentAt) || "Sin fecha"}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                                {getResponseStage(item.sentAt)}
+                              </span>
+                            </div>
+                            <p className="text-foreground leading-relaxed">{item.content || "Sin contenido"}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -438,104 +563,119 @@ export default function PQRSFDetail() {
                   </p>
                 </CardHeader>
                 <CardContent className="p-6 space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="analisis" className="text-base font-semibold">
-                      Análisis Técnico Interno (Opcional)
-                    </Label>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Documenta tu análisis técnico, antecedentes normativos y consideraciones internas.
-                    </p>
-                    <Textarea
-                      id="analisis"
-                      placeholder="Describe tu análisis técnico..."
-                      className="min-h-37.5"
-                      value={analisis}
-                      onChange={(e) => setAnalisis(e.target.value)}
-                      disabled={!canRespond}
-                    />
-                  </div>
-
-                  <div className="space-y-2 border-t pt-6">
-                    <Label htmlFor="respuestaCliente" className="text-base font-semibold text-primary">
-                      Respuesta al Cliente *
-                    </Label>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Redacta la respuesta oficial que será enviada directamente al solicitante.
-                    </p>
-                    <Textarea
-                      id="respuestaCliente"
-                      placeholder={
-                        responses.length > 0
-                          ? responses[0]?.content ?? "Respuesta enviada previamente"
-                          : "Ejemplo: Estimado(a) solicitante..."
-                      }
-                      className="min-h-50 border-2 border-primary/30"
-                      value={respuestaCliente}
-                      onChange={(e) => setRespuestaCliente(e.target.value)}
-                      required
-                      disabled={!canRespond}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="evidencias" className="text-base font-semibold">
-                      Adjuntar Evidencias (Opcional)
-                    </Label>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Adjunta documentos o archivos que soporten tu respuesta.
-                    </p>
-                    <label className="border-2 border-dashed rounded-lg p-6 text-center hover:bg-accent/50 cursor-pointer transition-colors block">
-                      <Paperclip className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm font-medium mb-1">Click para adjuntar archivos</p>
-                      <p className="text-xs text-muted-foreground">PDF, DOC, IMG hasta 10MB</p>
-                      <input
-                        id="evidencias"
-                        type="file"
-                        multiple
-                        className="hidden"
-                        onChange={(event) => setEvidencias(Array.from(event.target.files ?? []))}
-                        disabled={!canRespond}
-                      />
-                    </label>
-                    {evidencias.length > 0 && (
-                      <div className="text-xs text-muted-foreground">
-                        {evidencias.map((file) => file.name).join(", ")}
-                      </div>
-                    )}
-                  </div>
-
-                  {!canRespond && (
-                    <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-xs text-yellow-700">
+                  {!canRespond ? (
+                    <>
+                      {responses.length > 0 ? (
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-semibold text-muted-foreground">Historial de respuestas</h4>
+                          <div className="space-y-3">
+                            {responses.map((item, index) => (
+                              <div key={`historial-${item.id}-${index}`} className="rounded-lg border p-3 bg-muted/30">
+                                <div className="text-xs text-muted-foreground mb-1">
+                                  {formatDate(item.sentAt) || "Sin fecha"}
+                                </div>
+                                <p className="text-sm text-foreground">{item.content || "Sin contenido"}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-xs text-yellow-700">
                       {isClosed
                         ? "Esta PQRSF ya fue cerrada. Solo puedes visualizar la información."
-                        : "Ya se envió una respuesta. Solo podrás responder nuevamente si la PQRSF entra en reanálisis."}
-                    </div>
-                  )}
-
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="bg-green-500 rounded-lg p-2 shrink-0">
-                        <Send className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-sm text-foreground mb-1">Envío Directo al Cliente</p>
-                        <p className="text-xs text-muted-foreground">
-                          Al confirmar el envío, la respuesta será comunicada automáticamente al solicitante.
+                        : isReanalysis
+                          ? "Ya enviaste la respuesta en reanálisis. Debes esperar a que el administrador autorice nuevamente."
+                          : "Ya se envió una respuesta. Solo podrás responder nuevamente si la PQRSF entra en reanálisis."}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="analisis" className="text-base font-semibold">
+                          Análisis Técnico Interno (Opcional)
+                        </Label>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Documenta tu análisis técnico, antecedentes normativos y consideraciones internas.
                         </p>
+                        <Textarea
+                          id="analisis"
+                          placeholder="Describe tu análisis técnico..."
+                          className="min-h-37.5"
+                          value={analisis}
+                          onChange={(e) => setAnalisis(e.target.value)}
+                        />
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="flex gap-3 pt-4">
-                    <Button
-                      className="flex-1 bg-green-600 hover:bg-green-700"
-                      onClick={handleEnviarRespuestaCliente}
-                      disabled={!canRespond || !respuestaCliente.trim() || isSubmitting}
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      {isSubmitting ? "Enviando..." : "Enviar Respuesta al Cliente"}
-                    </Button>
-                  </div>
+                      <div className="space-y-2 border-t pt-6">
+                        <Label htmlFor="respuestaCliente" className="text-base font-semibold text-primary">
+                          Respuesta al Cliente *
+                        </Label>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Redacta la respuesta oficial que será enviada directamente al solicitante.
+                        </p>
+                        <Textarea
+                          id="respuestaCliente"
+                          placeholder="Ejemplo: Estimado(a) solicitante..."
+                          className="min-h-50 border-2 border-primary/30"
+                          value={respuestaCliente}
+                          onChange={(e) => setRespuestaCliente(e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="evidencias" className="text-base font-semibold">
+                          Adjuntar Evidencias (Opcional)
+                        </Label>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Adjunta documentos o archivos que soporten tu respuesta.
+                        </p>
+                        <label className="border-2 border-dashed rounded-lg p-6 text-center hover:bg-accent/50 cursor-pointer transition-colors block">
+                          <Paperclip className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm font-medium mb-1">Click para adjuntar archivos</p>
+                          <p className="text-xs text-muted-foreground">PDF, DOC, IMG hasta 10MB</p>
+                          <input
+                            id="evidencias"
+                            type="file"
+                            multiple
+                            className="hidden"
+                            onChange={(event) => setEvidencias(Array.from(event.target.files ?? []))}
+                          />
+                        </label>
+                        {evidencias.length > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            {evidencias.map((file) => file.name).join(", ")}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="bg-green-500 rounded-lg p-2 shrink-0">
+                            <Send className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm text-foreground mb-1">Envío Directo al Cliente</p>
+                            <p className="text-xs text-muted-foreground">
+                              Al confirmar el envío, la respuesta será comunicada automáticamente al solicitante.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3 pt-4">
+                        <Button
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          onClick={handleEnviarRespuestaCliente}
+                          disabled={!respuestaCliente.trim() || isSubmitting}
+                        >
+                          <Send className="h-4 w-4 mr-2" />
+                          {isSubmitting ? "Enviando..." : "Enviar Respuesta al Cliente"}
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -711,17 +851,16 @@ export default function PQRSFDetail() {
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div>
-                  <h3 className="font-semibold text-sm text-muted-foreground mb-2">DESCRIPCIÓN DE LA SOLICITUD</h3>
-                  <p className="text-foreground leading-relaxed">{detail.description}</p>
-                </div>
-
-                <div className="border-t pt-6">
                   <h3 className="font-semibold text-sm text-muted-foreground mb-4">DOCUMENTOS ADJUNTOS</h3>
                   <div className="space-y-2">
                     {documents.length === 0 ? (
                       <p className="text-sm text-muted-foreground">Sin documentos adjuntos.</p>
                     ) : (
                       documents.map((doc) => (
+                        (() => {
+                          const typeName = typeDocuments.find((item) => item.id === doc.typeDocumentId)?.name ?? "Documento"
+                          const owner = resolveDocumentOwner(typeName)
+                          return (
                         <button
                           key={doc.id}
                           type="button"
@@ -731,9 +870,12 @@ export default function PQRSFDetail() {
                           <FileText className="h-5 w-5 text-primary" />
                           <div className="flex-1 text-left">
                             <p className="font-medium text-sm">Documento #{doc.id}</p>
+                            <p className="text-xs text-muted-foreground">{typeName} • {owner}</p>
                             <p className="text-xs text-muted-foreground">{doc.url}</p>
                           </div>
                         </button>
+                          )
+                        })()
                       ))
                     )}
                   </div>
@@ -744,28 +886,62 @@ export default function PQRSFDetail() {
             <Card>
               <CardHeader>
                 <CardTitle>Analisis de responsable</CardTitle>
-                  <div>
-                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">Analisis tecnico</h3>
-                    <p className="text-foreground leading-relaxed">{analisis}</p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">Respuesta al cliente</h3>
-                    {responses.length === 0 ? (
-                      <p className="text-muted-foreground leading-relaxed">Sin respuesta registrada.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {responses.map((item, index) => (
-                          <div key={`respuesta-${item.id}-${index}`} className="rounded-lg border p-3">
-                            <div className="text-xs text-muted-foreground mb-1">
-                              {formatDate(item.sentAt) || "Sin fecha"}
-                            </div>
-                            <p className="text-foreground leading-relaxed">{item.content || "Sin contenido"}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
               </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-2">Analisis tecnico</h3>
+                  {analysisList.length === 0 && !reanalysis ? (
+                    <p className="text-foreground leading-relaxed">Sin análisis registrado.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {analysisList.map((item, index) => (
+                        <div key={`analysis-admin-${item.id}-${index}`} className="rounded-lg border p-3 bg-muted/20">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                            <span>{formatDate(item.createdAt) || "Sin fecha"}</span>
+                            <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Análisis</span>
+                          </div>
+                          <p className="text-sm text-foreground">{item.answer || "Sin análisis"}</p>
+                          {item.actionTaken && (
+                            <p className="text-xs text-muted-foreground mt-1">Acción: {item.actionTaken}</p>
+                          )}
+                        </div>
+                      ))}
+                      {reanalysis && (
+                        <div className="rounded-lg border p-3 bg-yellow-50">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                            <span>{formatDate(reanalysis.createdAt) || "Sin fecha"}</span>
+                            <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">Reanálisis</span>
+                          </div>
+                          <p className="text-sm text-foreground">{reanalysis.answer || "Sin análisis"}</p>
+                          {reanalysis.actionTaken && (
+                            <p className="text-xs text-muted-foreground mt-1">Acción: {reanalysis.actionTaken}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-2">Respuesta al cliente</h3>
+                  {responses.length === 0 ? (
+                    <p className="text-muted-foreground leading-relaxed">Sin respuesta registrada.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {responses.map((item, index) => (
+                        <div key={`respuesta-${item.id}-${index}`} className="rounded-lg border p-3">
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                            <span>{formatDate(item.sentAt) || "Sin fecha"}</span>
+                            <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                              {getResponseStage(item.sentAt)}
+                            </span>
+                          </div>
+                          <p className="text-foreground leading-relaxed">{item.content || "Sin contenido"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
             </Card>
 
             <Card>

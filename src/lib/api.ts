@@ -231,10 +231,11 @@ export async function post<T>(
   data?: any,
   init?: RequestInit
 ): Promise<T> {
+  const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
   return request<T>(path, {
     ...init,
     method: 'POST',
-    body: data ? JSON.stringify(data) : undefined,
+    body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
   })
 }
 
@@ -243,10 +244,11 @@ export async function put<T>(
   data?: any,
   init?: RequestInit
 ): Promise<T> {
+  const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
   return request<T>(path, {
     ...init,
     method: 'PUT',
-    body: data ? JSON.stringify(data) : undefined,
+    body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
   })
 }
 
@@ -255,10 +257,11 @@ export async function patch<T>(
   data?: any,
   init?: RequestInit
 ): Promise<T> {
+  const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
   return request<T>(path, {
     ...init,
     method: 'PATCH',
-    body: data ? JSON.stringify(data) : undefined,
+    body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
   })
 }
 

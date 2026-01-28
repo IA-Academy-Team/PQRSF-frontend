@@ -204,7 +204,8 @@ export default function Dashboard() {
             <div className="flex flex-col gap-4 lg:gap-6 min-h-0 overflow-hidden">
               {/* Fila 1: Cards */}
               <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 shrink-0">
-                <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0">
+                <Link to="/pqrsf?tab=general&status=todos">
+                  <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0 cursor-pointer hover:opacity-90 transition-opacity">
                   <CardContent className="p-2 sm:p-3">
                     <div className="flex items-center justify-between mb-2">
                       <div className="bg-white/20 rounded-lg p-1 sm:p-1.5">
@@ -216,9 +217,11 @@ export default function Dashboard() {
                       {isDashboardLoading ? "..." : totalPqrs}
                     </p>
                   </CardContent>
-                </Card>
+                  </Card>
+                </Link>
 
-                <Card className="border-orange-200 bg-orange-50">
+                <Link to="/pqrsf?tab=general&status=2">
+                  <Card className="border-orange-200 bg-orange-50 cursor-pointer hover:opacity-90 transition-opacity">
                   <CardContent className="p-2 sm:p-3">
                     <div className="flex items-center justify-between mb-2">
                       <div className="bg-orange-500/20 rounded-lg p-1 sm:p-1.5">
@@ -230,9 +233,11 @@ export default function Dashboard() {
                       {isDashboardLoading ? "..." : getStatusCount(2)}
                     </p>
                   </CardContent>
-                </Card>
+                  </Card>
+                </Link>
 
-                <Card className="border-red-200 bg-red-50">
+                <Link to="/pqrsf?tab=general&status=3">
+                  <Card className="border-red-200 bg-red-50 cursor-pointer hover:opacity-90 transition-opacity">
                   <CardContent className="p-2 sm:p-3">
                     <div className="flex items-center justify-between mb-2">
                       <div className="bg-red-500/20 rounded-lg p-1 sm:p-1.5">
@@ -244,9 +249,11 @@ export default function Dashboard() {
                       {isDashboardLoading ? "..." : getStatusCount(3)}
                     </p>
                   </CardContent>
-                </Card>
+                  </Card>
+                </Link>
 
-                <Card className="border-green-200 bg-green-50">
+                <Link to="/pqrsf?tab=general&status=4">
+                  <Card className="border-green-200 bg-green-50 cursor-pointer hover:opacity-90 transition-opacity">
                   <CardContent className="p-2 sm:p-3">
                     <div className="flex items-center justify-between mb-2">
                       <div className="bg-green-500/20 rounded-lg p-1 sm:p-1.5">
@@ -258,7 +265,8 @@ export default function Dashboard() {
                       {isDashboardLoading ? "..." : getStatusCount(4)}
                     </p>
                   </CardContent>
-                </Card>
+                  </Card>
+                </Link>
               </div>
 
               {/* Fila 2: Chats Recientes */}
@@ -444,7 +452,8 @@ export default function Dashboard() {
           )}
 
           <div className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4 mb-3 shrink-0">
-            <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0">
+            <Link to="/pqrsf?tab=general&status=todos">
+              <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0 cursor-pointer hover:opacity-90 transition-opacity">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="bg-white/20 rounded-lg p-1.5">
@@ -454,9 +463,11 @@ export default function Dashboard() {
                 <h3 className="text-xs font-medium mb-1 opacity-90">PQRSF Asignadas</h3>
                 <p className="text-2xl font-bold mb-0.5">{isAreaLoading ? "..." : totalAssigned}</p>
               </CardContent>
-            </Card>
+              </Card>
+            </Link>
 
-            <Card className="border-orange-200 bg-orange-50">
+            <Link to="/pqrsf?tab=analisis">
+              <Card className="border-orange-200 bg-orange-50 cursor-pointer hover:opacity-90 transition-opacity">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="bg-orange-500/20 rounded-lg p-1.5">
@@ -468,9 +479,11 @@ export default function Dashboard() {
                   {isAreaLoading ? "..." : pendingCount}
                 </p>
               </CardContent>
-            </Card>
+              </Card>
+            </Link>
 
-            <Card className="border-red-200 bg-red-50">
+            <Link to="/pqrsf?tab=apelacion">
+              <Card className="border-red-200 bg-red-50 cursor-pointer hover:opacity-90 transition-opacity">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="bg-red-500/20 rounded-lg p-1.5">
@@ -482,9 +495,11 @@ export default function Dashboard() {
                   {isAreaLoading ? "..." : appealsCount}
                 </p>
               </CardContent>
-            </Card>
+              </Card>
+            </Link>
 
-            <Card className="border-green-200 bg-green-50">
+            <Link to="/pqrsf?tab=cerradas">
+              <Card className="border-green-200 bg-green-50 cursor-pointer hover:opacity-90 transition-opacity">
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="bg-green-500/20 rounded-lg p-1.5">
@@ -496,7 +511,8 @@ export default function Dashboard() {
                   {isAreaLoading ? "..." : respondedCount}
                 </p>
               </CardContent>
-            </Card>
+              </Card>
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">

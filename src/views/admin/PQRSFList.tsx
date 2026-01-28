@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button"
 import { PQRSFCard, type UnifiedPQRSFItem } from "@/components/PQRSFCard"
 import { PQRSFPagination } from "@/components/PQRSFPagination"
 import { usePagination } from "@/hooks/usePagination"
+import { useSearchParams } from "react-router-dom"
 import {
   transformSeguimientoItem,
   transformCerradaItem,
@@ -48,6 +49,20 @@ export default function PQRSFList() {
   const [dateFilter, setDateFilter] = useState("")
   const [sortFilter, setSortFilter] = useState("recent")
   const [areaId, setAreaId] = useState<number | null>(null)
+  const [searchParams] = useSearchParams()
+
+  useEffect(() => {
+    const tab = searchParams.get("tab")
+    const status = searchParams.get("status")
+    if (tab) {
+      setActiveTab(tab)
+    }
+    if (status) {
+      setStatusFilter(status)
+    } else if (tab === "general") {
+      setStatusFilter("todos")
+    }
+  }, [searchParams])
 
 
   useEffect(() => {
