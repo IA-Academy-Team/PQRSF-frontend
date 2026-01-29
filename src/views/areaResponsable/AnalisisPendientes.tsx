@@ -19,6 +19,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { PQRSFCard, type UnifiedPQRSFItem } from "@/components/PQRSFCard"
+import { ITEMS_PER_PAGE } from "@/lib/pqrsf-utils"
 
 const DAY_MS = 1000 * 60 * 60 * 24
 
@@ -70,7 +71,7 @@ export default function AnalisisPendientes() {
   const [priorityFilter, setPriorityFilter] = useState("todos")
   const [dateFilter, setDateFilter] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 9
+  const itemsPerPage = ITEMS_PER_PAGE
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -183,23 +184,23 @@ export default function AnalisisPendientes() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
 
       <main
         className={cn(
-          "flex-1 p-8 h-screen transition-all duration-300 flex flex-col",
+          "flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 transition-all duration-300 overflow-hidden",
           isCollapsed ? "lg:ml-24" : "lg:ml-64"
         )}
       >
-        <div className="mb-8 shrink-0">
-          <h1 className="text-3xl font-bold text-foreground mb-2">PQRSF Pendientes de Respuesta</h1>
+        <div className="shrink-0 mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-1 sm:mb-2">PQRSF Pendientes de Respuesta</h1>
           <p className="text-sm text-muted-foreground">
             PQRSF asignadas a {areaName || "tu área"} que requieren respuesta directa al cliente
           </p>
         </div>
 
-        <CardContent className="pb-6 px-0 mb-6 shrink-0">
+        <CardContent className="pb-4 sm:pb-6 px-0 mb-4 sm:mb-6 shrink-0">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -242,15 +243,15 @@ export default function AnalisisPendientes() {
           </div>
         )}
 
-        <div className="flex-1 min-h-0 overflow-y-auto mb-6">
-          <div className="grid grid-cols-3 auto-rows-fr gap-4">
+        <div className="flex-1 min-h-0 overflow-y-auto mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-3 md:gap-4 min-[1600px]:gap-5">
             {isLoadingData && (
-              <Card className="col-span-3 border-dashed p-5">
+              <Card className="col-span-full border-dashed p-4 sm:p-5">
                 <div className="text-sm text-muted-foreground">Cargando pendientes...</div>
               </Card>
             )}
             {!isLoadingData && paginatedItems.length === 0 && (
-              <Card className="col-span-3 border-dashed p-5">
+              <Card className="col-span-full border-dashed p-4 sm:p-5">
                 <div className="text-sm text-muted-foreground">No hay PQRSF pendientes para mostrar.</div>
               </Card>
             )}

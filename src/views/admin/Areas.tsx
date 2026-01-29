@@ -11,9 +11,13 @@ import { useSidebar } from "@/contexts/sidebar-context"
 import { useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { areaService } from "@/services/area.service"
 import type { Area } from "@/types/database"
 import { notifyError, notifySuccess } from "@/lib/toast"
+import { ITEMS_PER_PAGE } from "@/lib/pqrsf-utils"
+import { usePagination } from "@/hooks/usePagination"
+import { PQRSFPagination } from "@/components/PQRSFPagination"
 
 export default function Areas() {
   const { user } = useAuth()
@@ -64,6 +68,12 @@ export default function Areas() {
     return area.name.toLowerCase().includes(query) || (area.code ?? "").toLowerCase().includes(query)
   })
 
+  const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
+    items: filteredAreas,
+    itemsPerPage: ITEMS_PER_PAGE,
+    dependencies: [searchTerm],
+  })
+
   const handleCreateOrUpdate = async (formData: Partial<Area>) => {
     try {
         if (editingArea) {
@@ -110,33 +120,40 @@ export default function Areas() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
 
       <main
         className={cn(
-          "flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto min-h-screen transition-all duration-300",
+          "flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 transition-all duration-300 overflow-hidden",
           isCollapsed ? "lg:ml-24" : "lg:ml-64"
         )}
       >
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="shrink-0 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Gestión de Áreas</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl min-[1600px]:text-4xl font-bold text-foreground mb-1 sm:mb-2 min-[1600px]:mb-3">Gestión de Áreas</h1>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  onClick={() => {
-                    setEditingArea(null)
-                    setIsDialogOpen(true)
-                  }}
-                  className="w-full sm:w-auto"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Crear Área
-                </Button>
-              </DialogTrigger>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="icon"
+                      onClick={() => {
+                        setEditingArea(null)
+                        setIsDialogOpen(true)
+                      }}
+                      className="shrink-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Agregar nueva área</p>
+                </TooltipContent>
+              </Tooltip>
               <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <AreaForm
                   area={editingArea}
@@ -151,7 +168,7 @@ export default function Areas() {
           </div>
         </div>
 
-          <CardContent className="pb-6 px-0 mb-6">
+          <CardContent className="shrink-0 pb-4 sm:pb-6 px-0 mb-4 sm:mb-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -163,62 +180,88 @@ export default function Areas() {
             </div>
           </CardContent>
 
-        {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
+        {error && <p className="shrink-0 mb-4 text-sm min-[1600px]:text-base text-destructive">{error}</p>}
 
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Cargando áreas...</p>
-          ) : filteredAreas.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay áreas registradas.</p>
-          ) : (
-            filteredAreas.map((area) => (
-              <Card key={area.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 rounded-lg p-2">
-                      <Briefcase className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{area.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">Código: {area.code ?? "Sin código"}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    {area.description?.trim() || "Sin descripción"}
-                  </p>
-                  <div className="flex gap-2 pt-4 border-t">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingArea(area)
-                        setIsDialogOpen(true)
-                      }}
-                      className="flex-1"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 bg-transparent"
-                      onClick={() => handleDelete(area.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            ))
-          )}
-        </div>
+        <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <CardHeader className="shrink-0 py-3 sm:py-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg min-[1600px]:text-xl">
+              <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 min-[1600px]:h-6 min-[1600px]:w-6" />
+              Lista de Áreas ({filteredAreas.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 flex-1 min-h-0 overflow-auto">
+            <div className="overflow-x-auto min-h-0">
+              <table className="w-full">
+                <thead className="bg-muted/50 border-b sticky top-0 z-10">
+                  <tr>
+                    <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Nombre</th>
+                    <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Código</th>
+                    <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Descripción</th>
+                    <th className="text-right p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoading ? (
+                    <tr>
+                      <td className="p-3 sm:p-4 min-[1600px]:p-5 text-sm min-[1600px]:text-base text-muted-foreground" colSpan={4}>
+                        Cargando áreas...
+                      </td>
+                    </tr>
+                  ) : paginatedItems.length === 0 ? (
+                    <tr>
+                      <td className="p-3 sm:p-4 min-[1600px]:p-5 text-sm min-[1600px]:text-base text-muted-foreground" colSpan={4}>
+                        No hay áreas registradas.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedItems.map((area) => (
+                      <tr key={area.id} className="border-b hover:bg-muted/30 transition-colors">
+                        <td className="p-3 sm:p-4 min-[1600px]:p-5">
+                          <div className="font-medium text-sm sm:text-base min-[1600px]:text-lg">{area.name}</div>
+                        </td>
+                        <td className="p-3 sm:p-4 min-[1600px]:p-5 text-xs sm:text-sm min-[1600px]:text-base text-muted-foreground">
+                          {area.code ?? "Sin código"}
+                        </td>
+                        <td className="p-3 sm:p-4 min-[1600px]:p-5 text-xs sm:text-sm min-[1600px]:text-base text-muted-foreground max-w-xs truncate" title={area.description ?? undefined}>
+                          {area.description?.trim() || "Sin descripción"}
+                        </td>
+                        <td className="p-3 sm:p-4 min-[1600px]:p-5">
+                          <div className="flex items-center justify-end gap-2 min-[1600px]:gap-3">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingArea(area)
+                                setIsDialogOpen(true)
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleDelete(area.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+          <div className="shrink-0 border-t border-border p-3 sm:p-4">
+            <PQRSFPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        </Card>
       </main>
     </div>
   )

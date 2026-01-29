@@ -19,6 +19,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { pqrsfService, type ApelacionItem } from "@/services/pqrsf.service"
+import { ITEMS_PER_PAGE } from "@/lib/pqrsf-utils"
 
 export default function EnApelacion() {
   const { user } = useAuth()
@@ -27,7 +28,7 @@ export default function EnApelacion() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filtroArea, setFiltroArea] = useState("todas")
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 4
+  const itemsPerPage = ITEMS_PER_PAGE
   const [items, setItems] = useState<ApelacionItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -131,24 +132,24 @@ export default function EnApelacion() {
   const visiblePages = getVisiblePages(safeCurrentPage, totalPages)
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
 
       <main
         className={cn(
-          "flex-1 p-4 sm:p-6 lg:p-8 h-screen transition-all duration-300 flex flex-col",
+          "flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 transition-all duration-300 overflow-hidden",
           isCollapsed ? "lg:ml-24" : "lg:ml-64",
         )}
       >
-        <div className="mb-6 sm:mb-8 shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="shrink-0 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">PQRSF En Apelación</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl min-[1600px]:text-4xl font-bold text-foreground mb-1 sm:mb-2 min-[1600px]:mb-3">PQRSF En Apelación</h1>
             </div>
           </div>
         </div>
 
-        <CardContent className="pb-6 px-0 mb-6 shrink-0">
+        <CardContent className="pb-4 sm:pb-6 px-0 mb-4 sm:mb-6 shrink-0">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -173,36 +174,36 @@ export default function EnApelacion() {
         </CardContent>
 
         {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="shrink-0 mb-4 rounded-lg border border-red-200 bg-red-50 p-4 min-[1600px]:p-5 text-sm min-[1600px]:text-base text-red-700">
             {error}
           </div>
         )}
 
         {!isLoading && filteredPQRSF.length > 0 && (
-          <div className="mb-4 text-sm text-muted-foreground">
+          <div className="shrink-0 mb-4 text-sm text-muted-foreground">
             Mostrando {filteredPQRSF.length} PQRSF en apelación
           </div>
         )}
 
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div className="grid grid-cols-2 grid-rows-2 gap-4">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-3 md:gap-4 min-[1600px]:gap-5">
             {isLoading && (
-              <Card className="col-span-2 border-dashed">
+              <Card className="col-span-full border-dashed min-h-0 overflow-hidden">
                 <CardContent className="p-4 text-sm text-muted-foreground">Cargando apelaciones...</CardContent>
               </Card>
             )}
             {!isLoading && paginatedItems.length === 0 && (
-              <Card className="col-span-2 border-dashed">
+              <Card className="col-span-full border-dashed min-h-0 overflow-hidden">
                 <CardContent className="p-4 text-sm text-muted-foreground">No hay PQRSF en apelación.</CardContent>
               </Card>
             )}
             {paginatedItems.map((pqrsf, index) => (
-              <Card key={`${pqrsf.radicado}-${startIndex + index}`} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-3">
-                  <div className="flex flex-col lg:flex-row lg:items-start gap-6">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="font-mono text-sm font-semibold text-primary">{pqrsf.radicado}</span>
+              <Card key={`${pqrsf.radicado}-${startIndex + index}`} className="h-full flex flex-col min-h-0 overflow-hidden hover:shadow-md transition-shadow">
+                <CardContent className="p-3 sm:p-4 flex-1 min-h-0 overflow-hidden flex flex-col">
+                  <div className="flex flex-col lg:flex-row lg:items-start gap-4 sm:gap-6 min-h-0 overflow-hidden">
+                    <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3 flex-wrap">
+                        <span className="font-mono text-xs sm:text-sm font-semibold text-primary truncate">{pqrsf.radicado}</span>
                         <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700">
                           {pqrsf.tipo}
                         </span>
@@ -219,19 +220,19 @@ export default function EnApelacion() {
                         </span>
                       </div>
 
-                      <p className="text-sm text-muted-foreground mb-4">
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-4 truncate">
                         Solicitante: <span className="font-medium text-foreground">{pqrsf.solicitante}</span> • Área
                         asignada: <span className="font-medium text-foreground">{pqrsf.area}</span>
                       </p>
 
-                      <div className="bg-blue-50 p-4 rounded-lg mb-3">
+                      <div className="bg-blue-50 p-3 sm:p-4 rounded-lg mb-2 sm:mb-3 min-h-0 overflow-hidden">
                         <p className="text-xs font-semibold text-blue-700 mb-1">RESPUESTA ORIGINAL:</p>
                         <p className="text-sm">{pqrsf.respuestaOriginal}</p>
                       </div>
 
-                      <div className="bg-red-50 p-4 rounded-lg">
+                      <div className="bg-red-50 p-3 sm:p-4 rounded-lg min-h-0 overflow-hidden">
                         <p className="text-xs font-semibold text-red-700 mb-1">MOTIVO DE APELACIÓN:</p>
-                        <p className="text-sm">{pqrsf.motivoApelacion}</p>
+                        <p className="text-sm line-clamp-3">{pqrsf.motivoApelacion}</p>
                         <p className="text-xs text-muted-foreground mt-2">Fecha de apelación: {pqrsf.fechaApelacion}</p>
                       </div>
                     </div>

@@ -22,13 +22,14 @@ import {
   transformApelacionItem,
   transformAreaPendingItem,
 } from "@/lib/pqrsf-transformers"
+import { ITEMS_PER_PAGE } from "@/lib/pqrsf-utils"
 
 export default function PQRSFList() {
   const { isCollapsed } = useSidebar()
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState("general")
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 6
+  const itemsPerPage = ITEMS_PER_PAGE
   const [items, setItems] = useState<PQRSFListItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -167,21 +168,21 @@ export default function PQRSFList() {
   })
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
 
       <main
         className={cn(
-          "flex-1 p-8 h-screen transition-all duration-300 flex flex-col",
+          "flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 transition-all duration-300 overflow-hidden",
           isCollapsed ? "lg:ml-24" : "lg:ml-64",
         )}
       >
-        <div className="mb-8 shrink-0">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Listado General de PQRSF</h1>
+        <div className="shrink-0 mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl min-[1600px]:text-4xl font-bold text-foreground mb-1 sm:mb-2 min-[1600px]:mb-3">Listado General de PQRSF</h1>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="mb-6 shrink-0">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <TabsList className="mb-4 sm:mb-6 shrink-0">
             <TabsTrigger value="general">Listado General</TabsTrigger>
             {user?.rol === "Administrador" && (
               <>
@@ -199,7 +200,7 @@ export default function PQRSFList() {
           </TabsList>
 
           <TabsContent value="general" className="flex-1 flex flex-col min-h-0 mt-0">
-            <CardContent className="pb-2 px-0 mb-6 shrink-0">
+            <CardContent className="pb-2 px-0 mb-4 sm:mb-6 shrink-0">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -250,20 +251,20 @@ export default function PQRSFList() {
             </CardContent>
 
             {error && (
-              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 min-[1600px]:p-5 text-sm min-[1600px]:text-base text-red-700">
                 {error}
               </div>
             )}
 
-            <div className="flex-1 min-h-0 overflow-y-auto mb-6">
-              <div className="grid grid-cols-3 auto-rows-fr gap-4">
+            <div className="flex-1 min-h-0 overflow-y-auto mb-4 sm:mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-3 md:gap-4 min-[1600px]:gap-5">
                 {isLoading && (
-                  <Card className="col-span-3 border-dashed p-5">
+                  <Card className="col-span-full border-dashed p-4 sm:p-5">
                     <div className="text-sm text-muted-foreground">Cargando bandeja...</div>
                   </Card>
                 )}
                 {!isLoading && paginatedItems.length === 0 && (
-                  <Card className="col-span-3 border-dashed p-5">
+                  <Card className="col-span-full border-dashed p-4 sm:p-5">
                     <div className="text-sm text-muted-foreground">No hay PQRSF para mostrar.</div>
                   </Card>
                 )}
@@ -324,7 +325,7 @@ function SeguimientoTabContent() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const [filtroEstado, setFiltroEstado] = useState("todas")
-  const itemsPerPage = 9
+  const itemsPerPage = ITEMS_PER_PAGE
   const [items, setItems] = useState<SeguimientoItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -445,15 +446,15 @@ function SeguimientoTabContent() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-y-auto mb-6">
-        <div className="grid grid-cols-3 auto-rows-fr gap-4">
+      <div className="flex-1 min-h-0 overflow-y-auto mb-4 sm:mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-3 md:gap-4 min-[1600px]:gap-5">
           {isLoading && (
-            <Card className="col-span-3 border-dashed p-5">
+            <Card className="col-span-full border-dashed p-4 sm:p-5">
               <div className="text-sm text-muted-foreground">Cargando seguimiento...</div>
             </Card>
           )}
           {!isLoading && paginatedItems.length === 0 && (
-            <Card className="col-span-3 border-dashed p-5">
+            <Card className="col-span-full border-dashed p-4 sm:p-5">
               <div className="text-sm text-muted-foreground">No hay PQRSF en seguimiento.</div>
             </Card>
           )}
@@ -483,7 +484,7 @@ function CerradasTabContent() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const [filtroTipo, setFiltroTipo] = useState("todos")
-  const itemsPerPage = 9
+  const itemsPerPage = ITEMS_PER_PAGE
   const [items, setItems] = useState<CerradaItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -569,15 +570,15 @@ function CerradasTabContent() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-y-auto mb-6">
-        <div className="grid grid-cols-3 auto-rows-fr gap-4">
+      <div className="flex-1 min-h-0 overflow-y-auto mb-4 sm:mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-3 md:gap-4 min-[1600px]:gap-5">
           {isLoading && (
-            <Card className="col-span-3 border-dashed p-5">
+            <Card className="col-span-full border-dashed p-4 sm:p-5">
               <div className="text-sm text-muted-foreground">Cargando cerradas...</div>
             </Card>
           )}
           {!isLoading && paginatedItems.length === 0 && (
-            <Card className="col-span-3 border-dashed p-5">
+            <Card className="col-span-full border-dashed p-4 sm:p-5">
               <div className="text-sm text-muted-foreground">No hay PQRSF cerradas.</div>
             </Card>
           )}
@@ -607,7 +608,7 @@ function ApelacionTabContent() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const [filtroArea, setFiltroArea] = useState("todas")
-  const itemsPerPage = 9
+  const itemsPerPage = ITEMS_PER_PAGE
   const [items, setItems] = useState<ApelacionItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -690,15 +691,15 @@ function ApelacionTabContent() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-y-auto mb-6">
-        <div className="grid grid-cols-3 auto-rows-fr gap-4">
+      <div className="flex-1 min-h-0 overflow-y-auto mb-4 sm:mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-3 md:gap-4 min-[1600px]:gap-5">
           {isLoading && (
-            <Card className="col-span-3 border-dashed p-5">
+            <Card className="col-span-full border-dashed p-4 sm:p-5">
               <div className="text-sm text-muted-foreground">Cargando apelaciones...</div>
             </Card>
           )}
           {!isLoading && paginatedItems.length === 0 && (
-            <Card className="col-span-3 border-dashed p-5">
+            <Card className="col-span-full border-dashed p-4 sm:p-5">
               <div className="text-sm text-muted-foreground">No hay PQRSF en apelación.</div>
             </Card>
           )}
@@ -734,7 +735,7 @@ function AnalisisPendienteTabContent() {
   const [searchTerm, setSearchTerm] = useState("")
   const [priorityFilter, setPriorityFilter] = useState("todos")
   const [dateFilter, setDateFilter] = useState("")
-  const itemsPerPage = 9
+  const itemsPerPage = ITEMS_PER_PAGE
 
   useEffect(() => {
     if (!user || user.rol !== "Usuario de Área Responsable") return
@@ -854,15 +855,15 @@ function AnalisisPendienteTabContent() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-y-auto mb-6">
-        <div className="grid grid-cols-3 auto-rows-fr gap-4">
+      <div className="flex-1 min-h-0 overflow-y-auto mb-4 sm:mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-3 md:gap-4 min-[1600px]:gap-5">
           {isLoadingData && (
-            <Card className="col-span-3 border-dashed p-5">
+            <Card className="col-span-full border-dashed p-4 sm:p-5">
               <div className="text-sm text-muted-foreground">Cargando pendientes...</div>
             </Card>
           )}
           {!isLoadingData && paginatedItems.length === 0 && (
-            <Card className="col-span-3 border-dashed p-5">
+            <Card className="col-span-full border-dashed p-4 sm:p-5">
               <div className="text-sm text-muted-foreground">No hay PQRSF pendientes para mostrar.</div>
             </Card>
           )}

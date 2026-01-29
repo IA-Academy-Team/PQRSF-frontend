@@ -180,45 +180,45 @@ export default function Dashboard() {
 
         <main
           className={cn(
-            "flex-1 p-4 sm:p-6 lg:p-8 h-screen overflow-hidden transition-all duration-300 flex flex-col",
+            "flex-1 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 h-screen overflow-hidden transition-all duration-300 flex flex-col",
             isCollapsed ? "lg:ml-24" : "lg:ml-64"
           )}
         >
           <div className="mb-4 shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Panel de Administración</h1>
+                <h1 className="text-2xl sm:text-3xl min-[1600px]:text-4xl font-bold text-foreground mb-2 min-[1600px]:mb-3">Panel de Administración</h1>
               </div>
             </div>
           </div>
 
           <div className="mb-4 shrink-0">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+            <div className="inline-flex items-center gap-2 px-3 py-1 min-[1600px]:px-4 min-[1600px]:py-1.5 rounded-full bg-primary/10 text-primary text-sm min-[1600px]:text-base font-medium">
               {user.rol}
             </div>
           </div>
 
           {dashboardError && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 min-[1600px]:p-4 text-sm min-[1600px]:text-base text-red-700">
               {dashboardError}
             </div>
           )}
 
-          <div className="grid gap-4 lg:grid-cols-2 lg:gap-6 flex-1 min-h-0 overflow-hidden">
+          <div className="grid gap-4 lg:grid-cols-2 lg:gap-6 min-[1600px]:gap-8 flex-1 min-h-0 overflow-hidden">
             {/* Columna Izquierda */}
-            <div className="flex flex-col gap-4 lg:gap-6 min-h-0 overflow-hidden">
+            <div className="flex flex-col gap-4 lg:gap-6 min-[1600px]:gap-8 min-h-0 overflow-hidden">
               {/* Fila 1: Cards */}
-              <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 shrink-0">
+              <div className="grid gap-2 sm:gap-3 min-[1600px]:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 shrink-0">
                 <Link to="/pqrsf?tab=general&status=todos">
                   <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0 cursor-pointer hover:opacity-90 transition-opacity">
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="bg-white/20 rounded-lg p-1 sm:p-1.5">
-                        <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <CardContent className="p-2 sm:p-3 min-[1600px]:p-4">
+                    <div className="flex items-center justify-between mb-2 min-[1600px]:mb-3">
+                      <div className="bg-white/20 rounded-lg p-1 sm:p-1.5 min-[1600px]:p-2">
+                        <FileText className="h-3 w-3 sm:h-4 sm:w-4 min-[1600px]:h-5 min-[1600px]:w-5" />
                       </div>
                     </div>
-                    <h3 className="text-xs font-medium mb-1 opacity-90">Total PQRSF</h3>
-                    <p className="text-xl sm:text-2xl font-bold">
+                    <h3 className="text-xs font-medium mb-1 min-[1600px]:text-sm opacity-90">Total PQRSF</h3>
+                    <p className="text-xl sm:text-2xl min-[1600px]:text-3xl font-bold">
                       {isDashboardLoading ? "..." : totalPqrs}
                     </p>
                   </CardContent>
@@ -227,14 +227,14 @@ export default function Dashboard() {
 
                 <Link to="/pqrsf?tab=general&status=2">
                   <Card className="border-orange-200 bg-orange-50 cursor-pointer hover:opacity-90 transition-opacity">
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="bg-orange-500/20 rounded-lg p-1 sm:p-1.5">
-                        <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+                  <CardContent className="p-2 sm:p-3 min-[1600px]:p-4">
+                    <div className="flex items-center justify-between mb-2 min-[1600px]:mb-3">
+                      <div className="bg-orange-500/20 rounded-lg p-1 sm:p-1.5 min-[1600px]:p-2">
+                        <Clock className="h-3 w-3 sm:h-4 sm:w-4 min-[1600px]:h-5 min-[1600px]:w-5 text-orange-600" />
                       </div>
                     </div>
-                    <h3 className="text-xs font-medium text-muted-foreground mb-1">En Seguimiento</h3>
-                    <p className="text-xl sm:text-2xl font-bold text-foreground">
+                    <h3 className="text-xs font-medium min-[1600px]:text-sm text-muted-foreground mb-1">En Seguimiento</h3>
+                    <p className="text-xl sm:text-2xl min-[1600px]:text-3xl font-bold text-foreground">
                       {isDashboardLoading ? "..." : getStatusCount(2)}
                     </p>
                   </CardContent>
@@ -243,14 +243,14 @@ export default function Dashboard() {
 
                 <Link to="/pqrsf?tab=general&status=3">
                   <Card className="border-red-200 bg-red-50 cursor-pointer hover:opacity-90 transition-opacity">
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="bg-red-500/20 rounded-lg p-1 sm:p-1.5">
-                        <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
+                  <CardContent className="p-2 sm:p-3 min-[1600px]:p-4">
+                    <div className="flex items-center justify-between mb-2 min-[1600px]:mb-3">
+                      <div className="bg-red-500/20 rounded-lg p-1 sm:p-1.5 min-[1600px]:p-2">
+                        <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 min-[1600px]:h-5 min-[1600px]:w-5 text-red-600" />
                       </div>
                     </div>
-                    <h3 className="text-xs font-medium text-muted-foreground mb-1">En Apelación</h3>
-                    <p className="text-xl sm:text-2xl font-bold text-foreground">
+                    <h3 className="text-xs font-medium min-[1600px]:text-sm text-muted-foreground mb-1">En Apelación</h3>
+                    <p className="text-xl sm:text-2xl min-[1600px]:text-3xl font-bold text-foreground">
                       {isDashboardLoading ? "..." : getAppealsCount()}
                     </p>
                   </CardContent>
@@ -259,14 +259,14 @@ export default function Dashboard() {
 
                 <Link to="/pqrsf?tab=general&status=4">
                   <Card className="border-green-200 bg-green-50 cursor-pointer hover:opacity-90 transition-opacity">
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="bg-green-500/20 rounded-lg p-1 sm:p-1.5">
-                        <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
+                  <CardContent className="p-2 sm:p-3 min-[1600px]:p-4">
+                    <div className="flex items-center justify-between mb-2 min-[1600px]:mb-3">
+                      <div className="bg-green-500/20 rounded-lg p-1 sm:p-1.5 min-[1600px]:p-2">
+                        <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 min-[1600px]:h-5 min-[1600px]:w-5 text-green-600" />
                       </div>
                     </div>
-                    <h3 className="text-xs font-medium text-muted-foreground mb-1">Cerradas</h3>
-                    <p className="text-xl sm:text-2xl font-bold text-foreground">
+                    <h3 className="text-xs font-medium min-[1600px]:text-sm text-muted-foreground mb-1">Cerradas</h3>
+                    <p className="text-xl sm:text-2xl min-[1600px]:text-3xl font-bold text-foreground">
                       {isDashboardLoading ? "..." : getStatusCount(4)}
                     </p>
                   </CardContent>
@@ -277,34 +277,34 @@ export default function Dashboard() {
               {/* Fila 2: Chats Recientes */}
               <div className="min-h-0 flex flex-1">
                 <Card className="h-full w-full flex flex-col">
-                  <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 shrink-0">
-                    <CardTitle className="text-lg sm:text-xl">Chats Recientes</CardTitle>
+                  <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 min-[1600px]:p-8 shrink-0">
+                    <CardTitle className="text-lg sm:text-xl min-[1600px]:text-2xl">Chats Recientes</CardTitle>
                     <Link to="/chats">
-                      <Button variant="ghost" size="sm" className="w-full sm:w-auto">
+                      <Button variant="ghost" size="sm" className="w-full sm:w-auto min-[1600px]:text-base">
                         Ver Todos
-                        <ArrowUpRight className="h-4 w-4 ml-1" />
+                        <ArrowUpRight className="h-4 w-4 min-[1600px]:h-5 min-[1600px]:w-5 ml-1" />
                       </Button>
                     </Link>
                   </CardHeader>
-                  <CardContent className="p-4 sm:p-6 flex-1 min-h-0 overflow-hidden">
-                    <div className="space-y-3">
+                  <CardContent className="p-4 sm:p-6 min-[1600px]:p-8 flex-1 min-h-0 overflow-hidden">
+                    <div className="space-y-3 min-[1600px]:space-y-4">
                       {chatItems.length === 0 && !isDashboardLoading && (
-                        <div className="text-sm text-muted-foreground">Sin chats recientes.</div>
+                        <div className="text-sm min-[1600px]:text-base text-muted-foreground">Sin chats recientes.</div>
                       )}
                       {(isDashboardLoading ? [] : chatItems).map((chat, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                          className="flex items-center justify-between p-3 min-[1600px]:p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                         >
-                          <div className="flex items-center gap-3">
-                            <MessageCircle className="h-4 w-4 text-primary shrink-0" />
+                          <div className="flex items-center gap-3 min-[1600px]:gap-4">
+                            <MessageCircle className="h-4 w-4 min-[1600px]:h-5 min-[1600px]:w-5 text-primary shrink-0" />
                             <div className="min-w-0 flex-1">
-                              <p className="font-semibold text-sm truncate">{chat.radicado}</p>
-                              <p className="text-xs text-muted-foreground truncate">{chat.cliente}</p>
-                              <p className="text-xs mt-1 line-clamp-2">{chat.ultimoMensaje}</p>
+                              <p className="font-semibold text-sm min-[1600px]:text-base truncate">{chat.radicado}</p>
+                              <p className="text-xs min-[1600px]:text-sm text-muted-foreground truncate">{chat.cliente}</p>
+                              <p className="text-xs min-[1600px]:text-sm mt-1 line-clamp-2">{chat.ultimoMensaje}</p>
                             </div>
                           </div>
-                          <span className="text-xs text-muted-foreground shrink-0 ml-2">{chat.fecha}</span>
+                          <span className="text-xs min-[1600px]:text-sm text-muted-foreground shrink-0 ml-2">{chat.fecha}</span>
                         </div>
                       ))}
                     </div>
@@ -314,16 +314,16 @@ export default function Dashboard() {
             </div>
 
             {/* Columna Derecha */}
-            <div className="flex flex-col gap-4 lg:gap-6 min-h-0 overflow-hidden">
+            <div className="flex flex-col gap-4 lg:gap-6 min-[1600px]:gap-8 min-h-0 overflow-hidden">
               {/* Fila 1: PQRSF por Tipo */}
               <Card className="flex-2 min-h-0 flex flex-col">
-                <CardHeader className="shrink-0">
-                  <CardTitle className="text-lg">PQRSF por Tipo</CardTitle>
+                <CardHeader className="shrink-0 min-[1600px]:p-6">
+                  <CardTitle className="text-lg min-[1600px]:text-xl">PQRSF por Tipo</CardTitle>
                 </CardHeader>
-                <CardContent className="flex-1 min-h-0 overflow-y-auto">
-                  <div className="space-y-4">
+                <CardContent className="flex-1 min-h-0 overflow-y-auto min-[1600px]:px-6 min-[1600px]:pb-6">
+                  <div className="space-y-4 min-[1600px]:space-y-5">
                     {pqrsByType.length === 0 && !isDashboardLoading && (
-                      <div className="text-sm text-muted-foreground">Sin datos disponibles.</div>
+                      <div className="text-sm min-[1600px]:text-base text-muted-foreground">Sin datos disponibles.</div>
                     )}
                     {(isDashboardLoading ? [] : pqrsByType).map((item) => {
                       const colorMap: Record<string, string> = {
@@ -335,13 +335,13 @@ export default function Dashboard() {
                       }
                       const color = colorMap[item.typeName] || "bg-gray-400"
                       return (
-                        <div key={item.typeName} className="flex items-center gap-4">
+                        <div key={item.typeName} className="flex items-center gap-4 min-[1600px]:gap-5">
                           <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium">{item.typeName}</span>
-                              <span className="text-sm text-muted-foreground">{item.count}</span>
+                            <div className="flex items-center justify-between mb-2 min-[1600px]:mb-3">
+                              <span className="text-sm min-[1600px]:text-base font-medium">{item.typeName}</span>
+                              <span className="text-sm min-[1600px]:text-base text-muted-foreground">{item.count}</span>
                             </div>
-                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div className="h-2 min-[1600px]:h-2.5 bg-muted rounded-full overflow-hidden">
                               <div
                                 className={`h-full ${color}`}
                                 style={{ width: `${(item.count / pqrsByTypeTotal) * 100}%` }}
@@ -357,20 +357,20 @@ export default function Dashboard() {
 
               {/* Fila 2: Tiempo Promedio de Respuesta */}
               <Card className="flex-1 min-h-0 flex flex-col">
-                <CardHeader className="shrink-0">
-                  <CardTitle className="text-lg">Tiempo Promedio de Respuesta</CardTitle>
+                <CardHeader className="shrink-0 min-[1600px]:p-6">
+                  <CardTitle className="text-lg min-[1600px]:text-xl">Tiempo Promedio de Respuesta</CardTitle>
                 </CardHeader>
-                <CardContent className="flex-1 min-h-0 overflow-y-auto">
-                  <div className="space-y-2">
+                <CardContent className="flex-1 min-h-0 overflow-y-auto min-[1600px]:px-6 min-[1600px]:pb-6">
+                  <div className="space-y-2 min-[1600px]:space-y-3">
                     {avgResponseByArea.length === 0 && !isDashboardLoading && (
-                      <div className="text-sm text-muted-foreground">Sin datos disponibles.</div>
+                      <div className="text-sm min-[1600px]:text-base text-muted-foreground">Sin datos disponibles.</div>
                     )}
                     {(isDashboardLoading ? [] : avgResponseByArea.slice(0, 3)).map((item, index) => {
                       const colors = ["text-green-600", "text-blue-600", "text-purple-600"]
                       return (
-                        <div key={item.areaId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                          <span className="text-sm font-medium">{item.areaName}</span>
-                          <span className={`text-sm font-bold ${colors[index] || "text-muted-foreground"}`}>
+                        <div key={item.areaId} className="flex items-center justify-between p-3 min-[1600px]:p-4 bg-muted/50 rounded-lg">
+                          <span className="text-sm min-[1600px]:text-base font-medium">{item.areaName}</span>
+                          <span className={`text-sm min-[1600px]:text-base font-bold ${colors[index] || "text-muted-foreground"}`}>
                             {item.avgDays} días
                           </span>
                         </div>
@@ -435,55 +435,55 @@ export default function Dashboard() {
 
         <main
           className={cn(
-            "flex-1 p-3 sm:p-4 lg:p-5 h-screen transition-all duration-300 flex flex-col overflow-hidden",
+            "flex-1 p-3 sm:p-4 lg:p-5 min-[1600px]:p-10 h-screen transition-all duration-300 flex flex-col overflow-hidden",
             isCollapsed ? "lg:ml-24" : "lg:ml-64"
           )}
         >
           <div className="mb-3 shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Panel del Área Responsable</h1>
+                <h1 className="text-xl sm:text-2xl min-[1600px]:text-3xl font-bold text-foreground mb-1 min-[1600px]:mb-2">Panel del Área Responsable</h1>
               </div>
             </div>
           </div>
 
           <div className="mb-3 shrink-0">
-            <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+            <div className="inline-flex items-center gap-2 px-2 py-0.5 min-[1600px]:px-3 min-[1600px]:py-1 rounded-full bg-primary/10 text-primary text-xs min-[1600px]:text-sm font-medium">
               {user.rol}
             </div>
           </div>
 
           {areaError && (
-            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-2 min-[1600px]:p-3 text-xs min-[1600px]:text-sm text-red-700">
               {areaError}
             </div>
           )}
 
-          <div className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4 mb-3 shrink-0">
+          <div className="grid gap-2 sm:gap-3 min-[1600px]:gap-4 grid-cols-2 lg:grid-cols-4 mb-3 shrink-0">
             <Link to="/pqrsf?tab=general&status=todos">
               <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0 cursor-pointer hover:opacity-90 transition-opacity">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="bg-white/20 rounded-lg p-1.5">
-                    <FileText className="h-4 w-4" />
+              <CardContent className="p-3 min-[1600px]:p-4">
+                <div className="flex items-center justify-between mb-2 min-[1600px]:mb-3">
+                  <div className="bg-white/20 rounded-lg p-1.5 min-[1600px]:p-2">
+                    <FileText className="h-4 w-4 min-[1600px]:h-5 min-[1600px]:w-5" />
                   </div>
                 </div>
-                <h3 className="text-xs font-medium mb-1 opacity-90">PQRSF Asignadas</h3>
-                <p className="text-2xl font-bold mb-0.5">{isAreaLoading ? "..." : totalAssigned}</p>
+                <h3 className="text-xs font-medium min-[1600px]:text-sm mb-1 opacity-90">PQRSF Asignadas</h3>
+                <p className="text-2xl min-[1600px]:text-3xl font-bold mb-0.5">{isAreaLoading ? "..." : totalAssigned}</p>
               </CardContent>
               </Card>
             </Link>
 
             <Link to="/pqrsf?tab=analisis">
               <Card className="border-orange-200 bg-orange-50 cursor-pointer hover:opacity-90 transition-opacity">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="bg-orange-500/20 rounded-lg p-1.5">
-                    <ClipboardList className="h-4 w-4 text-orange-600" />
+              <CardContent className="p-3 min-[1600px]:p-4">
+                <div className="flex items-center justify-between mb-2 min-[1600px]:mb-3">
+                  <div className="bg-orange-500/20 rounded-lg p-1.5 min-[1600px]:p-2">
+                    <ClipboardList className="h-4 w-4 min-[1600px]:h-5 min-[1600px]:w-5 text-orange-600" />
                   </div>
                 </div>
-                <h3 className="text-xs font-medium text-muted-foreground mb-1">Pendientes</h3>
-                <p className="text-2xl font-bold text-foreground mb-0.5">
+                <h3 className="text-xs font-medium min-[1600px]:text-sm text-muted-foreground mb-1">Pendientes</h3>
+                <p className="text-2xl min-[1600px]:text-3xl font-bold text-foreground mb-0.5">
                   {isAreaLoading ? "..." : pendingCount}
                 </p>
               </CardContent>
@@ -492,14 +492,14 @@ export default function Dashboard() {
 
             <Link to="/pqrsf?tab=apelacion">
               <Card className="border-red-200 bg-red-50 cursor-pointer hover:opacity-90 transition-opacity">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="bg-red-500/20 rounded-lg p-1.5">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
+              <CardContent className="p-3 min-[1600px]:p-4">
+                <div className="flex items-center justify-between mb-2 min-[1600px]:mb-3">
+                  <div className="bg-red-500/20 rounded-lg p-1.5 min-[1600px]:p-2">
+                    <AlertCircle className="h-4 w-4 min-[1600px]:h-5 min-[1600px]:w-5 text-red-600" />
                   </div>
                 </div>
-                <h3 className="text-xs font-medium text-muted-foreground mb-1">Apelaciones</h3>
-                <p className="text-2xl font-bold text-foreground mb-0.5">
+                <h3 className="text-xs font-medium min-[1600px]:text-sm text-muted-foreground mb-1">Apelaciones</h3>
+                <p className="text-2xl min-[1600px]:text-3xl font-bold text-foreground mb-0.5">
                   {isAreaLoading ? "..." : appealsCount}
                 </p>
               </CardContent>
@@ -508,14 +508,14 @@ export default function Dashboard() {
 
             <Link to="/pqrsf?tab=cerradas">
               <Card className="border-green-200 bg-green-50 cursor-pointer hover:opacity-90 transition-opacity">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="bg-green-500/20 rounded-lg p-1.5">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <CardContent className="p-3 min-[1600px]:p-4">
+                <div className="flex items-center justify-between mb-2 min-[1600px]:mb-3">
+                  <div className="bg-green-500/20 rounded-lg p-1.5 min-[1600px]:p-2">
+                    <CheckCircle2 className="h-4 w-4 min-[1600px]:h-5 min-[1600px]:w-5 text-green-600" />
                   </div>
                 </div>
-                <h3 className="text-xs font-medium text-muted-foreground mb-1">Respondidas</h3>
-                <p className="text-2xl font-bold text-foreground mb-0.5">
+                <h3 className="text-xs font-medium min-[1600px]:text-sm text-muted-foreground mb-1">Respondidas</h3>
+                <p className="text-2xl min-[1600px]:text-3xl font-bold text-foreground mb-0.5">
                   {isAreaLoading ? "..." : respondedCount}
                 </p>
               </CardContent>
@@ -523,23 +523,23 @@ export default function Dashboard() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 min-[1600px]:gap-5 flex-1 min-h-0">
             <Card className="h-full flex flex-col">
-              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 shrink-0">
-                <CardTitle className="text-sm sm:text-base">PQRSF Pendientes de Respuesta</CardTitle>
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 min-[1600px]:p-5 shrink-0">
+                <CardTitle className="text-sm sm:text-base min-[1600px]:text-lg">PQRSF Pendientes de Respuesta</CardTitle>
                 <Link to="/analisis-pendientes">
-                  <Button variant="ghost" size="sm" className="w-full sm:w-auto h-7 text-xs">
+                  <Button variant="ghost" size="sm" className="w-full sm:w-auto h-7 min-[1600px]:h-8 text-xs min-[1600px]:text-sm">
                     Ver Todas
-                    <ArrowUpRight className="h-3 w-3 ml-1" />
+                    <ArrowUpRight className="h-3 w-3 min-[1600px]:h-4 min-[1600px]:w-4 ml-1" />
                   </Button>
                 </Link>
               </CardHeader>
-              <CardContent className="p-3 flex-1 min-h-0 overflow-y-auto">
-                <div className="space-y-2">
+              <CardContent className="p-3 min-[1600px]:p-5 flex-1 min-h-0 overflow-y-auto">
+                <div className="space-y-2 min-[1600px]:space-y-3">
                   {isAreaLoading ? (
-                    <div className="text-xs text-muted-foreground">Cargando pendientes...</div>
+                    <div className="text-xs min-[1600px]:text-sm text-muted-foreground">Cargando pendientes...</div>
                   ) : areaPending.length === 0 ? (
-                    <div className="text-xs text-muted-foreground">Sin PQRSF pendientes.</div>
+                    <div className="text-xs min-[1600px]:text-sm text-muted-foreground">Sin PQRSF pendientes.</div>
                   ) : (
                     areaPending.slice(0, 2).map((item) => {
                       const prioridad = getPriorityLabel(item.dueDate, item.createdAt)
@@ -553,28 +553,28 @@ export default function Dashboard() {
                       return (
                         <div
                           key={item.id}
-                          className={`flex flex-col lg:flex-row lg:items-center justify-between p-2.5 border-l-4 ${borderColor} bg-card rounded-lg hover:shadow-md transition-shadow gap-2`}
+                          className={`flex flex-col lg:flex-row lg:items-center justify-between p-2.5 min-[1600px]:p-4 border-l-4 ${borderColor} bg-card rounded-lg hover:shadow-md transition-shadow gap-2 min-[1600px]:gap-3`}
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-mono text-xs font-semibold text-primary">{item.ticketNumber}</span>
-                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                            <div className="flex items-center gap-2 min-[1600px]:gap-3 mb-1">
+                              <span className="font-mono text-xs min-[1600px]:text-sm font-semibold text-primary">{item.ticketNumber}</span>
+                              <span className="text-[10px] min-[1600px]:text-xs font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
                                 {item.typeName}
                               </span>
                             </div>
-                            <h4 className="font-semibold text-foreground text-xs mb-0.5 truncate">
+                            <h4 className="font-semibold text-foreground text-xs min-[1600px]:text-sm mb-0.5 truncate">
                               {item.description}
                             </h4>
-                            <p className="text-[10px] text-muted-foreground truncate">
+                            <p className="text-[10px] min-[1600px]:text-xs text-muted-foreground truncate">
                               {item.clientName || areaName || "Cliente"} • {item.createdAt?.split("T")[0] ?? ""}
                             </p>
                           </div>
 
-                          <div className="flex flex-row items-center gap-2">
+                          <div className="flex flex-row items-center gap-2 min-[1600px]:gap-3">
                             <div className="text-left">
-                              <p className="text-[10px] text-muted-foreground mb-0.5">PRIORIDAD</p>
+                              <p className="text-[10px] min-[1600px]:text-xs text-muted-foreground mb-0.5">PRIORIDAD</p>
                               <span
-                                className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                                className={`text-[10px] min-[1600px]:text-xs font-medium px-1.5 py-0.5 rounded-full ${
                                   prioridad === "Alta"
                                     ? "bg-red-100 text-red-700"
                                     : prioridad === "Media"
@@ -587,13 +587,13 @@ export default function Dashboard() {
                             </div>
 
                             <div className="text-left">
-                              <p className="text-[10px] text-muted-foreground mb-0.5">TIEMPO</p>
-                              <p className="text-xs font-medium">{diasTranscurridos}d</p>
+                              <p className="text-[10px] min-[1600px]:text-xs text-muted-foreground mb-0.5">TIEMPO</p>
+                              <p className="text-xs min-[1600px]:text-sm font-medium">{diasTranscurridos}d</p>
                             </div>
 
                             <Link to={`/pqrsf/${item.id}`}>
-                              <Button size="sm" className="h-7 text-xs px-2">
-                                <ClipboardList className="h-3 w-3 mr-1" />
+                              <Button size="sm" className="h-7 min-[1600px]:h-8 text-xs min-[1600px]:text-sm px-2">
+                                <ClipboardList className="h-3 w-3 min-[1600px]:h-4 min-[1600px]:w-4 mr-1" />
                                 Responder
                               </Button>
                             </Link>
@@ -607,38 +607,38 @@ export default function Dashboard() {
             </Card>
 
             <Card className="h-full flex flex-col">
-              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 shrink-0">
-                <CardTitle className="text-lg sm:text-xl">Apelaciones Recientes</CardTitle>
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 min-[1600px]:p-8 shrink-0">
+                <CardTitle className="text-lg sm:text-xl min-[1600px]:text-2xl">Apelaciones Recientes</CardTitle>
                 <Link to="/apelaciones">
-                  <Button variant="ghost" size="sm" className="w-full sm:w-auto">
+                  <Button variant="ghost" size="sm" className="w-full sm:w-auto min-[1600px]:text-base">
                     Ver Todas
-                    <ArrowUpRight className="h-4 w-4 ml-1" />
+                    <ArrowUpRight className="h-4 w-4 min-[1600px]:h-5 min-[1600px]:w-5 ml-1" />
                   </Button>
                 </Link>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6 flex-1 min-h-0 overflow-y-auto">
-                <div className="space-y-4">
+              <CardContent className="p-4 sm:p-6 min-[1600px]:p-8 flex-1 min-h-0 overflow-y-auto">
+                <div className="space-y-4 min-[1600px]:space-y-5">
                   {isAreaLoading ? (
-                    <div className="text-xs text-muted-foreground">Cargando apelaciones...</div>
+                    <div className="text-xs min-[1600px]:text-sm text-muted-foreground">Cargando apelaciones...</div>
                   ) : areaAppeals.length === 0 ? (
-                    <div className="text-xs text-muted-foreground">Sin apelaciones recientes.</div>
+                    <div className="text-xs min-[1600px]:text-sm text-muted-foreground">Sin apelaciones recientes.</div>
                   ) : (
                     areaAppeals.slice(0, 1).map((item) => (
                       <div
                         key={item.id}
-                        className="flex flex-col lg:flex-row lg:items-center justify-between p-4 border-l-4 border-l-red-500 bg-card rounded-lg gap-4"
+                        className="flex flex-col lg:flex-row lg:items-center justify-between p-4 min-[1600px]:p-5 border-l-4 border-l-red-500 bg-card rounded-lg gap-4 min-[1600px]:gap-5"
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-3 sm:gap-4">
-                            <span className="font-mono text-sm font-semibold text-primary">{item.ticketNumber}</span>
-                            <span className="text-xs font-medium px-2 py-1 rounded-full bg-red-100 text-red-700">
+                            <span className="font-mono text-sm min-[1600px]:text-base font-semibold text-primary">{item.ticketNumber}</span>
+                            <span className="text-xs min-[1600px]:text-sm font-medium px-2 py-1 rounded-full bg-red-100 text-red-700">
                               Apelada
                             </span>
                           </div>
-                          <h4 className="font-semibold text-foreground text-sm sm:text-base mb-1">
+                          <h4 className="font-semibold text-foreground text-sm sm:text-base min-[1600px]:text-lg mb-1">
                             {item.description}
                           </h4>
-                          <p className="text-xs sm:text-sm text-muted-foreground">
+                          <p className="text-xs sm:text-sm min-[1600px]:text-base text-muted-foreground">
                             {item.clientName || areaName || "Cliente"} • {item.responseContent || "Requiere reanálisis"}
                           </p>
                         </div>

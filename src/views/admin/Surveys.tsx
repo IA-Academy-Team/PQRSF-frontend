@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import { surveyService } from "@/services/survey.service"
 import type { PQRSFSurveyDetailed } from "@/types/database"
+import { ITEMS_PER_PAGE } from "@/lib/pqrsf-utils"
 
 const computeAverage = (survey: PQRSFSurveyDetailed) => {
   const values = [
@@ -53,7 +54,7 @@ export default function Surveys() {
   const [items, setItems] = useState<PQRSFSurveyDetailed[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const itemsPerPage = 9
+  const itemsPerPage = ITEMS_PER_PAGE
   const showSidebar = Boolean(user)
 
   useEffect(() => {
@@ -114,27 +115,27 @@ export default function Surveys() {
   }, [items])
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       {showSidebar && <Sidebar />}
 
       <main
         className={cn(
-          "flex-1 p-4 sm:p-6 lg:p-8 h-screen transition-all duration-300 flex flex-col",
+          "flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 transition-all duration-300 overflow-hidden",
           showSidebar ? (isCollapsed ? "lg:ml-24" : "lg:ml-64") : "",
         )}
       >
-        <div className="mb-6 sm:mb-8 shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="shrink-0 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Encuestas PQRSF</h1>
-              <p className="text-sm text-muted-foreground">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl min-[1600px]:text-4xl font-bold text-foreground mb-1 sm:mb-2 min-[1600px]:mb-3">Encuestas PQRSF</h1>
+              <p className="text-sm min-[1600px]:text-base text-muted-foreground">
                 Consulta el nivel de satisfaccion reportado por los usuarios.
               </p>
             </div>
             <Button
               variant="outline"
               size="lg"
-              className="gap-2 self-start sm:self-auto text-base sm:text-lg px-4 sm:px-6 py-3 sm:py-4"
+              className="gap-2 self-start sm:self-auto text-base sm:text-lg min-[1600px]:text-xl px-4 sm:px-6 py-3 sm:py-4 min-[1600px]:px-8 min-[1600px]:py-5"
             >
               <Star className="h-5 w-5 text-amber-500" />
               {overallAverage !== null ? overallAverage.toFixed(1) : "Sin datos"}
@@ -142,7 +143,7 @@ export default function Surveys() {
           </div>
         </div>
 
-        <CardContent className="pb-6 px-0 mb-6 shrink-0">
+        <CardContent className="pb-4 sm:pb-6 px-0 mb-4 sm:mb-6 shrink-0">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -157,20 +158,20 @@ export default function Surveys() {
         </CardContent>
 
         {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="shrink-0 mb-4 rounded-lg border border-red-200 bg-red-50 p-4 min-[1600px]:p-5 text-sm min-[1600px]:text-base text-red-700">
             {error}
           </div>
         )}
 
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-3 md:gap-4 min-[1600px]:gap-5">
             {isLoading && (
-              <Card className="border-dashed sm:col-span-2 lg:col-span-3">
+              <Card className="col-span-full border-dashed min-h-0 overflow-hidden">
                 <CardContent className="p-4 text-sm text-muted-foreground">Cargando encuestas...</CardContent>
               </Card>
             )}
             {!isLoading && paginatedItems.length === 0 && (
-              <Card className="border-dashed sm:col-span-2 lg:col-span-3">
+              <Card className="col-span-full border-dashed min-h-0 overflow-hidden">
                 <CardContent className="p-4 text-sm text-muted-foreground">No hay encuestas registradas.</CardContent>
               </Card>
             )}
@@ -179,8 +180,8 @@ export default function Surveys() {
               const average = computeAverage(item)
               const createdAt = item.createdAt ? new Date(item.createdAt) : null
               return (
-                <Card key={item.id} className="hover:shadow-sm transition-shadow">
-                  <CardContent className="p-4 space-y-4">
+                <Card key={item.id} className="h-full flex flex-col min-h-0 overflow-hidden hover:shadow-sm transition-shadow">
+                  <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4 flex-1 min-h-0 overflow-hidden flex flex-col">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-primary">{item.ticketNumber}</p>
@@ -266,7 +267,7 @@ export default function Surveys() {
           </div>
         </div>
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="shrink-0 mt-4 sm:mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted-foreground">
             {totalItems === 0
               ? "Mostrando 0 de 0 encuestas"
