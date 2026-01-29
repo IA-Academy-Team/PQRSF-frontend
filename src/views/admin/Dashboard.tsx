@@ -164,6 +164,11 @@ export default function Dashboard() {
   if (user.rol === "Administrador") {
     const getStatusCount = (statusId: number) =>
       metrics?.byStatus?.find((status) => status.statusId === statusId)?.count ?? 0
+    const getAppealsCount = () =>
+      (metrics?.byStatus ?? []).reduce((acc, item) => {
+        if (item.statusId === 3 || item.statusId === 5) return acc + item.count
+        return acc
+      }, 0)
     const totalPqrs = metrics?.totalPqrs ?? 0
     const pqrsByType = metrics?.byType ?? []
     const avgResponseByArea = metrics?.avgResponseByArea ?? []
@@ -246,7 +251,7 @@ export default function Dashboard() {
                     </div>
                     <h3 className="text-xs font-medium text-muted-foreground mb-1">En Apelación</h3>
                     <p className="text-xl sm:text-2xl font-bold text-foreground">
-                      {isDashboardLoading ? "..." : getStatusCount(3)}
+                      {isDashboardLoading ? "..." : getAppealsCount()}
                     </p>
                   </CardContent>
                   </Card>
@@ -389,7 +394,10 @@ export default function Dashboard() {
       if (item.statusId === 4) return acc
       return acc + item.count
     }, 0)
-    const appealsCount = getAreaStatusCount(3)
+    const appealsCount = (areaMetrics?.byStatus ?? []).reduce((acc, item) => {
+      if (item.statusId === 3 || item.statusId === 5) return acc + item.count
+      return acc
+    }, 0)
     const respondedCount = getAreaStatusCount(4)
 
     const getPriorityLabel = (dueDate?: string | null, createdAt?: string | null) => {

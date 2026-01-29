@@ -159,6 +159,7 @@ export default function PQRSFList() {
     radicado: "bg-amber-50 text-amber-700 border-amber-200",
     analisis: "bg-blue-50 text-blue-700 border-blue-200",
     "reanálisis": "bg-red-50 text-red-700 border-red-200",
+    devuelto: "bg-orange-50 text-orange-700 border-orange-200",
     cerrado: "bg-emerald-50 text-emerald-700 border-emerald-200",
   }
 
@@ -233,6 +234,7 @@ export default function PQRSFList() {
                     <SelectItem value="1">Radicado</SelectItem>
                     <SelectItem value="2">Analisis</SelectItem>
                     <SelectItem value="3">Reanálisis</SelectItem>
+                    <SelectItem value="5">Devuelto</SelectItem>
                     <SelectItem value="4">Cerrado</SelectItem>
                   </SelectContent>
                 </Select>

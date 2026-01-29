@@ -136,8 +136,9 @@ export default function PQRSFDetail() {
         const responseType = typeDocuments.find((item) => item.name.toLowerCase() === "análisis")
         setResponseDocTypeId(responseType?.id ?? typeDocuments[0]?.id ?? null)
 
-        if (analysisResponse[0]?.answer) {
-          setAnalisis(analysisResponse[0].answer ?? "")
+        const latestAnalysis = analysisResponse[analysisResponse.length - 1]
+        if (latestAnalysis?.answer) {
+          setAnalisis(latestAnalysis.answer ?? "")
         }
 
         if (user.rol === "Usuario de Área Responsable") {
@@ -217,6 +218,17 @@ export default function PQRSFDetail() {
       })
     }
 
+    if (detail.statusId === 5) {
+      items.push({
+        title: "Devuelto",
+        date: detail.updatedAt ?? detail.createdAt,
+        description: "El administrador devolvió la PQRSF al área responsable.",
+        icon: AlertCircle,
+        iconClass: "text-orange-700",
+        bgClass: "bg-orange-100",
+      })
+    }
+
     if (detail.statusId === 4) {
       items.push({
         title: "PQRSF cerrada",
@@ -275,19 +287,30 @@ export default function PQRSFDetail() {
     setIsSubmitting(true)
     setError(null)
     try {
-      const analysis = analysisList[0]
-      if (analysis) {
-        await pqrsfService.updateAnalysis(analysis.id, {
-          answer: analisis || null,
-          actionTaken: analisis || null,
-        })
-      } else if (detail.statusId !== 3) {
-        await pqrsfService.createAnalysis({
+      const latestAnalysis = analysisList[analysisList.length - 1] ?? null
+      let analysis = latestAnalysis
+      let createdAnalysis: PQRSFAnalysis | null = null
+      if (detail.statusId === 3 || detail.statusId === 5) {
+        createdAnalysis = await pqrsfService.createAnalysis({
           pqrsId: detail.id,
           responsibleId,
           answer: analisis || null,
           actionTaken: analisis || null,
         })
+        analysis = createdAnalysis
+      } else if (analysis) {
+        analysis = await pqrsfService.updateAnalysis(analysis.id, {
+          answer: analisis || null,
+          actionTaken: analisis || null,
+        })
+      } else {
+        createdAnalysis = await pqrsfService.createAnalysis({
+          pqrsId: detail.id,
+          responsibleId,
+          answer: analisis || null,
+          actionTaken: analisis || null,
+        })
+        analysis = createdAnalysis
       }
 
       if (detail.statusId === 3 && analysis) {
@@ -297,6 +320,7 @@ export default function PQRSFDetail() {
             await pqrsfService.updateReanalysis(existingReanalysis.id, {
               answer: analisis || null,
               actionTaken: analisis || null,
+              analysisId: analysis.id,
             })
           }
         } catch {
@@ -406,17 +430,40 @@ export default function PQRSFDetail() {
     )
   }
 
+  const normalizedReanalysisAnswer = (reanalysis?.answer ?? "").trim().toLowerCase()
+  const normalizedReanalysisAction = (reanalysis?.actionTaken ?? "").trim().toLowerCase()
+  const shouldShowReanalysisAction =
+    normalizedReanalysisAction.length > 0 && normalizedReanalysisAction !== normalizedReanalysisAnswer
+
   if (user.rol === "Usuario de Área Responsable") {
     const showAnonymous = isAnonymousPerson(detail.typePersonName)
     const displayClientName = showAnonymous ? "Anónimo" : detail.clientName || "Sin nombre"
     const displayStakeholder = showAnonymous ? "Anónimo" : detail.stakeholderName || "Sin rol"
     const isClosed = detail.statusId === 4
-    const isReanalysis = detail.statusId === 3
+    const isReanalysis = detail.statusId === 3 || detail.statusId === 5
+    const isReturned = detail.statusId === 5
     const hasResponse = responses.length > 0
     const hasReanalysisResponse = isReanalysis
       ? responses.some((item) => getResponseStage(item.sentAt) === "Reanálisis")
       : false
-    const canRespond = !isClosed && (!hasResponse || (isReanalysis && !hasReanalysisResponse))
+    const latestResponseAt = responses.length > 0 ? responses[responses.length - 1]?.sentAt : null
+    const detailUpdatedAt = detail.updatedAt ? new Date(detail.updatedAt) : null
+    const effectiveReanalysisCutoff = (() => {
+      if (reanalysisCutoff && detailUpdatedAt) {
+        return reanalysisCutoff.getTime() >= detailUpdatedAt.getTime() ? reanalysisCutoff : detailUpdatedAt
+      }
+      return reanalysisCutoff ?? detailUpdatedAt
+    })()
+    const hasResponseAfterReanalysis =
+      isReanalysis && effectiveReanalysisCutoff && latestResponseAt
+        ? new Date(latestResponseAt).getTime() >= effectiveReanalysisCutoff.getTime()
+        : false
+    const allowWhenReanalysisMissing = isReanalysis && !effectiveReanalysisCutoff
+    const canRespond =
+      !isClosed &&
+      (!hasResponse ||
+        allowWhenReanalysisMissing ||
+        (isReanalysis && (isReturned || !hasResponseAfterReanalysis)))
 
     return (
       <div className="flex min-h-screen bg-background">
@@ -509,9 +556,6 @@ export default function PQRSFDetail() {
                               <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Análisis</span>
                             </div>
                             <p className="text-sm text-foreground">{item.answer || "Sin análisis"}</p>
-                            {item.actionTaken && (
-                              <p className="text-xs text-muted-foreground mt-1">Acción: {item.actionTaken}</p>
-                            )}
                           </div>
                         ))}
                         {reanalysis && (
@@ -521,9 +565,9 @@ export default function PQRSFDetail() {
                               <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">Reanálisis</span>
                             </div>
                             <p className="text-sm text-foreground">{reanalysis.answer || "Sin análisis"}</p>
-                            {reanalysis.actionTaken && (
-                              <p className="text-xs text-muted-foreground mt-1">Acción: {reanalysis.actionTaken}</p>
-                            )}
+                            {shouldShowReanalysisAction ? (
+                              <p className="text-sm text-foreground">{reanalysis.actionTaken}</p>
+                            ) : null}
                           </div>
                         )}
                       </div>
@@ -810,6 +854,7 @@ export default function PQRSFDetail() {
   const displayClientName = showAnonymous ? "Anónimo" : detail.clientName || "Sin nombre"
   const displayStakeholder = showAnonymous ? "Anónimo" : detail.stakeholderName || "Sin rol"
   const isClosed = detail.statusId === 4
+  const hasInitialResponse = responses.length > 0
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -901,9 +946,6 @@ export default function PQRSFDetail() {
                             <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Análisis</span>
                           </div>
                           <p className="text-sm text-foreground">{item.answer || "Sin análisis"}</p>
-                          {item.actionTaken && (
-                            <p className="text-xs text-muted-foreground mt-1">Acción: {item.actionTaken}</p>
-                          )}
                         </div>
                       ))}
                       {reanalysis && (
@@ -913,9 +955,9 @@ export default function PQRSFDetail() {
                             <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">Reanálisis</span>
                           </div>
                           <p className="text-sm text-foreground">{reanalysis.answer || "Sin análisis"}</p>
-                          {reanalysis.actionTaken && (
-                            <p className="text-xs text-muted-foreground mt-1">Acción: {reanalysis.actionTaken}</p>
-                          )}
+                          {shouldShowReanalysisAction ? (
+                            <p className="text-sm text-foreground">{reanalysis.actionTaken}</p>
+                          ) : null}
                         </div>
                       )}
                     </div>
@@ -953,7 +995,7 @@ export default function PQRSFDetail() {
                   <Button
                     className="flex-1 bg-green-600 hover:bg-green-700"
                     onClick={() => handleAdminDecision("finalize")}
-                    disabled={isSubmitting || isClosed}
+                    disabled={isSubmitting || isClosed || !hasInitialResponse}
                   >
                     <CheckCircle2 className="h-4 w-4 mr-2" />
                     Aprobar y Cerrar
@@ -962,12 +1004,17 @@ export default function PQRSFDetail() {
                     variant="outline"
                     className="flex-1 bg-transparent"
                     onClick={() => handleAdminDecision("appeal")}
-                    disabled={isSubmitting || isClosed}
+                    disabled={isSubmitting || isClosed || !hasInitialResponse}
                   >
                     <XCircle className="h-4 w-4 mr-2" />
                     Enviar a Reanálisis
                   </Button>
                 </div>
+                {!hasInitialResponse && (
+                  <p className="text-xs text-muted-foreground">
+                    El administrador solo puede actuar cuando el responsable haya enviado la primera respuesta.
+                  </p>
+                )}
                 {isClosed && (
                   <p className="text-xs text-muted-foreground">
                     Esta PQRSF ya fue cerrada. Solo puedes visualizar la información.

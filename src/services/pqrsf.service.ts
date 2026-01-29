@@ -187,7 +187,7 @@ export const pqrsfService = {
   },
 
   getDetail: async (id: number): Promise<PQRSFDetailItem> => {
-    return api.get<PQRSFDetailItem>(`/pqrsf/${id}/detail`)
+    return api.get<PQRSFDetailItem>(`/pqrsf/${id}/detail`, { cache: 'no-store' })
   },
 
   getSeguimiento: async (): Promise<SeguimientoItem[]> => {
@@ -228,7 +228,7 @@ export const pqrsfService = {
 
   // PQRSF Analysis
   getAnalysis: async (pqrsfId: number): Promise<PQRSFAnalysis[]> => {
-    return api.get<PQRSFAnalysis[]>(`/pqrsf/${pqrsfId}/analysis`)
+    return api.get<PQRSFAnalysis[]>(`/pqrsf/${pqrsfId}/analysis`, { cache: 'no-store' })
   },
 
   createAnalysis: async (data: CreatePQRSFAnalysis): Promise<PQRSFAnalysis> => {
@@ -265,7 +265,7 @@ export const pqrsfService = {
 
   // PQRSF Reanalysis
   getReanalysis: async (pqrsfId: number): Promise<PQRSFReanalysis> => {
-    return api.get<PQRSFReanalysis>(`/pqrsf/${pqrsfId}/reanalysis`)
+    return api.get<PQRSFReanalysis>(`/pqrsf/${pqrsfId}/reanalysis`, { cache: 'no-store' })
   },
 
   createReanalysis: async (data: CreatePQRSFReanalysis): Promise<PQRSFReanalysis> => {
@@ -278,7 +278,7 @@ export const pqrsfService = {
 
   // PQRSF Responses
   getResponses: async (pqrsfId: number): Promise<Response[]> => {
-    return api.get<Response[]>(`/pqrsf/${pqrsfId}/responses`)
+    return api.get<Response[]>(`/pqrsf/${pqrsfId}/responses`, { cache: 'no-store' })
   },
 
   createResponse: async (pqrsfId: number, data: CreateResponse): Promise<Response> => {
