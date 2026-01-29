@@ -125,15 +125,200 @@
 }
 
 @layer utilities {
-  @media (min-width: 1024px) {
-    .clip-diagonal {
-      clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%);
-    }
-  }
 
   @media (min-width: 768px) and (max-width: 1023px) {
-    .clip-diagonal {
-      clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%);
+    /* Reducir padding de contenedores de login y recuperar contraseña */
+    .bg-primary.flex.items-center {
+      padding: 1rem !important;
     }
+    
+    .bg-background.flex.items-center {
+      padding: 1rem !important;
+    }
+    
+    /* Reducir tamaño de títulos h1 */
+    .bg-primary h1 {
+      font-size: 1.5rem !important;
+      line-height: 1.75rem !important;
+    }
+    
+    /* Reducir tamaño de subtítulos */
+    .bg-primary p {
+      font-size: 0.875rem !important;
+    }
+    
+    /* Reducir espaciado entre elementos del formulario */
+    .bg-primary form {
+      gap: 0.75rem !important;
+    }
+    
+    .bg-primary [class*="space-y-"] > * + * {
+      margin-top: 0.75rem !important;
+    }
+    
+    /* Reducir altura de inputs */
+    .bg-primary input {
+      height: 2.25rem !important;
+      font-size: 0.875rem !important;
+      padding: 0.5rem 0.75rem !important;
+    }
+    
+    /* Reducir tamaño de botones */
+    .bg-primary button {
+      height: 2.25rem !important;
+      font-size: 0.875rem !important;
+      padding: 0.5rem 1rem !important;
+    }
+    
+    /* Reducir tamaño de logo */
+    .bg-background img {
+      width: 10rem !important;
+      height: 10rem !important;
+      max-width: 10rem !important;
+      max-height: 10rem !important;
+    }
+    
+    /* Reducir altura mínima de secciones para evitar scroll */
+    .bg-primary[class*="min-h-"] {
+      min-height: 100vh !important;
+      max-height: 100vh !important;
+      overflow: hidden !important;
+    }
+    
+    .bg-background[class*="min-h-"] {
+      min-height: 100vh !important;
+      max-height: 100vh !important;
+      overflow: hidden !important;
+    }
+    
+    /* Reducir max-width del formulario */
+    .bg-primary .max-w-md {
+      max-width: 20rem !important;
+    }
+    
+    /* Asegurar que el contenedor principal no tenga scroll */
+    .min-h-screen.flex {
+      min-height: 100vh !important;
+      max-height: 100vh !important;
+      overflow: hidden !important;
+    }
+  }
+  @media (min-width: 1024px) {
+    .clip-diagonal {
+      clip-path: polygon(20% 0%, 100% 0, 100% 100%, 0 100%) !important;
+    }
+  }
+}
+
+/* Particles Effect */
+.particles-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  z-index: 1;
+  pointer-events: none;
+  left: 0;
+  top: 0;
+}
+
+@media (min-width: 1024px) {
+  .particles-container {
+    width: 100%;
+    right: 0;
+    left: auto;
+  }
+}
+
+.particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: oklch(0.52 0.19 252);
+  border-radius: 50%;
+  opacity: 0.9;
+  animation: particle-float linear infinite;
+  box-shadow: 0 0 12px oklch(0.52 0.19 252 / 0.8), 0 0 24px oklch(0.52 0.19 252 / 0.5), 0 0 36px oklch(0.52 0.19 252 / 0.3);
+}
+
+.particle:nth-child(3n) {
+  width: 5px;
+  height: 5px;
+  opacity: 0.8;
+  background: oklch(0.52 0.19 252);
+}
+
+.particle:nth-child(5n) {
+  width: 8px;
+  height: 8px;
+  opacity: 1;
+  background: oklch(0.52 0.19 252);
+  box-shadow: 0 0 16px oklch(0.52 0.19 252 / 0.9), 0 0 32px oklch(0.52 0.19 252 / 0.6), 0 0 48px oklch(0.52 0.19 252 / 0.4);
+}
+
+.particle:nth-child(7n) {
+  width: 4px;
+  height: 4px;
+  opacity: 0.7;
+  background: oklch(0.52 0.19 252);
+}
+
+@keyframes particle-float {
+  0% {
+    transform: translateY(100%) translateX(0) scale(0);
+    opacity: 0;
+  }
+  3% {
+    opacity: 0.9;
+  }
+  97% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-100%) translateX(0) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Variación de movimiento para partículas */
+.particle:nth-child(odd) {
+  animation-name: particle-float-left;
+}
+
+.particle:nth-child(even) {
+  animation-name: particle-float-right;
+}
+
+@keyframes particle-float-left {
+  0% {
+    transform: translateY(100%) translateX(-40px) scale(0);
+    opacity: 0;
+  }
+  3% {
+    opacity: 0.9;
+  }
+  97% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-100%) translateX(40px) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes particle-float-right {
+  0% {
+    transform: translateY(100%) translateX(40px) scale(0);
+    opacity: 0;
+  }
+  3% {
+    opacity: 0.9;
+  }
+  97% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-100%) translateX(-40px) scale(1);
+    opacity: 0;
   }
 }

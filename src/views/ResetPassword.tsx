@@ -1,12 +1,18 @@
 import type React from "react"
+import { useState } from "react"
+import { Link, useSearchParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Link } from "react-router-dom"
-import { useState } from "react"
+import { authService } from "@/services/auth.service"
+import { HttpError } from "@/lib/api"
 
-export default function ForgotPassword() {
-  const [email, setEmail] = useState("")
+export default function ResetPassword() {
+  const [searchParams] = useSearchParams()
+  const tokenFromUrl = searchParams.get("token") || ""
+  const [token, setToken] = useState(tokenFromUrl)
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState("")
@@ -14,13 +20,36 @@ export default function ForgotPassword() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    setIsLoading(true)
 
-    // Simulación de envío de email
-    setTimeout(() => {
+    if (!token.trim()) {
+      setError("El token es obligatorio.")
+      return
+    }
+    if (password.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres.")
+      return
+    }
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden.")
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      await authService.resetPassword(token, password)
       setSubmitted(true)
+    } catch (err) {
+      const message =
+        err instanceof HttpError
+          ? err.data?.message || err.message
+          : err instanceof Error
+            ? err.message
+            : "No se pudo restablecer la contraseña."
+      console.error("[auth] reset-password error", err)
+      setError(message)
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   if (submitted) {
@@ -31,7 +60,7 @@ export default function ForgotPassword() {
             <div className="relative">
               <img
                 src="/images/image.png"
-                alt="Recuperar Contraseña"
+                alt="Restablecer Contraseña"
                 className="drop-shadow-2xl w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64"
               />
             </div>
@@ -40,16 +69,11 @@ export default function ForgotPassword() {
           <div className="flex items-center justify-center bg-primary p-6 sm:p-8 md:p-10 lg:p-12 md:w-1/2 md:clip-diagonal min-h-[60vh] md:min-h-screen">
             <div className="w-full max-w-md space-y-6 text-center">
               <div className="space-y-2 text-primary-foreground">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">¡Revisa tu Email!</h1>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">Contrasena actualizada</h1>
                 <p className="text-primary-foreground/80 text-sm sm:text-base">
-                  Hemos enviado un enlace para recuperar tu contraseña a:
+                  Ya puedes iniciar sesion con tu nueva contrasena.
                 </p>
-                <p className="font-semibold text-primary-foreground break-all">{email}</p>
               </div>
-
-              <p className="text-sm text-primary-foreground/70">
-                Por favor, revisa tu bandeja de entrada y sigue las instrucciones para restablecer tu contraseña.
-              </p>
 
               <Link to="/">
                 <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold h-10 md:h-11">
@@ -70,8 +94,8 @@ export default function ForgotPassword() {
           <div className="relative">
             <img
               src="/images/image.png"
-              alt="Recuperar Contraseña"
-              className="drop-shadow-2xl w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-[280px] lg:h-[280px]"
+              alt="Restablecer Contraseña"
+              className="drop-shadow-2xl w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-70 lg:h-70"
             />
           </div>
         </div>
@@ -79,24 +103,54 @@ export default function ForgotPassword() {
         <div className="flex items-center justify-center bg-primary p-6 sm:p-8 md:p-10 lg:p-12 md:w-1/2 md:clip-diagonal min-h-[60vh] md:min-h-screen">
           <div className="w-full max-w-md space-y-6 md:space-y-8">
             <div className="space-y-2 text-center text-primary-foreground">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">Recuperar Contraseña</h1>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">Restablecer Contraseña</h1>
               <p className="text-primary-foreground/80 text-sm sm:text-base">
-                Ingresa tu email para recibir instrucciones de recuperación
+                Ingresa el token recibido y define tu nueva contrasena
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-primary-foreground text-sm md:text-base">
-                  Your email
+                <Label htmlFor="token" className="text-primary-foreground text-sm md:text-base">
+                  Token
                 </Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
+                  id="token"
+                  type="text"
+                  placeholder="Pega el token aqui"
                   className="bg-white text-foreground h-10 md:h-11"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-primary-foreground text-sm md:text-base">
+                  Nueva contrasena
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Minimo 8 caracteres"
+                  className="bg-white text-foreground h-10 md:h-11"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-primary-foreground text-sm md:text-base">
+                  Confirmar contrasena
+                </Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Repite tu contrasena"
+                  className="bg-white text-foreground h-10 md:h-11"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                 />
               </div>
@@ -112,7 +166,7 @@ export default function ForgotPassword() {
                 disabled={isLoading}
                 className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold h-10 md:h-11 text-sm md:text-base"
               >
-                {isLoading ? "Enviando..." : "ENVIAR INSTRUCCIONES"}
+                {isLoading ? "Actualizando..." : "ACTUALIZAR CONTRASENA"}
               </Button>
             </form>
 

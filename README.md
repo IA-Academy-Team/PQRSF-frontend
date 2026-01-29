@@ -94,6 +94,18 @@ import { pqrsfService } from '@/services'
 import type { DBPQRSF } from '@/types/database'
 ```
 
+### Selección automática de API (localhost vs dominio)
+
+El cliente HTTP (`src/lib/api.ts`) detecta automáticamente si se está ejecutando en localhost
+para usar la URL correspondiente:
+
+```env
+VITE_API_DEV=http://localhost:3000/api
+VITE_API_PROD=https://tu-dominio.com/api
+```
+
+Si el hostname es `localhost`/`127.0.0.1`, usa `VITE_API_DEV`, de lo contrario `VITE_API_PROD`.
+
 ## 📜 Scripts Disponibles
 
 ```bash
@@ -197,6 +209,14 @@ const patched = await api.patch<User>(`/users/${id}`, {
 // DELETE
 await api.del(`/users/${id}`)
 ```
+
+### Manejo de errores
+
+El cliente centraliza errores y expone `HttpError` con:
+- `status` (código HTTP)
+- `data` (payload del backend)
+
+Las vistas usan toasts para mostrar mensajes claros cuando algo falla.
 
 ### Manejo de Errores
 

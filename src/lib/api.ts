@@ -37,13 +37,16 @@ const getApiBaseUrl = (): string => {
   const prodUrl = import.meta.env.VITE_API_PROD || 'https://api.tudominio.com/api'
 
   // Seleccionar URL según entorno
-  return isDev ? devUrl : prodUrl
+  const rawBase = isDev ? devUrl : prodUrl
+  const normalizedBase = rawBase.replace(/\/+$/, '')
+  return normalizedBase.endsWith('/api') ? normalizedBase : `${normalizedBase}/api`
 }
 
 /**
  * URL base de la API
  */
 export const API_BASE = getApiBaseUrl()
+export const IS_LOCALHOST = isLocalhost()
 
 /**
  * Rutas públicas que NO requieren token de autenticación
@@ -51,9 +54,11 @@ export const API_BASE = getApiBaseUrl()
 const PUBLIC_ROUTES = [
   '/auth/login',
   '/auth/register',
-  '/auth/forgot-password',
-  '/auth/reset-password',
+  '/auth/password/request',
+  '/auth/password/reset',
   '/public/',
+  '/survey/',
+  '/surver/',
   '/health',
 ]
 
@@ -109,20 +114,22 @@ async function request<T>(
   const token = getToken()
 
   // Configurar headers
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(init.headers || {}),
+  const headers = new Headers(init.headers || {})
+  const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData
+  if (!headers.has('Content-Type') && !isFormData) {
+    headers.set('Content-Type', 'application/json')
   }
 
   // Agregar token si existe y NO es ruta pública
   if (token && !isPublic) {
-    headers['Authorization'] = `Bearer ${token}`
+    headers.set('Authorization', `Bearer ${token}`)
   }
 
   try {
     // Hacer la petición
     const response = await fetch(fullUrl, {
       ...init,
+      credentials: 'include',
       headers,
     })
 
@@ -164,16 +171,22 @@ async function request<T>(
         }
       }
 
-      // Lanzar error HTTP
+      const normalizedMessage =
+        typeof errorMessage === 'string'
+          ? errorMessage
+          : errorData?.error?.message ||
+            errorData?.message ||
+            'Error en la petición'
+
       throw new HttpError(
-        typeof errorMessage === 'string' ? errorMessage : 'Error en la petición',
+        normalizedMessage,
         response.status,
         errorData
       )
     }
 
     // Si la respuesta está vacía (204 No Content)
-    if (response.status === 204 || response.status === 201) {
+    if (response.status === 204) {
       return {} as T
     }
 
@@ -218,10 +231,11 @@ export async function post<T>(
   data?: any,
   init?: RequestInit
 ): Promise<T> {
+  const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
   return request<T>(path, {
     ...init,
     method: 'POST',
-    body: data ? JSON.stringify(data) : undefined,
+    body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
   })
 }
 
@@ -230,10 +244,11 @@ export async function put<T>(
   data?: any,
   init?: RequestInit
 ): Promise<T> {
+  const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
   return request<T>(path, {
     ...init,
     method: 'PUT',
-    body: data ? JSON.stringify(data) : undefined,
+    body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
   })
 }
 
@@ -242,10 +257,11 @@ export async function patch<T>(
   data?: any,
   init?: RequestInit
 ): Promise<T> {
+  const isFormData = typeof FormData !== 'undefined' && data instanceof FormData
   return request<T>(path, {
     ...init,
     method: 'PATCH',
-    body: data ? JSON.stringify(data) : undefined,
+    body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
   })
 }
 
