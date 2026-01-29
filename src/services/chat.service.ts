@@ -27,6 +27,7 @@ export interface ChatPqrsSummary extends ChatSummary {
   ticketNumber: string
   statusId: number
   pqrsCreatedAt: string
+  pqrsEndAt: string | null
 }
 
 export const chatService = {
@@ -68,8 +69,9 @@ export const chatService = {
   },
 
   // Messages
-  getMessages: async (chatId: number): Promise<Message[]> => {
-    return api.get<Message[]>(`/chats/${chatId}/messages`)
+  getMessages: async (chatId: number, pqrsId?: number): Promise<Message[]> => {
+    const query = pqrsId ? `?pqrsId=${pqrsId}` : ''
+    return api.get<Message[]>(`/chats/${chatId}/messages${query}`)
   },
 
   createMessage: async (data: CreateMessage): Promise<Message> => {

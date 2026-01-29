@@ -78,6 +78,7 @@ export interface PQRSFListQuery {
 export interface SeguimientoItem {
   id: number
   ticketNumber: string
+  description: string | null
   createdAt: string | null
   statusId: number
   statusName: string
@@ -97,6 +98,7 @@ export interface SeguimientoItem {
 export interface ApelacionItem {
   id: number
   ticketNumber: string
+  description: string | null
   createdAt: string | null
   statusId: number
   statusName: string
@@ -111,6 +113,7 @@ export interface ApelacionItem {
 export interface CerradaItem {
   id: number
   ticketNumber: string
+  description: string | null
   createdAt: string | null
   updatedAt: string | null
   statusId: number
