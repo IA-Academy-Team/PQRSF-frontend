@@ -120,19 +120,19 @@ export default function LoginPage() {
         <div className="flex items-center justify-center bg-primary p-6 sm:p-8 md:p-10 lg:p-12 lg:w-3/5 clip-diagonal min-h-[70vh] lg:min-h-screen">
           <div className="w-full max-w-md space-y-6 md:space-y-8 lg:ml-30">
             <div className="space-y-2 text-center text-primary-foreground">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">Admin Access</h1>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">Plataforma PQRSF</h1>
               <p className="text-primary-foreground/80 text-sm sm:text-base">Ingresa tus credenciales para continuar</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-4 md:space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-primary-foreground text-sm md:text-base">
-                  Your email
+                   email
                 </Label>
                 <Input
                   id="email"
                   type="email" 
-                  placeholder="Enter your email"
+                  placeholder="ingresa tu email"
                   className="bg-white text-foreground h-10 md:h-11"
                   value={correo}
                   onChange={(e) => {
@@ -158,12 +158,12 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-primary-foreground text-sm md:text-base">
-                  Password
+                  Contraseña
                 </Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Enter your password"
+                  placeholder="Ingresa tu contraseña"
                   className="bg-white text-foreground h-10 md:h-11"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -186,14 +186,14 @@ export default function LoginPage() {
                     className="border-primary-foreground bg-white"
                   />
                   <label htmlFor="remember" className="text-xs sm:text-sm text-primary-foreground cursor-pointer">
-                    Remember me
+                    Recuerdame
                   </label>
                 </div>
                 <Link
                   to="/forgot-password"
                   className="text-xs sm:text-sm text-primary-foreground/80 hover:text-primary-foreground underline"
                 >
-                  Forgot password?
+                  Olvidaste tu contraseña?
                 </Link>
               </div>
 
@@ -202,7 +202,7 @@ export default function LoginPage() {
                 disabled={isLoading}
                 className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold h-10 md:h-11 text-sm md:text-base"
               >
-                {isLoading ? "Iniciando sesión..." : "SIGN IN"}
+                {isLoading ? "Iniciando sesión..." : "Iniciar sesión"}
               </Button>
             </form>
           </div>

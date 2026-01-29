@@ -151,12 +151,12 @@ export default function ForgotPassword() {
             <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-primary-foreground text-sm md:text-base">
-                  Your email
+                  Email
                 </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="Ingresa tu email"
                   className="bg-white text-foreground h-10 md:h-11"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -175,7 +175,7 @@ export default function ForgotPassword() {
                 disabled={isLoading}
                 className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold h-10 md:h-11 text-sm md:text-base"
               >
-                {isLoading ? "Enviando..." : "ENVIAR INSTRUCCIONES"}
+                {isLoading ? "Enviando..." : "Recuperar contraseña"}
               </Button>
             </form>
 
@@ -185,7 +185,7 @@ export default function ForgotPassword() {
                   variant="ghost"
                   className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
                 >
-                  ← Volver al Login
+                  ← Volver al inicio de sesión
                 </Button>
               </Link>
             </div>

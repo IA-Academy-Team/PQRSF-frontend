@@ -57,6 +57,14 @@ export interface PQRSFDetailItem {
   stakeholderName: string | null
 }
 
+export interface PQRSFStatusHistory {
+  id: number
+  pqrsId: number
+  statusId: number
+  createdAt: string
+  note?: string | null
+}
+
 export interface PQRSFListQuery {
   q?: string
   pqrsStatusId?: number
@@ -266,6 +274,12 @@ export const pqrsfService = {
   // PQRSF Reanalysis
   getReanalysis: async (pqrsfId: number): Promise<PQRSFReanalysis> => {
     return api.get<PQRSFReanalysis>(`/pqrsf/${pqrsfId}/reanalysis`, { cache: 'no-store' })
+  },
+  getReanalysisHistory: async (pqrsfId: number): Promise<PQRSFReanalysis[]> => {
+    return api.get<PQRSFReanalysis[]>(`/pqrsf/${pqrsfId}/reanalysis/history`, { cache: 'no-store' })
+  },
+  getStatusHistory: async (pqrsfId: number): Promise<PQRSFStatusHistory[]> => {
+    return api.get<PQRSFStatusHistory[]>(`/pqrsf/${pqrsfId}/status-history`, { cache: 'no-store' })
   },
 
   createReanalysis: async (data: CreatePQRSFReanalysis): Promise<PQRSFReanalysis> => {

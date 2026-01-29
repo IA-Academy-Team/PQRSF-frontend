@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { Search, Star, ListChecks } from "lucide-react"
+import { Search, Star, ArrowUpRight } from "lucide-react"
 import { Sidebar } from "@/components/sidebar"
 import { useAuth } from "@/contexts/auth-context"
 import { useSidebar } from "@/contexts/sidebar-context"
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Dialog,
   DialogContent,
@@ -188,6 +189,45 @@ export default function Surveys() {
                         <span className="text-sm font-semibold text-foreground">
                           {average !== null ? average.toFixed(1) : "Sin puntaje"}
                         </span>
+                        <Dialog>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DialogTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <ArrowUpRight className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>Ver detalle de puntajes</TooltipContent>
+                          </Tooltip>
+                          <DialogContent className="sm:max-w-xl">
+                            <DialogHeader>
+                              <DialogTitle>Detalle de encuesta</DialogTitle>
+                              <DialogDescription>
+                                {item.ticketNumber} • {item.clientName || "Anonimo"}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-3">
+                              {QUESTION_LABELS.map((question) => {
+                                const value = item[question.key]
+                                return (
+                                  <div
+                                    key={question.key}
+                                    className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm"
+                                  >
+                                    <span className="text-foreground">{question.label}</span>
+                                    <span className="font-semibold text-foreground">{formatScore(value as number)}</span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                            {item.comment && (
+                              <div className="rounded-lg border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
+                                "{item.comment}"
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     </div>
 
@@ -209,50 +249,12 @@ export default function Surveys() {
                         <p>{item.clientEmail || "Sin correo"}</p>
                       </div>
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-2">
-                            <ListChecks className="h-4 w-4" />
-                            Ver detalle de puntajes
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-xl">
-                          <DialogHeader>
-                            <DialogTitle>Detalle de encuesta</DialogTitle>
-                            <DialogDescription>
-                              {item.ticketNumber} • {item.clientName || "Anonimo"}
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="grid gap-3">
-                            {QUESTION_LABELS.map((question) => {
-                              const value = item[question.key]
-                              return (
-                                <div
-                                  key={question.key}
-                                  className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm"
-                                >
-                                  <span className="text-foreground">{question.label}</span>
-                                  <span className="font-semibold text-foreground">{formatScore(value as number)}</span>
-                                </div>
-                              )
-                            })}
-                          </div>
-                          {item.comment && (
-                            <div className="rounded-lg border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
-                              "{item.comment}"
-                            </div>
-                          )}
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-
                     {item.comment && (
                       <div className="rounded-lg border border-border bg-muted/20 p-3 text-sm text-muted-foreground">
                         "{item.comment}"
                       </div>
                     )}
+                    <div className="flex flex-wrap items-center gap-2" />
                   </CardContent>
                 </Card>
               )

@@ -27,6 +27,7 @@ import { catalogService } from "@/services/catalog.service"
 import {
   pqrsfService,
   type PQRSFDetailItem,
+  type PQRSFStatusHistory,
 } from "@/services/pqrsf.service"
 
 import type {
@@ -75,6 +76,8 @@ export default function PQRSFDetail() {
   const [detail, setDetail] = useState<PQRSFDetailItem | null>(null)
   const [analysisList, setAnalysisList] = useState<PQRSFAnalysis[]>([])
   const [reanalysis, setReanalysis] = useState<PQRSFReanalysis | null>(null)
+  const [reanalysisHistory, setReanalysisHistory] = useState<PQRSFReanalysis[]>([])
+  const [statusHistory, setStatusHistory] = useState<PQRSFStatusHistory[]>([])
   const [documents, setDocuments] = useState<Document[]>([])
   const [responses, setResponses] = useState<ResponseItem[]>([])
   const [analisis, setAnalisis] = useState("")
@@ -125,12 +128,26 @@ export default function PQRSFDetail() {
         setTypeDocuments(typeDocuments)
 
         try {
-          const reanalysisResponse = await pqrsfService.getReanalysis(resolvedId)
+          const [reanalysisResponse, reanalysisHistoryResponse] = await Promise.all([
+            pqrsfService.getReanalysis(resolvedId),
+            pqrsfService.getReanalysisHistory(resolvedId),
+          ])
           if (!active) return
           setReanalysis(reanalysisResponse)
+          setReanalysisHistory(reanalysisHistoryResponse ?? [])
         } catch {
           if (!active) return
           setReanalysis(null)
+          setReanalysisHistory([])
+        }
+
+        try {
+          const statusHistoryResponse = await pqrsfService.getStatusHistory(resolvedId)
+          if (!active) return
+          setStatusHistory(statusHistoryResponse ?? [])
+        } catch {
+          if (!active) return
+          setStatusHistory([])
         }
 
         const responseType = typeDocuments.find((item) => item.name.toLowerCase() === "análisis")
@@ -186,9 +203,10 @@ export default function PQRSFDetail() {
     ]
 
     if (analysisList.length > 0) {
+      const lastAnalysis = analysisList[analysisList.length - 1]
       items.push({
         title: "Análisis registrado",
-        date: analysisList[0]?.createdAt ?? detail.updatedAt,
+        date: lastAnalysis?.createdAt ?? detail.updatedAt,
         description: "Análisis técnico registrado por el área.",
         icon: User,
         iconClass: "text-blue-600",
@@ -197,9 +215,10 @@ export default function PQRSFDetail() {
     }
 
     if (responses.length > 0) {
+      const lastResponse = responses[responses.length - 1]
       items.push({
         title: "Respuesta enviada",
-        date: responses[0]?.sentAt ?? detail.updatedAt,
+        date: lastResponse?.sentAt ?? detail.updatedAt,
         description: "Respuesta comunicada al solicitante.",
         icon: CheckCircle2,
         iconClass: "text-green-600",
@@ -207,7 +226,40 @@ export default function PQRSFDetail() {
       })
     }
 
-    if (detail.statusId === 3) {
+    if (statusHistory.length > 0) {
+      statusHistory.forEach((entry) => {
+        if (entry.statusId === 3) {
+          items.push({
+            title: "En reanálisis",
+            date: entry.createdAt ?? detail.updatedAt ?? detail.createdAt,
+            description: "La PQRSF fue enviada a reanálisis.",
+            icon: AlertCircle,
+            iconClass: "text-yellow-700",
+            bgClass: "bg-yellow-100",
+          })
+        }
+        if (entry.statusId === 5) {
+          items.push({
+            title: "Devuelto",
+            date: entry.createdAt ?? detail.updatedAt ?? detail.createdAt,
+            description: "El administrador devolvió la PQRSF al área responsable.",
+            icon: AlertCircle,
+            iconClass: "text-orange-700",
+            bgClass: "bg-orange-100",
+          })
+        }
+        if (entry.statusId === 4) {
+          items.push({
+            title: "PQRSF cerrada",
+            date: entry.createdAt ?? detail.updatedAt ?? detail.createdAt,
+            description: "La solicitud fue aprobada y cerrada.",
+            icon: CheckCircle2,
+            iconClass: "text-emerald-700",
+            bgClass: "bg-emerald-100",
+          })
+        }
+      })
+    } else if (detail.statusId === 3) {
       items.push({
         title: "En reanálisis",
         date: detail.updatedAt ?? detail.createdAt,
@@ -216,9 +268,7 @@ export default function PQRSFDetail() {
         iconClass: "text-yellow-700",
         bgClass: "bg-yellow-100",
       })
-    }
-
-    if (detail.statusId === 5) {
+    } else if (detail.statusId === 5) {
       items.push({
         title: "Devuelto",
         date: detail.updatedAt ?? detail.createdAt,
@@ -227,9 +277,7 @@ export default function PQRSFDetail() {
         iconClass: "text-orange-700",
         bgClass: "bg-orange-100",
       })
-    }
-
-    if (detail.statusId === 4) {
+    } else if (detail.statusId === 4) {
       items.push({
         title: "PQRSF cerrada",
         date: detail.updatedAt ?? detail.createdAt,
@@ -241,13 +289,42 @@ export default function PQRSFDetail() {
     }
 
     return items
-  }, [detail, analysisList, responses])
+  }, [detail, analysisList, responses, reanalysisHistory, statusHistory])
 
   const reanalysisCutoff = useMemo(() => {
     if (!reanalysis?.createdAt) return null
     const date = new Date(reanalysis.createdAt)
     return Number.isNaN(date.getTime()) ? null : date
   }, [reanalysis])
+
+  const analysisListForDisplay = useMemo(() => analysisList, [analysisList])
+
+  const getAnalysisStage = (createdAt?: string | null) => {
+    if (!createdAt) return "Análisis"
+    if (!reanalysisCutoff) return "Análisis"
+    const created = new Date(createdAt)
+    if (Number.isNaN(created.getTime())) return "Análisis"
+    return created.getTime() >= reanalysisCutoff.getTime() ? "Reanálisis" : "Análisis"
+  }
+
+  const hasAnalysisAfterCutoff = useMemo(() => {
+    if (!reanalysisCutoff) return false
+    return analysisListForDisplay.some((item) => {
+      if (!item.createdAt) return false
+      const created = new Date(item.createdAt)
+      if (Number.isNaN(created.getTime())) return false
+      return created.getTime() >= reanalysisCutoff.getTime()
+    })
+  }, [analysisListForDisplay, reanalysisCutoff])
+
+  const responseDeadline = useMemo(() => {
+    if (detail?.dueDate) return detail.dueDate
+    if (!detail?.createdAt) return null
+    const created = new Date(detail.createdAt)
+    if (Number.isNaN(created.getTime())) return null
+    created.setDate(created.getDate() + 15)
+    return created.toISOString()
+  }, [detail?.dueDate, detail?.createdAt])
 
   const getResponseStage = (sentAt?: string | null) => {
     if (!sentAt) return "Análisis"
@@ -456,16 +533,7 @@ export default function PQRSFDetail() {
           return reanalysisCutoff ?? detailUpdatedAt
         })()
       : null
-    const hasResponseAfterReanalysis =
-      isReanalysis && effectiveReanalysisCutoff && latestResponseAt
-        ? new Date(latestResponseAt).getTime() >= effectiveReanalysisCutoff.getTime()
-        : false
-    const allowWhenReanalysisMissing = isReanalysis && !effectiveReanalysisCutoff
-    const canRespond =
-      !isClosed &&
-      (!hasResponse ||
-        allowWhenReanalysisMissing ||
-        (isReanalysis && (isReturned || !hasResponseAfterReanalysis)))
+    const canRespond = !isClosed && (isReanalysis || !hasResponse)
 
     return (
       <div className="flex min-h-screen bg-background">
@@ -547,20 +615,28 @@ export default function PQRSFDetail() {
                 <CardContent className="space-y-4">
                   <div>
                     <h3 className="font-semibold text-sm text-muted-foreground mb-2">Analisis tecnico</h3>
-                    {analysisList.length === 0 ? (
+                    {analysisListForDisplay.length === 0 ? (
                       <p className="text-foreground leading-relaxed">Sin análisis registrado.</p>
                     ) : (
                       <div className="space-y-3">
-                        {analysisList.map((item, index) => (
+                        {analysisListForDisplay.map((item, index) => (
                           <div key={`analysis-${item.id}-${index}`} className="rounded-lg border p-3 bg-muted/20">
                             <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                               <span>{formatDate(item.createdAt) || "Sin fecha"}</span>
-                              <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Análisis</span>
+                              <span
+                                className={
+                                  getAnalysisStage(item.createdAt) === "Reanálisis"
+                                    ? "px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700"
+                                    : "px-2 py-0.5 rounded-full bg-blue-100 text-blue-700"
+                                }
+                              >
+                                {getAnalysisStage(item.createdAt)}
+                              </span>
                             </div>
                             <p className="text-sm text-foreground">{item.answer || "Sin análisis"}</p>
                           </div>
                         ))}
-                        {reanalysis && (
+                        {reanalysis && !hasAnalysisAfterCutoff && (
                           <div className="rounded-lg border p-3 bg-yellow-50">
                             <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                               <span>{formatDate(reanalysis.createdAt) || "Sin fecha"}</span>
@@ -814,7 +890,7 @@ export default function PQRSFDetail() {
                     <div>
                       <p className="font-semibold text-sm text-foreground mb-1">Plazo de Respuesta</p>
                       <p className="text-xs text-muted-foreground">
-                        Esta solicitud debe ser respondida antes del {formatDate(detail.dueDate) || "por definir"}.
+                        Esta solicitud debe ser respondida antes del {formatDate(responseDeadline) || "por definir"}.
                       </p>
                     </div>
                   </div>
@@ -937,20 +1013,28 @@ export default function PQRSFDetail() {
               <CardContent className="space-y-4">
                 <div>
                   <h3 className="font-semibold text-sm text-muted-foreground mb-2">Analisis tecnico</h3>
-                  {analysisList.length === 0 && !reanalysis ? (
+                  {analysisListForDisplay.length === 0 && !reanalysis ? (
                     <p className="text-foreground leading-relaxed">Sin análisis registrado.</p>
                   ) : (
                     <div className="space-y-3">
-                      {analysisList.map((item, index) => (
+                      {analysisListForDisplay.map((item, index) => (
                         <div key={`analysis-admin-${item.id}-${index}`} className="rounded-lg border p-3 bg-muted/20">
                           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                             <span>{formatDate(item.createdAt) || "Sin fecha"}</span>
-                            <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Análisis</span>
+                            <span
+                              className={
+                                getAnalysisStage(item.createdAt) === "Reanálisis"
+                                  ? "px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700"
+                                  : "px-2 py-0.5 rounded-full bg-blue-100 text-blue-700"
+                              }
+                            >
+                              {getAnalysisStage(item.createdAt)}
+                            </span>
                           </div>
                           <p className="text-sm text-foreground">{item.answer || "Sin análisis"}</p>
                         </div>
                       ))}
-                      {reanalysis && (
+                      {reanalysis && !hasAnalysisAfterCutoff && (
                         <div className="rounded-lg border p-3 bg-yellow-50">
                           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                             <span>{formatDate(reanalysis.createdAt) || "Sin fecha"}</span>
