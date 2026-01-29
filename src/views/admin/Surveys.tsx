@@ -131,9 +131,13 @@ export default function Surveys() {
                 Consulta el nivel de satisfaccion reportado por los usuarios.
               </p>
             </div>
-            <Button variant="outline" size="sm" className="gap-2 self-start sm:self-auto">
-              <Star className="h-4 w-4 text-amber-500" />
-              Promedio general: {overallAverage !== null ? overallAverage.toFixed(1) : "Sin datos"}
+            <Button
+              variant="outline"
+              size="lg"
+              className="gap-2 self-start sm:self-auto text-base sm:text-lg px-4 sm:px-6 py-3 sm:py-4"
+            >
+              <Star className="h-5 w-5 text-amber-500" />
+              {overallAverage !== null ? overallAverage.toFixed(1) : "Sin datos"}
             </Button>
           </div>
         </div>

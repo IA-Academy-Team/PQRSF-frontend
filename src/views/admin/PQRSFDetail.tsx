@@ -48,6 +48,19 @@ const formatDate = (value?: string | null) => {
   return date.toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })
 }
 
+const formatDateTime = (value?: string | null) => {
+  if (!value) return ""
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ""
+  return date.toLocaleString("es-CO", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).replace(" a las ", ", ")
+}
+
 const getElapsedDays = (value?: string | null) => {
   if (!value) return 0
   const date = new Date(value)
@@ -913,7 +926,7 @@ export default function PQRSFDetail() {
                         </div>
                         <div className="pb-6">
                           <p className="font-semibold">{item.title}</p>
-                          <p className="text-sm text-muted-foreground">{formatDate(item.date) || "Sin fecha"}</p>
+                          <p className="text-sm text-muted-foreground">{formatDateTime(item.date) || "Sin fecha"}</p>
                           <p className="text-sm mt-1">{item.description}</p>
                         </div>
                       </div>
@@ -1166,7 +1179,7 @@ export default function PQRSFDetail() {
                       </div>
                       <div className="pb-6">
                         <p className="font-semibold">{item.title}</p>
-                        <p className="text-sm text-muted-foreground">{formatDate(item.date) || "Sin fecha"}</p>
+                        <p className="text-sm text-muted-foreground">{formatDateTime(item.date) || "Sin fecha"}</p>
                         <p className="text-sm mt-1">{item.description}</p>
                       </div>
                     </div>
