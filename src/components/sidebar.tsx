@@ -29,6 +29,7 @@ export function Sidebar() {
         { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
         { name: "PQRSF - Bandeja General", href: "/pqrsf", icon: FileText },
         { name: "Chats", href: "/chats", icon: MessageCircle },
+        { name: "Encuestas", href: "/encuestas", icon: ClipboardList },
       ]
     } else if (user?.rol === "Usuario de Área Responsable") {
       return [

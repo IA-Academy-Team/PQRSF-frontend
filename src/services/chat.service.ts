@@ -22,6 +22,13 @@ export interface ChatSummary {
   lastMessageAt: string | null
 }
 
+export interface ChatPqrsSummary extends ChatSummary {
+  pqrsId: number
+  ticketNumber: string
+  statusId: number
+  pqrsCreatedAt: string
+}
+
 export const chatService = {
   // Chat CRUD
   getAll: async (): Promise<Chat[]> => {
@@ -30,6 +37,10 @@ export const chatService = {
 
   getSummaries: async (): Promise<ChatSummary[]> => {
     return api.get<ChatSummary[]>('/chats/summary')
+  },
+
+  getSummariesByPqrs: async (): Promise<ChatPqrsSummary[]> => {
+    return api.get<ChatPqrsSummary[]>('/chats/summary/pqrs')
   },
 
   getById: async (id: number): Promise<Chat> => {

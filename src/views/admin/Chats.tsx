@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { chatService, type ChatSummary } from "@/services/chat.service"
+import { chatService, type ChatSummary, type ChatPqrsSummary } from "@/services/chat.service"
 import type { Message } from "@/types/database"
 import { API_BASE } from "@/lib/api"
 import { io } from "socket.io-client"
@@ -36,11 +36,20 @@ const getInitials = (name: string) => {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
 }
 
-const normalizeChatSearch = (chat: ChatSummary, query: string) => {
+type ChatListItem = ChatSummary & Partial<ChatPqrsSummary>
+
+const normalizeChatSearch = (chat: ChatListItem, query: string) => {
   const name = chat.clientName?.toLowerCase() ?? ""
   const phone = chat.clientPhone ?? ""
   const lastMessage = chat.lastMessage?.toLowerCase() ?? ""
-  return name.includes(query) || phone.includes(query) || lastMessage.includes(query)
+  const ticket = chat.ticketNumber?.toLowerCase() ?? ""
+  return name.includes(query) || phone.includes(query) || lastMessage.includes(query) || ticket.includes(query)
+}
+
+const inferChannel = (chat: ChatListItem): "whatsapp" | "telegram" => {
+  const phone = chat.clientPhone?.toLowerCase() ?? ""
+  if (phone.startsWith("tg:") || phone.startsWith("telegram:")) return "telegram"
+  return "whatsapp"
 }
 
 export default function Chats() {
@@ -48,7 +57,8 @@ export default function Chats() {
   const [selectedChat, setSelectedChat] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [message, setMessage] = useState("")
-  const [chats, setChats] = useState<ChatSummary[]>([])
+  const [chatView, setChatView] = useState<"persona" | "pqrs">("persona")
+  const [chats, setChats] = useState<ChatListItem[]>([])
   const [isLoadingChats, setIsLoadingChats] = useState(true)
   const [chatError, setChatError] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -77,7 +87,10 @@ export default function Chats() {
       setIsLoadingChats(true)
       setChatError(null)
       try {
-        const data = await chatService.getSummaries()
+        const data =
+          chatView === "pqrs"
+            ? await chatService.getSummariesByPqrs()
+            : await chatService.getSummaries()
         if (active) {
           setChats(data)
         }
@@ -98,7 +111,12 @@ export default function Chats() {
     return () => {
       active = false
     }
-  }, [])
+  }, [chatView])
+
+  useEffect(() => {
+    setSelectedChat(null)
+    setMessages([])
+  }, [chatView])
 
   useEffect(() => {
     const socket = io(getSocketBase(), {
@@ -242,7 +260,7 @@ export default function Chats() {
       const created = await chatService.sendMessage({
         chatId: selectedChat,
         content,
-        channel: "whatsapp",
+        channel: currentChat ? inferChannel(currentChat) : "whatsapp",
       })
       setMessages((prev) => [...prev, created])
       setChats((prev) =>
@@ -273,11 +291,29 @@ export default function Chats() {
         {/* Lista de chats */}
         <div className="w-96 border-r border-border bg-card flex flex-col">
           <div className="p-4 border-b border-border">
-            <h2 className="text-xl font-bold mb-4">Chats de WhatsApp</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Chats</h2>
+              <div className="flex items-center gap-2 text-xs">
+                <Button
+                  variant={chatView === "persona" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setChatView("persona")}
+                >
+                  Por persona
+                </Button>
+                <Button
+                  variant={chatView === "pqrs" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setChatView("pqrs")}
+                >
+                  Por PQRS
+                </Button>
+              </div>
+            </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar chats..."
+                placeholder={chatView === "pqrs" ? "Buscar por radicado o cliente..." : "Buscar chats..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -298,6 +334,8 @@ export default function Chats() {
                 const chatPhone = chat.clientPhone ?? "Sin teléfono"
                 const lastMessage = chat.lastMessage ?? "Sin mensajes aún"
                 const lastMessageAt = chat.lastMessageAt ? new Date(chat.lastMessageAt) : null
+                const ticketLabel = chatView === "pqrs" ? chat.ticketNumber ?? "PQRS" : null
+                const channelLabel = inferChannel(chat) === "telegram" ? "Telegram" : "WhatsApp"
                 return (
                   <button
                     key={chat.id}
@@ -311,13 +349,18 @@ export default function Chats() {
                     </div>
                     <div className="flex-1 text-left min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-semibold text-foreground truncate">{chatName}</h3>
+                        <h3 className="font-semibold text-foreground truncate">
+                          {chatName}
+                          {ticketLabel && <span className="ml-2 text-xs text-muted-foreground">{ticketLabel}</span>}
+                        </h3>
                         <span className="text-xs text-muted-foreground">
                           {lastMessageAt ? formatWhatsAppDate(lastMessageAt) : ""}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">{lastMessage}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{chatPhone}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {chatPhone} • {channelLabel}
+                      </p>
                     </div>
                   </button>
                 )
@@ -338,6 +381,9 @@ export default function Chats() {
                 <div>
                   <h3 className="font-semibold text-foreground">{currentChat?.clientName ?? "Sin nombre"}</h3>
                   <p className="text-xs text-muted-foreground">{currentChat?.clientPhone ?? "Sin teléfono"}</p>
+                  {chatView === "pqrs" && currentChat?.ticketNumber && (
+                    <p className="text-xs text-muted-foreground">PQRS: {currentChat.ticketNumber}</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">

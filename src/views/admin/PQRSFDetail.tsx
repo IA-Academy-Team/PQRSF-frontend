@@ -448,12 +448,14 @@ export default function PQRSFDetail() {
       : false
     const latestResponseAt = responses.length > 0 ? responses[responses.length - 1]?.sentAt : null
     const detailUpdatedAt = detail.updatedAt ? new Date(detail.updatedAt) : null
-    const effectiveReanalysisCutoff = (() => {
-      if (reanalysisCutoff && detailUpdatedAt) {
-        return reanalysisCutoff.getTime() >= detailUpdatedAt.getTime() ? reanalysisCutoff : detailUpdatedAt
-      }
-      return reanalysisCutoff ?? detailUpdatedAt
-    })()
+    const effectiveReanalysisCutoff = reanalysis
+      ? (() => {
+          if (reanalysisCutoff && detailUpdatedAt) {
+            return reanalysisCutoff.getTime() >= detailUpdatedAt.getTime() ? reanalysisCutoff : detailUpdatedAt
+          }
+          return reanalysisCutoff ?? detailUpdatedAt
+        })()
+      : null
     const hasResponseAfterReanalysis =
       isReanalysis && effectiveReanalysisCutoff && latestResponseAt
         ? new Date(latestResponseAt).getTime() >= effectiveReanalysisCutoff.getTime()

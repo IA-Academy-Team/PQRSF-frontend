@@ -100,6 +100,17 @@ export default function Surveys() {
   const startIndex = (safePage - 1) * itemsPerPage
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems)
   const paginatedItems = filteredItems.slice(startIndex, endIndex)
+  const overallAverage = useMemo(() => {
+    const values = items.flatMap((survey) => [
+      survey.q1Clarity,
+      survey.q2Timeliness,
+      survey.q3Quality,
+      survey.q4Attention,
+      survey.q5Overall,
+    ]).filter((value): value is number => typeof value === "number")
+    if (values.length === 0) return null
+    return values.reduce((sum, value) => sum + value, 0) / values.length
+  }, [items])
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -119,6 +130,10 @@ export default function Surveys() {
                 Consulta el nivel de satisfaccion reportado por los usuarios.
               </p>
             </div>
+            <Button variant="outline" size="sm" className="gap-2 self-start sm:self-auto">
+              <Star className="h-4 w-4 text-amber-500" />
+              Promedio general: {overallAverage !== null ? overallAverage.toFixed(1) : "Sin datos"}
+            </Button>
           </div>
         </div>
 
