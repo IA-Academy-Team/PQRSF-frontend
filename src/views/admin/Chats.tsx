@@ -52,9 +52,22 @@ const inferChannel = (chat: ChatListItem): "whatsapp" | "telegram" => {
   return "whatsapp"
 }
 
+const isMessageWithinPqrsWindow = (chat: ChatListItem | undefined, createdAt: Date) => {
+  if (!chat?.pqrsCreatedAt) return true
+  const start = new Date(chat.pqrsCreatedAt)
+  if (Number.isNaN(start.getTime())) return true
+  if (createdAt < start) return false
+  if (chat.pqrsEndAt) {
+    const end = new Date(chat.pqrsEndAt)
+    if (!Number.isNaN(end.getTime()) && createdAt >= end) return false
+  }
+  return true
+}
+
 export default function Chats() {
   const { isCollapsed } = useSidebar()
-  const [selectedChat, setSelectedChat] = useState<number | null>(null)
+  const [selectedChatId, setSelectedChatId] = useState<number | null>(null)
+  const [selectedPqrsId, setSelectedPqrsId] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [message, setMessage] = useState("")
   const [chatView, setChatView] = useState<"persona" | "pqrs">("persona")
@@ -114,7 +127,8 @@ export default function Chats() {
   }, [chatView])
 
   useEffect(() => {
-    setSelectedChat(null)
+    setSelectedChatId(null)
+    setSelectedPqrsId(null)
     setMessages([])
   }, [chatView])
 
@@ -130,12 +144,21 @@ export default function Chats() {
       setChats((prev) =>
         prev.map((chat) =>
           chat.id === chatId
-            ? {
-                ...chat,
-                lastMessage: summary.lastMessage ?? chat.lastMessage,
-                lastMessageAt: summary.lastMessageAt ?? chat.lastMessageAt,
-                mode: summary.mode ?? chat.mode,
-              }
+            ? (() => {
+                const lastMessageAt = summary.lastMessageAt ?? chat.lastMessageAt
+                if (chatView === "pqrs" && lastMessageAt) {
+                  const lastDate = new Date(lastMessageAt)
+                  if (!Number.isNaN(lastDate.getTime()) && !isMessageWithinPqrsWindow(chat, lastDate)) {
+                    return { ...chat, mode: summary.mode ?? chat.mode }
+                  }
+                }
+                return {
+                  ...chat,
+                  lastMessage: summary.lastMessage ?? chat.lastMessage,
+                  lastMessageAt,
+                  mode: summary.mode ?? chat.mode,
+                }
+              })()
             : chat
         )
       )
@@ -152,10 +175,10 @@ export default function Chats() {
     return () => {
       socket.disconnect()
     }
-  }, [])
+  }, [chatView])
 
   useEffect(() => {
-    if (!selectedChat) {
+    if (!selectedChatId) {
       setMessages([])
       setMessageError(null)
       return
@@ -166,7 +189,8 @@ export default function Chats() {
       setIsLoadingMessages(true)
       setMessageError(null)
       try {
-        const data = await chatService.getMessages(selectedChat)
+        const pqrsId = chatView === "pqrs" ? selectedPqrsId ?? undefined : undefined
+        const data = await chatService.getMessages(selectedChatId, pqrsId)
         if (active) {
           setMessages(data)
         }
@@ -187,23 +211,29 @@ export default function Chats() {
     return () => {
       active = false
     }
-  }, [selectedChat])
+  }, [selectedChatId, selectedPqrsId, chatView])
 
   useEffect(() => {
     if (messages.length === 0) return
     scrollToBottom("auto")
-  }, [messages, selectedChat])
+  }, [messages, selectedChatId])
 
   useEffect(() => {
-    if (!selectedChat) return
+    if (!selectedChatId) return
     const socket = io(getSocketBase(), {
       path: "/ws",
-      query: { chatId: String(selectedChat) },
+      query: { chatId: String(selectedChatId) },
     })
 
     socket.on("chat_message", (payload: { chatId: number; message: Message }) => {
-      if (payload.chatId !== selectedChat) return
+      if (payload.chatId !== selectedChatId) return
       const incoming = payload.message
+      if (chatView === "pqrs" && incoming.createdAt) {
+        const incomingDate = new Date(incoming.createdAt)
+        if (!Number.isNaN(incomingDate.getTime()) && !isMessageWithinPqrsWindow(currentChat, incomingDate)) {
+          return
+        }
+      }
       setMessages((prev) => {
         if (prev.some((msg) => msg.id === incoming.id)) return prev
         return [...prev, incoming]
@@ -211,8 +241,8 @@ export default function Chats() {
     })
 
     socket.on("chat_mode", (payload: { chatId: number; mode: number | null }) => {
-      if (payload.chatId !== selectedChat) return
-      setChats((prev) => prev.map((chat) => (chat.id === selectedChat ? { ...chat, mode: payload.mode } : chat)))
+      if (payload.chatId !== selectedChatId) return
+      setChats((prev) => prev.map((chat) => (chat.id === selectedChatId ? { ...chat, mode: payload.mode } : chat)))
     })
 
     socket.on("connect_error", (error) => {
@@ -222,7 +252,7 @@ export default function Chats() {
     return () => {
       socket.disconnect()
     }
-  }, [selectedChat])
+  }, [selectedChatId, chatView, currentChat?.pqrsCreatedAt, currentChat?.pqrsEndAt])
 
   const filteredChats = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
@@ -230,7 +260,9 @@ export default function Chats() {
     return chats.filter((chat) => normalizeChatSearch(chat, query))
   }, [chats, searchQuery])
 
-  const currentChat = chats.find((chat) => chat.id === selectedChat)
+  const currentChat = chats.find(
+    (chat) => chat.id === selectedChatId && (chatView !== "pqrs" || chat.pqrsId === selectedPqrsId)
+  )
   const currentMode = currentChat?.mode ?? 1
   const isAdminMode = currentMode === 2
 
@@ -252,20 +284,20 @@ export default function Chats() {
   }
 
   const handleSendMessage = async () => {
-    if (!selectedChat || !message.trim()) return
+    if (!selectedChatId || !message.trim()) return
     const content = message.trim()
     setMessage("")
     setMessageError(null)
     try {
       const created = await chatService.sendMessage({
-        chatId: selectedChat,
+        chatId: selectedChatId,
         content,
         channel: currentChat ? inferChannel(currentChat) : "whatsapp",
       })
       setMessages((prev) => [...prev, created])
       setChats((prev) =>
         prev.map((chat) =>
-          chat.id === selectedChat
+          chat.id === selectedChatId
             ? { ...chat, lastMessage: created.content ?? content, lastMessageAt: created.createdAt ?? null }
             : chat
         )
@@ -336,12 +368,19 @@ export default function Chats() {
                 const lastMessageAt = chat.lastMessageAt ? new Date(chat.lastMessageAt) : null
                 const ticketLabel = chatView === "pqrs" ? chat.ticketNumber ?? "PQRS" : null
                 const channelLabel = inferChannel(chat) === "telegram" ? "Telegram" : "WhatsApp"
+                const isSelected =
+                  chatView === "pqrs"
+                    ? selectedChatId === chat.id && selectedPqrsId === chat.pqrsId
+                    : selectedChatId === chat.id
                 return (
                   <button
-                    key={chat.id}
-                    onClick={() => setSelectedChat(chat.id)}
-                    className={`w-full p-4 min-[1600px]:p-5 flex items-center gap-3 min-[1600px]:gap-4 border-b border-border hover:bg-accent transition-colors ${
-                      selectedChat === chat.id ? "bg-accent" : ""
+                    key={`${chat.id}-${chat.pqrsId ?? "chat"}`}
+                    onClick={() => {
+                      setSelectedChatId(chat.id)
+                      setSelectedPqrsId(chatView === "pqrs" ? chat.pqrsId ?? null : null)
+                    }}
+                    className={`w-full p-4 flex items-center gap-3 border-b border-border hover:bg-accent transition-colors ${
+                      isSelected ? "bg-accent" : ""
                     }`}
                   >
                     <div className="h-12 w-12 min-[1600px]:h-14 min-[1600px]:w-14 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold min-[1600px]:text-base">
@@ -370,8 +409,8 @@ export default function Chats() {
         </div>
 
         {/* Área de chat */}
-        {selectedChat ? (
-          <div className="flex-1 flex flex-col min-h-0 bg-[#efeae2] overflow-hidden">
+        {selectedChatId ? (
+          <div className="flex-1 flex flex-col bg-[#efeae2]">
             {/* Header del chat */}
             <div className="bg-card border-b border-border p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
