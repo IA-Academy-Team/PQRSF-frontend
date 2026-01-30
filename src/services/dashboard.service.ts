@@ -25,6 +25,7 @@ export interface AdminMetrics {
   byStatus: AdminStatusMetric[]
   byType: AdminTypeMetric[]
   avgResponseByArea: AdminAvgResponseMetric[]
+  surveyAverage?: number
 }
 
 export interface AdminChat {

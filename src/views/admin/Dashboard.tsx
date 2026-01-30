@@ -6,6 +6,7 @@ import {
   AlertCircle,
   ClipboardList,
   MessageCircle,
+  Star,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -170,6 +171,7 @@ export default function Dashboard() {
         return acc
       }, 0)
     const totalPqrs = metrics?.totalPqrs ?? 0
+    const surveyAverage = metrics?.surveyAverage ?? 0
     const pqrsByType = metrics?.byType ?? []
     const avgResponseByArea = metrics?.avgResponseByArea ?? []
     const pqrsByTypeTotal = totalPqrs > 0 ? totalPqrs : 1
@@ -220,6 +222,22 @@ export default function Dashboard() {
                     <h3 className="text-xs font-medium mb-1 min-[1600px]:text-sm opacity-90">Total PQRSF</h3>
                     <p className="text-xl sm:text-2xl min-[1600px]:text-3xl font-bold">
                       {isDashboardLoading ? "..." : totalPqrs}
+                    </p>
+                  </CardContent>
+                  </Card>
+                </Link>
+                <Link to="/encuestas">
+                  <Card className="bg-linear-to-br from-amber-500 to-amber-600 text-white border-0 cursor-pointer hover:opacity-90 transition-opacity">
+                  <CardContent className="p-2 sm:p-3 min-[1600px]:p-4">
+                    <div className="flex items-center justify-between mb-2 min-[1600px]:mb-3">
+                      <div className="bg-white/20 rounded-lg p-1 sm:p-1.5 min-[1600px]:p-2">
+                        <Star className="h-3 w-3 sm:h-4 sm:w-4 min-[1600px]:h-5 min-[1600px]:w-5" />
+                      </div>
+                      <ArrowUpRight className="h-3 w-3 sm:h-4 sm:w-4 min-[1600px]:h-5 min-[1600px]:w-5 opacity-80" />
+                    </div>
+                    <h3 className="text-xs font-medium mb-1 min-[1600px]:text-sm opacity-90">Promedio encuestas</h3>
+                    <p className="text-lg sm:text-xl min-[1600px]:text-2xl font-bold">
+                      {surveyAverage.toFixed(1)}
                     </p>
                   </CardContent>
                   </Card>
@@ -281,7 +299,6 @@ export default function Dashboard() {
                     <CardTitle className="text-lg sm:text-xl min-[1600px]:text-2xl">Chats Recientes</CardTitle>
                     <Link to="/chats">
                       <Button variant="ghost" size="sm" className="w-full sm:w-auto min-[1600px]:text-base">
-                        Ver Todos
                         <ArrowUpRight className="h-4 w-4 min-[1600px]:h-5 min-[1600px]:w-5 ml-1" />
                       </Button>
                     </Link>

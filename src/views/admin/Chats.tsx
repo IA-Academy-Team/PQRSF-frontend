@@ -218,6 +218,14 @@ export default function Chats() {
     scrollToBottom("auto")
   }, [messages, selectedChatId])
 
+  const currentChat = useMemo(
+    () =>
+      chats.find(
+        (chat) => chat.id === selectedChatId && (chatView !== "pqrs" || chat.pqrsId === selectedPqrsId)
+      ),
+    [chats, selectedChatId, selectedPqrsId, chatView]
+  )
+
   useEffect(() => {
     if (!selectedChatId) return
     const socket = io(getSocketBase(), {
@@ -259,10 +267,6 @@ export default function Chats() {
     if (!query) return chats
     return chats.filter((chat) => normalizeChatSearch(chat, query))
   }, [chats, searchQuery])
-
-  const currentChat = chats.find(
-    (chat) => chat.id === selectedChatId && (chatView !== "pqrs" || chat.pqrsId === selectedPqrsId)
-  )
   const currentMode = currentChat?.mode ?? 1
   const isAdminMode = currentMode === 2
 
