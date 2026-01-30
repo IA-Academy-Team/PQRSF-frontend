@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
-import { AlertCircle, Search, ArrowUpRight } from "lucide-react"
+import { AlertCircle, Search, ArrowUpRight, Filter } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +19,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { pqrsfService, type ApelacionItem } from "@/services/pqrsf.service"
+import { areaService } from "@/services/area.service"
 import { ITEMS_PER_PAGE } from "@/lib/pqrsf-utils"
 
 export default function EnApelacion() {
@@ -62,6 +63,15 @@ export default function EnApelacion() {
     }
   }, [])
 
+  useEffect(() => {
+    let active = true
+    areaService.getAll().then((list) => {
+      if (!active) return
+      setAreasList(list.map((a) => ({ id: a.id, name: a.name })))
+    }).catch(() => { if (active) setAreasList([]) })
+    return () => { active = false }
+  }, [])
+
   const formattedItems = useMemo(() => {
     return items.map((item) => {
       const createdAt = item.createdAt ? new Date(item.createdAt) : null
@@ -89,14 +99,15 @@ export default function EnApelacion() {
       p.radicado.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.solicitante.toLowerCase().includes(searchTerm.toLowerCase())
     const matchArea = filtroArea === "todas" || p.area === filtroArea
-    return matchSearch && matchArea
+    const matchTipo = filtroTipo === "todos" || p.tipo === filtroTipo
+    return matchSearch && matchArea && matchTipo
   })
 
   const totalPages = Math.ceil(filteredPQRSF.length / itemsPerPage) || 1
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm, filtroArea])
+  }, [searchTerm, filtroArea, filtroTipo])
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
@@ -161,13 +172,29 @@ export default function EnApelacion() {
               />
             </div>
             <Select value={filtroArea} onValueChange={setFiltroArea}>
-              <SelectTrigger className="w-full sm:w-62.5">
-                <SelectValue placeholder="Filtrar por área" />
+              <SelectTrigger className="w-full sm:w-50">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Área" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas las áreas</SelectItem>
-                <SelectItem value="Área Responsable (Operativa)">Área Responsable</SelectItem>
-                <SelectItem value="Servicio al Cliente">Servicio al Cliente</SelectItem>
+                {areasList.map((a) => (
+                  <SelectItem key={a.id} value={a.name}>{a.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+              <SelectTrigger className="w-full sm:w-50">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Estado (tipo)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los estados</SelectItem>
+                <SelectItem value="Petición">Petición</SelectItem>
+                <SelectItem value="Queja">Queja</SelectItem>
+                <SelectItem value="Reclamo">Reclamo</SelectItem>
+                <SelectItem value="Sugerencia">Sugerencia</SelectItem>
+                <SelectItem value="Felicitación">Felicitación</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -185,8 +212,8 @@ export default function EnApelacion() {
           </div>
         )}
 
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-3 md:gap-4 min-[1600px]:gap-5">
+        <div className="flex-1 min-h-0 overflow-hidden mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 auto-rows-fr min-h-full gap-3 md:gap-4 min-[1600px]:gap-5">
             {isLoading && (
               <Card className="col-span-full border-dashed min-h-0 overflow-hidden">
                 <CardContent className="p-4 text-sm text-muted-foreground">Cargando apelaciones...</CardContent>
@@ -202,13 +229,13 @@ export default function EnApelacion() {
                 <CardContent className="p-3 sm:p-4 flex-1 min-h-0 overflow-hidden flex flex-col">
                   <div className="flex flex-col lg:flex-row lg:items-start gap-4 sm:gap-6 min-h-0 overflow-hidden">
                     <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
-                      <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3 flex-wrap">
-                        <span className="font-mono text-xs sm:text-sm font-semibold text-primary truncate">{pqrsf.radicado}</span>
-                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3 flex-nowrap min-w-0 overflow-hidden">
+                        <span className="font-mono text-xs sm:text-sm font-semibold text-primary truncate min-w-0 flex-1">{pqrsf.radicado}</span>
+                        <span className="shrink-0 text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700 whitespace-nowrap">
                           {pqrsf.tipo}
                         </span>
                         <span
-                          className={`text-xs font-medium px-2 py-1 rounded-full ${
+                          className={`shrink-0 text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap ${
                             pqrsf.prioridad === "alta"
                               ? "bg-red-100 text-red-700"
                               : pqrsf.prioridad === "media"

@@ -1,5 +1,5 @@
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Briefcase, Plus, Edit, Trash2, Search } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -15,20 +15,48 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { areaService } from "@/services/area.service"
 import type { Area } from "@/types/database"
 import { notifyError, notifySuccess } from "@/lib/toast"
-import { ITEMS_PER_PAGE } from "@/lib/pqrsf-utils"
 import { usePagination } from "@/hooks/usePagination"
 import { PQRSFPagination } from "@/components/PQRSFPagination"
+
+/** Altura aproximada del thead de la tabla (px) */
+const TABLE_HEAD_HEIGHT = 52
+/** Altura aproximada de cada fila del tbody (px); algo mayor para evitar scroll */
+const ROW_HEIGHT = 56
+/** Margen extra al calcular filas que caben, para no generar scroll */
+const HEIGHT_BUFFER = 12
+const ITEMS_PER_PAGE_MIN = 4
 
 export default function Areas() {
   const { user } = useAuth()
   const { isCollapsed } = useSidebar()
   const navigate = useNavigate()
+  const tableContainerRef = useRef<HTMLDivElement>(null)
   const [areas, setAreas] = useState<Area[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingArea, setEditingArea] = useState<Area | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+
+  useEffect(() => {
+    const el = tableContainerRef.current
+    if (!el) return
+    const updateItemsPerPage = () => {
+      const h = el.clientHeight
+      if (h <= 0) return
+      const available = h - TABLE_HEAD_HEIGHT - HEIGHT_BUFFER
+      const rowsThatFit = Math.floor(available / ROW_HEIGHT)
+      setItemsPerPage((prev) => {
+        const next = Math.max(ITEMS_PER_PAGE_MIN, rowsThatFit)
+        return next === prev ? prev : next
+      })
+    }
+    updateItemsPerPage()
+    const observer = new ResizeObserver(updateItemsPerPage)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     if (user && user.rol !== "Administrador") {
@@ -70,8 +98,8 @@ export default function Areas() {
 
   const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
     items: filteredAreas,
-    itemsPerPage: ITEMS_PER_PAGE,
-    dependencies: [searchTerm],
+    itemsPerPage,
+    dependencies: [searchTerm, itemsPerPage],
   })
 
   const handleCreateOrUpdate = async (formData: Partial<Area>) => {
@@ -182,15 +210,16 @@ export default function Areas() {
 
         {error && <p className="shrink-0 mb-4 text-sm min-[1600px]:text-base text-destructive">{error}</p>}
 
-        <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <CardHeader className="shrink-0 py-3 sm:py-6">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg min-[1600px]:text-xl">
-              <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 min-[1600px]:h-6 min-[1600px]:w-6" />
-              Lista de Áreas ({filteredAreas.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 flex-1 min-h-0 overflow-auto">
-            <div className="overflow-x-auto min-h-0">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <Card className="h-full flex flex-col min-h-0 overflow-hidden">
+            <CardHeader className="shrink-0 py-3 sm:py-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg min-[1600px]:text-xl">
+                <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 min-[1600px]:h-6 min-[1600px]:w-6" />
+                Lista de Áreas ({filteredAreas.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent ref={tableContainerRef} className="p-0 flex-1 min-h-0 overflow-hidden">
+              <div className="overflow-x-auto min-h-0">
               <table className="w-full">
                 <thead className="bg-muted/50 border-b sticky top-0 z-10">
                   <tr>
@@ -254,14 +283,15 @@ export default function Areas() {
               </table>
             </div>
           </CardContent>
-          <div className="shrink-0 border-t border-border p-3 sm:p-4">
-            <PQRSFPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          </div>
-        </Card>
+            <div className="shrink-0 border-t border-border p-3 sm:p-4">
+              <PQRSFPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          </Card>
+        </div>
       </main>
     </div>
   )

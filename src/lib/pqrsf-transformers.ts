@@ -11,6 +11,20 @@ import {
   calculatePriority,
 } from "./pqrsf-utils"
 
+/** Obtiene la descripción del ítem; soporta API con 'description' o 'descripcion' (en raíz o en item.pqrs). Exportada para uso en listados. */
+export function getDescription(item: {
+  description?: string | null
+  descripcion?: string | null
+  pqrs?: { description?: string | null; descripcion?: string | null }
+}): string | null {
+  const d =
+    item.description ??
+    item.descripcion ??
+    item.pqrs?.description ??
+    item.pqrs?.descripcion
+  return d == null ? null : String(d)
+}
+
 /**
  * Transforma un SeguimientoItem a UnifiedPQRSFItem
  */
@@ -24,7 +38,7 @@ export function transformSeguimientoItem(item: SeguimientoItem): UnifiedPQRSFIte
     ticketNumber: item.ticketNumber,
     typeName: item.typeName,
     statusName: item.statusName,
-    description: item.description || null,
+    description: getDescription(item),
     clientName: item.clientName,
     areaName: item.areaName,
     createdAt: item.createdAt,
@@ -51,7 +65,7 @@ export function transformCerradaItem(item: CerradaItem): UnifiedPQRSFItem {
     ticketNumber: item.ticketNumber,
     typeName: item.typeName,
     statusName: item.statusName,
-    description: item.description || null,
+    description: getDescription(item),
     clientName: item.clientName,
     areaName: item.areaName,
     createdAt: item.createdAt,
@@ -77,7 +91,7 @@ export function transformApelacionItem(item: ApelacionItem): UnifiedPQRSFItem {
     ticketNumber: item.ticketNumber,
     typeName: item.typeName,
     statusName: item.statusName,
-    description: item.description || null,
+    description: getDescription(item),
     clientName: item.clientName,
     areaName: item.areaName,
     createdAt: item.createdAt,

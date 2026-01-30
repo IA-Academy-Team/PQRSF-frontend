@@ -16,6 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HttpError } from "@/lib/api"
 import { notifyError, notifySuccess } from "@/lib/toast"
 import { areaService, type ResponsibleSummary } from "@/services/area.service"
+import { usePagination } from "@/hooks/usePagination"
+import { PQRSFPagination } from "@/components/PQRSFPagination"
 import { authService } from "@/services/auth.service"
 import { userService } from "@/services/user.service"
 import type { Area, DBUser } from "@/types/database"
@@ -96,6 +98,13 @@ export default function Usuarios() {
     const matchesArea =
       areaFilterId === "todas" || responsable.areaId === Number(areaFilterId)
     return matchesSearch && matchesArea
+  })
+
+  const ITEMS_PER_PAGE = 10
+  const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
+    items: filteredResponsables,
+    itemsPerPage: ITEMS_PER_PAGE,
+    dependencies: [searchTerm, areaFilterId],
   })
 
   const handleCreateOrUpdate = async (formData: ResponsableFormValues) => {
@@ -309,40 +318,41 @@ export default function Usuarios() {
 
         {error && <p className="shrink-0 mb-4 text-sm min-[1600px]:text-base text-destructive">{error}</p>}
 
-        <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <CardHeader className="shrink-0 py-3 sm:py-6">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg min-[1600px]:text-xl">
-              <Users className="h-4 w-4 sm:h-5 sm:w-5 min-[1600px]:h-6 min-[1600px]:w-6" />
-              Lista de Responsables ({filteredResponsables.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 flex-1 min-h-0 overflow-auto">
-            <div className="overflow-x-auto min-h-0">
-              <table className="w-full">
-                <thead className="bg-muted/50 border-b sticky top-0 z-10">
-                  <tr>
-                    <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Nombre</th>
-                    <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Correo</th>
-                    <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Área</th>
-                    <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Estado</th>
-                    <th className="text-right p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <Card className="h-full flex flex-col min-h-0 overflow-hidden">
+            <CardHeader className="shrink-0 py-3 sm:py-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg min-[1600px]:text-xl">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 min-[1600px]:h-6 min-[1600px]:w-6" />
+                Lista de Responsables ({filteredResponsables.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 flex-1 min-h-0 overflow-auto">
+              <div className="overflow-x-auto min-h-0">
+                <table className="w-full">
+                  <thead className="bg-muted/50 border-b sticky top-0 z-10">
                     <tr>
-                      <td className="p-3 sm:p-4 min-[1600px]:p-5 text-sm min-[1600px]:text-base text-muted-foreground" colSpan={5}>
-                        Cargando responsables...
-                      </td>
+                      <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Nombre</th>
+                      <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Correo</th>
+                      <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Área</th>
+                      <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Estado</th>
+                      <th className="text-right p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Acciones</th>
                     </tr>
-                  ) : filteredResponsables.length === 0 ? (
-                    <tr>
-                      <td className="p-3 sm:p-4 min-[1600px]:p-5 text-sm min-[1600px]:text-base text-muted-foreground" colSpan={5}>
-                        No hay responsables registrados.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredResponsables.map((responsable) => (
+                  </thead>
+                  <tbody>
+                    {isLoading ? (
+                      <tr>
+                        <td className="p-3 sm:p-4 min-[1600px]:p-5 text-sm min-[1600px]:text-base text-muted-foreground" colSpan={5}>
+                          Cargando responsables...
+                        </td>
+                      </tr>
+                    ) : paginatedItems.length === 0 ? (
+                      <tr>
+                        <td className="p-3 sm:p-4 min-[1600px]:p-5 text-sm min-[1600px]:text-base text-muted-foreground" colSpan={5}>
+                          No hay responsables registrados.
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedItems.map((responsable) => (
                       <tr key={responsable.id} className="border-b hover:bg-muted/30 transition-colors">
                         <td className="p-3 sm:p-4 min-[1600px]:p-5">
                           <div className="font-medium text-sm sm:text-base min-[1600px]:text-lg">{responsable.userName ?? "Sin nombre"}</div>
@@ -385,12 +395,20 @@ export default function Usuarios() {
                         </td>
                       </tr>
                     ))
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+            <div className="shrink-0 border-t border-border p-3 sm:p-4">
+              <PQRSFPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </div>
-          </CardContent>
-        </Card>
+          </Card>
+        </div>
       </main>
     </div>
   )

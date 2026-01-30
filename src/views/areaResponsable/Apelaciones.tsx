@@ -210,8 +210,8 @@ export default function Apelaciones() {
           </div>
         )}
 
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-3 md:gap-4 min-[1600px]:gap-5">
+        <div className="flex-1 min-h-0 overflow-hidden mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 auto-rows-fr min-h-full gap-3 md:gap-4 min-[1600px]:gap-5">
             {isLoadingData ? (
               <Card className="col-span-full border-dashed p-4">
                 <CardContent className="p-4 text-sm text-muted-foreground">Cargando apelaciones...</CardContent>
@@ -240,12 +240,12 @@ export default function Apelaciones() {
 
                     <div className="flex flex-col lg:flex-row items-start justify-between gap-4">
                       <div className="flex-1 w-full">
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
-                          <span className="font-mono text-sm font-semibold text-primary">{item.ticketNumber}</span>
-                          <span className={`text-xs font-medium px-3 py-1 rounded-full border ${getTypeColor(item.typeName)}`}>
+                        <div className="flex flex-nowrap items-center gap-2 sm:gap-3 mb-3 min-w-0 overflow-hidden">
+                          <span className="font-mono text-sm font-semibold text-primary truncate min-w-0 flex-1">{item.ticketNumber}</span>
+                          <span className={`shrink-0 text-xs font-medium px-3 py-1 rounded-full border whitespace-nowrap ${getTypeColor(item.typeName)}`}>
                             {item.typeName}
                           </span>
-                          <span className="text-xs font-medium px-3 py-1 rounded-full bg-red-100 text-red-700">
+                          <span className="shrink-0 text-xs font-medium px-3 py-1 rounded-full bg-red-100 text-red-700 whitespace-nowrap">
                             Apelada
                           </span>
                         </div>

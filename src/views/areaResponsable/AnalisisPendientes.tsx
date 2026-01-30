@@ -243,8 +243,8 @@ export default function AnalisisPendientes() {
           </div>
         )}
 
-        <div className="flex-1 min-h-0 overflow-y-auto mb-4 sm:mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-3 md:gap-4 min-[1600px]:gap-5">
+        <div className="flex-1 min-h-0 overflow-hidden mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 auto-rows-fr min-h-full gap-3 md:gap-4 min-[1600px]:gap-5">
             {isLoadingData && (
               <Card className="col-span-full border-dashed p-4 sm:p-5">
                 <div className="text-sm text-muted-foreground">Cargando pendientes...</div>

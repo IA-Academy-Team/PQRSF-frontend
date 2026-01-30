@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
-import { CheckCircle, Search, ArrowUpRight } from "lucide-react"
+import { CheckCircle, Search, ArrowUpRight, Filter } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +19,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { pqrsfService, type CerradaItem } from "@/services/pqrsf.service"
+import { areaService } from "@/services/area.service"
 import { ITEMS_PER_PAGE } from "@/lib/pqrsf-utils"
 
 export default function Cerradas() {
@@ -27,6 +28,8 @@ export default function Cerradas() {
   const { isCollapsed } = useSidebar()
   const [searchTerm, setSearchTerm] = useState("")
   const [filtroTipo, setFiltroTipo] = useState("todos")
+  const [filtroArea, setFiltroArea] = useState("todas")
+  const [areasList, setAreasList] = useState<{ id: number; name: string }[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = ITEMS_PER_PAGE
   const [items, setItems] = useState<CerradaItem[]>([])
@@ -60,6 +63,15 @@ export default function Cerradas() {
     return () => {
       active = false
     }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    areaService.getAll().then((list) => {
+      if (!active) return
+      setAreasList(list.map((a) => ({ id: a.id, name: a.name })))
+    }).catch(() => { if (active) setAreasList([]) })
+    return () => { active = false }
   }, [])
 
   const computeAvgScore = (item: CerradaItem) => {
@@ -112,14 +124,15 @@ export default function Cerradas() {
       p.radicado.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.solicitante.toLowerCase().includes(searchTerm.toLowerCase())
     const matchTipo = filtroTipo === "todos" || p.tipo === filtroTipo
-    return matchSearch && matchTipo
+    const matchArea = filtroArea === "todas" || p.area === filtroArea
+    return matchSearch && matchTipo && matchArea
   })
 
   const totalPages = Math.ceil(filteredPQRSF.length / itemsPerPage) || 1
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm, filtroTipo])
+  }, [searchTerm, filtroTipo, filtroArea])
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
@@ -185,15 +198,28 @@ export default function Cerradas() {
             </div>
             <Select value={filtroTipo} onValueChange={setFiltroTipo}>
               <SelectTrigger className="w-full sm:w-50">
-                <SelectValue placeholder="Filtrar por tipo" />
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Estado (tipo)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todos los tipos</SelectItem>
+                <SelectItem value="todos">Todos los estados</SelectItem>
                 <SelectItem value="Petición">Petición</SelectItem>
                 <SelectItem value="Queja">Queja</SelectItem>
                 <SelectItem value="Reclamo">Reclamo</SelectItem>
                 <SelectItem value="Sugerencia">Sugerencia</SelectItem>
                 <SelectItem value="Felicitación">Felicitación</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filtroArea} onValueChange={setFiltroArea}>
+              <SelectTrigger className="w-full sm:w-50">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Área" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas las áreas</SelectItem>
+                {areasList.map((a) => (
+                  <SelectItem key={a.id} value={a.name}>{a.name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -205,8 +231,8 @@ export default function Cerradas() {
           </div>
         )}
 
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-3 md:gap-4 min-[1600px]:gap-5">
+        <div className="flex-1 min-h-0 overflow-hidden mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 auto-rows-fr min-h-full gap-3 md:gap-4 min-[1600px]:gap-5">
             {isLoading && (
               <Card className="col-span-full border-dashed min-h-0 overflow-hidden">
                 <CardContent className="p-4 text-sm text-muted-foreground">Cargando cerradas...</CardContent>
@@ -222,12 +248,12 @@ export default function Cerradas() {
                 <CardContent className="p-3 sm:p-4 flex-1 min-h-0 overflow-hidden flex flex-col">
                   <div className="flex flex-col lg:flex-row lg:items-start gap-4 sm:gap-6 min-h-0 overflow-hidden">
                     <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
-                      <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3 flex-wrap">
-                        <span className="font-mono text-xs sm:text-sm font-semibold text-primary truncate">{pqrsf.radicado}</span>
-                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3 flex-nowrap min-w-0 overflow-hidden">
+                        <span className="font-mono text-xs sm:text-sm font-semibold text-primary truncate min-w-0 flex-1">{pqrsf.radicado}</span>
+                        <span className="shrink-0 text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700 whitespace-nowrap">
                           {pqrsf.tipo}
                         </span>
-                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <CheckCircle className="h-4 w-4 shrink-0 text-green-600" />
                       </div>
 
                       <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-4 truncate">
