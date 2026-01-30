@@ -1084,6 +1084,17 @@ export default function PQRSFDetail() {
                 </div>
               </CardContent>
             </Card>
+            {detail.appeal && detail.appeal.trim().length > 0 ? (
+              <Card className="border-amber-200 bg-amber-50/60">
+                <CardHeader className="flex flex-row items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                  <CardTitle>Apelación del Cliente</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-foreground leading-relaxed">{detail.appeal}</p>
+                </CardContent>
+              </Card>
+            ) : null}
 
             <Card>
               <CardHeader>

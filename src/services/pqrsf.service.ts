@@ -38,6 +38,7 @@ export interface PQRSFDetailItem {
   description: string
   isAutoResolved: boolean
   dueDate: string | null
+  appeal?: string | null
   createdAt: string | null
   updatedAt: string | null
   statusId: number
