@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
 import { pqrsfService, type PQRSFListItem, type PQRSFListQuery, type SeguimientoItem, type CerradaItem, type ApelacionItem } from "@/services/pqrsf.service"
 import { areaService } from "@/services/area.service"
+import { catalogService } from "@/services/catalog.service"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { dashboardService, type AreaPendingItem } from "@/services/dashboard.service"
 import { PQRSFCard, type UnifiedPQRSFItem } from "@/components/PQRSFCard"
@@ -46,12 +47,14 @@ export default function PQRSFList() {
   const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("todos")
+  const [typeFilter, setTypeFilter] = useState("todos")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
   const [sortFilter, setSortFilter] = useState("recent")
   const [areaId, setAreaId] = useState<number | null>(null)
   const [areaFilter, setAreaFilter] = useState("todos")
   const [areasList, setAreasList] = useState<{ id: number; name: string }[]>([])
+  const [typesList, setTypesList] = useState<{ id: number; name: string }[]>([])
   const [searchParams] = useSearchParams()
 
   useEffect(() => {
@@ -110,6 +113,22 @@ export default function PQRSFList() {
 
   useEffect(() => {
     let active = true
+    catalogService
+      .getTypePQRSF()
+      .then((list) => {
+        if (!active) return
+        setTypesList(list.map((t) => ({ id: t.id, name: t.name })))
+      })
+      .catch(() => {
+        if (active) setTypesList([])
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
     const timeout = setTimeout(async () => {
       setIsLoading(true)
       setError("")
@@ -131,6 +150,9 @@ export default function PQRSFList() {
         if (statusFilter !== "todos") {
           query.pqrsStatusId = Number(statusFilter)
         }
+        if (typeFilter !== "todos") {
+          query.typePqrsId = Number(typeFilter)
+        }
         if (dateFrom) query.fromDate = dateFrom
         if (dateTo) query.toDate = dateTo
 
@@ -150,7 +172,7 @@ export default function PQRSFList() {
       active = false
       clearTimeout(timeout)
     }
-  }, [searchTerm, statusFilter, dateFrom, dateTo, sortFilter, user, areaId, areaFilter])
+  }, [searchTerm, statusFilter, typeFilter, dateFrom, dateTo, sortFilter, user, areaId, areaFilter])
 
   const formattedItems = useMemo<UnifiedPQRSFItem[]>(
     () =>
@@ -195,7 +217,7 @@ export default function PQRSFList() {
   const { currentPage: safeCurrentPage, totalPages, paginatedItems, setCurrentPage: setSafeCurrentPage } = usePagination({
     items: formattedItems,
     itemsPerPage,
-    dependencies: [searchTerm, statusFilter, dateFrom, dateTo, sortFilter],
+    dependencies: [searchTerm, statusFilter, typeFilter, dateFrom, dateTo, sortFilter],
   })
 
   return (
@@ -258,6 +280,21 @@ export default function PQRSFList() {
                   </SelectContent>
                 </Select>
 
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-full md:w-50">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos los tipos</SelectItem>
+                    {typesList.map((t) => (
+                      <SelectItem key={t.id} value={String(t.id)}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
                 {user?.rol === "Administrador" && (
                   <Select value={areaFilter} onValueChange={setAreaFilter}>
                     <SelectTrigger className="w-full md:w-50">
@@ -316,13 +353,14 @@ export default function PQRSFList() {
                 </Popover>
 
                 <Select value={sortFilter} onValueChange={setSortFilter}>
-                  <SelectTrigger className="w-full md:w-55">
+                  <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+                    <Filter className="h-4 w-4 mr-2 shrink-0" />
                     <SelectValue placeholder="Ordenar por" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="recent">Más reciente</SelectItem>
-                    <SelectItem value="oldest">Más antigua</SelectItem>
-                    <SelectItem value="ticket">Token</SelectItem>
+                    <SelectItem value="recent">Reciente</SelectItem>
+                    <SelectItem value="oldest">Antigua</SelectItem>
+                    <SelectItem value="ticket">Ticket</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -402,9 +440,15 @@ export default function PQRSFList() {
 function SeguimientoTabContent() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
-  const [filtroEstado, setFiltroEstado] = useState("todas")
+  const [filtroEstado, setFiltroEstado] = useState("todos")
+  const [filtroTipo, setFiltroTipo] = useState("todos")
   const [filtroArea, setFiltroArea] = useState("todas")
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
+  const [sortFilter, setSortFilter] = useState<"recent" | "oldest" | "ticket">("recent")
   const [areasSeguimiento, setAreasSeguimiento] = useState<{ id: number; name: string }[]>([])
+  const [statusList, setStatusList] = useState<{ id: number; name: string }[]>([])
+  const [typesList, setTypesList] = useState<{ id: number; name: string }[]>([])
   const itemsPerPage = ITEMS_PER_PAGE
   const [items, setItems] = useState<SeguimientoItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -420,6 +464,24 @@ function SeguimientoTabContent() {
     }).catch(() => { if (active) setAreasSeguimiento([]) })
     return () => { active = false }
   }, [user])
+
+  useEffect(() => {
+    let active = true
+    catalogService.getPQRSStatus().then((list) => {
+      if (!active) return
+      setStatusList(list.map((s) => ({ id: s.id, name: s.name })))
+    }).catch(() => { if (active) setStatusList([]) })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    catalogService.getTypePQRSF().then((list) => {
+      if (!active) return
+      setTypesList(list.map((t) => ({ id: t.id, name: t.name })))
+    }).catch(() => { if (active) setTypesList([]) })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     if (!user || user.rol !== "Administrador") return
@@ -449,22 +511,33 @@ function SeguimientoTabContent() {
     return items.map(transformSeguimientoItem)
   }, [items])
 
-const filteredPQRSF = formattedItems.filter((p) => {
-    const matchSearch =
-      p.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.clientName || "").toLowerCase().includes(searchTerm.toLowerCase())
-    const matchEstado = filtroEstado === "todas" ||
-      (filtroEstado === "satisfecho" && p.satisfaction && ["Satisfecho", "Muy Satisfecho"].includes(p.satisfaction)) ||
-      (filtroEstado === "insatisfecho" && p.satisfaction && !["Satisfecho", "Muy Satisfecho"].includes(p.satisfaction)) ||
-      (filtroEstado === "sin_respuesta" && !p.satisfaction)
-    const matchArea = filtroArea === "todas" || p.areaName === filtroArea
-    return matchSearch && matchEstado && matchArea
-  })
+  const filteredPQRSF = useMemo(() => {
+    const filtered = formattedItems.filter((p) => {
+      const matchSearch =
+        p.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.clientName || "").toLowerCase().includes(searchTerm.toLowerCase())
+      const matchEstado = filtroEstado === "todos" || p.statusName === filtroEstado
+      const matchTipo = filtroTipo === "todos" || p.typeName === filtroTipo
+      const matchArea = filtroArea === "todas" || p.areaName === filtroArea
+      const fechaItem = p.createdAt ? p.createdAt.slice(0, 10) : ""
+      const matchFecha =
+        (!dateFrom || (fechaItem && fechaItem >= dateFrom)) &&
+        (!dateTo || (fechaItem && fechaItem <= dateTo))
+      return matchSearch && matchEstado && matchTipo && matchArea && matchFecha
+    })
+    if (sortFilter === "oldest") {
+      return [...filtered].sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""))
+    }
+    if (sortFilter === "ticket") {
+      return [...filtered].sort((a, b) => a.ticketNumber.localeCompare(b.ticketNumber))
+    }
+    return [...filtered].sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
+  }, [formattedItems, searchTerm, filtroEstado, filtroTipo, filtroArea, dateFrom, dateTo, sortFilter])
 
   const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
     items: filteredPQRSF,
     itemsPerPage,
-    dependencies: [searchTerm, filtroEstado, filtroArea],
+    dependencies: [searchTerm, filtroEstado, filtroTipo, filtroArea, dateFrom, dateTo, sortFilter],
   })
 
   const handleFinalize = async (id: number) => {
@@ -507,7 +580,7 @@ const filteredPQRSF = formattedItems.filter((p) => {
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <CardContent className="pb-2 px-0 mb-4 sm:mb-6 shrink-0">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -518,27 +591,88 @@ const filteredPQRSF = formattedItems.filter((p) => {
             />
           </div>
           <Select value={filtroEstado} onValueChange={setFiltroEstado}>
-            <SelectTrigger className="w-full sm:w-50">
+            <SelectTrigger className="w-full md:w-50">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Estado" />
+              <SelectValue placeholder="Todos los estados" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todas">Todos los estados</SelectItem>
-              <SelectItem value="satisfecho">Cliente Satisfecho</SelectItem>
-              <SelectItem value="insatisfecho">Cliente Insatisfecho</SelectItem>
-              <SelectItem value="sin_respuesta">Sin Respuesta</SelectItem>
+              <SelectItem value="todos">Todos los estados</SelectItem>
+              {statusList.map((s) => (
+                <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Select value={filtroArea} onValueChange={setFiltroArea}>
-            <SelectTrigger className="w-full sm:w-50">
+          <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+            <SelectTrigger className="w-full md:w-50">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Área" />
+              <SelectValue placeholder="Todos los tipos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todas">Todas las áreas</SelectItem>
-              {areasSeguimiento.map((a) => (
-                <SelectItem key={a.id} value={a.name}>{a.name}</SelectItem>
+              <SelectItem value="todos">Todos los tipos</SelectItem>
+              {typesList.map((t) => (
+                <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          {user?.rol === "Administrador" && (
+            <Select value={filtroArea} onValueChange={setFiltroArea}>
+              <SelectTrigger className="w-full md:w-50">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Todas las áreas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas las áreas</SelectItem>
+                {areasSeguimiento.map((a) => (
+                  <SelectItem key={a.id} value={a.name}>{a.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full md:w-50 justify-start text-left font-normal pl-10 text-sm min-w-0 truncate",
+                  !dateFrom && !dateTo && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {dateFrom && dateTo
+                    ? `${formatDateLabel(dateFrom)} — ${formatDateLabel(dateTo)}`
+                    : dateFrom
+                      ? `Desde ${formatDateLabel(dateFrom)}`
+                      : "Rango de fechas (desde — hasta)"}
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                defaultMonth={dateFrom ? new Date(dateFrom + "T12:00:00") : undefined}
+                selected={
+                  dateFrom
+                    ? { from: new Date(dateFrom + "T12:00:00"), to: dateTo ? new Date(dateTo + "T12:00:00") : undefined }
+                    : undefined
+                }
+                onSelect={(range: DateRange | undefined) => {
+                  setDateFrom(range?.from ? range.from.toISOString().split("T")[0] : "")
+                  setDateTo(range?.to ? range.to.toISOString().split("T")[0] : "")
+                }}
+                numberOfMonths={1}
+              />
+            </PopoverContent>
+          </Popover>
+          <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
+            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+              <Filter className="h-4 w-4 mr-2 shrink-0" />
+              <SelectValue placeholder="Ordenar por" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Reciente</SelectItem>
+              <SelectItem value="oldest">Antigua</SelectItem>
+              <SelectItem value="ticket">Ticket</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -587,9 +721,15 @@ const filteredPQRSF = formattedItems.filter((p) => {
 function CerradasTabContent() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
+  const [filtroEstado, setFiltroEstado] = useState("todos")
   const [filtroTipo, setFiltroTipo] = useState("todos")
   const [filtroArea, setFiltroArea] = useState("todas")
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
+  const [sortFilter, setSortFilter] = useState<"recent" | "oldest" | "ticket">("recent")
   const [areasCerradas, setAreasCerradas] = useState<{ id: number; name: string }[]>([])
+  const [statusList, setStatusList] = useState<{ id: number; name: string }[]>([])
+  const [typesList, setTypesList] = useState<{ id: number; name: string }[]>([])
   const itemsPerPage = ITEMS_PER_PAGE
   const [items, setItems] = useState<CerradaItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -604,6 +744,24 @@ function CerradasTabContent() {
     }).catch(() => { if (active) setAreasCerradas([]) })
     return () => { active = false }
   }, [user])
+
+  useEffect(() => {
+    let active = true
+    catalogService.getPQRSStatus().then((list) => {
+      if (!active) return
+      setStatusList(list.map((s) => ({ id: s.id, name: s.name })))
+    }).catch(() => { if (active) setStatusList([]) })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    catalogService.getTypePQRSF().then((list) => {
+      if (!active) return
+      setTypesList(list.map((t) => ({ id: t.id, name: t.name })))
+    }).catch(() => { if (active) setTypesList([]) })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     if (!user || (user.rol !== "Administrador" && user.rol !== "Usuario de Área Responsable")) return
@@ -633,19 +791,33 @@ function CerradasTabContent() {
     return items.map(transformCerradaItem)
   }, [items])
 
-  const filteredPQRSF = formattedItems.filter((p) => {
-    const matchSearch =
-      p.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.clientName || "").toLowerCase().includes(searchTerm.toLowerCase())
-    const matchTipo = filtroTipo === "todos" || p.typeName === filtroTipo
-    const matchArea = filtroArea === "todas" || p.areaName === filtroArea
-    return matchSearch && matchTipo && matchArea
-  })
+  const filteredPQRSF = useMemo(() => {
+    const filtered = formattedItems.filter((p) => {
+      const matchSearch =
+        p.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.clientName || "").toLowerCase().includes(searchTerm.toLowerCase())
+      const matchEstado = filtroEstado === "todos" || p.statusName === filtroEstado
+      const matchTipo = filtroTipo === "todos" || p.typeName === filtroTipo
+      const matchArea = filtroArea === "todas" || p.areaName === filtroArea
+      const fechaItem = p.createdAt ? p.createdAt.slice(0, 10) : ""
+      const matchFecha =
+        (!dateFrom || (fechaItem && fechaItem >= dateFrom)) &&
+        (!dateTo || (fechaItem && fechaItem <= dateTo))
+      return matchSearch && matchEstado && matchTipo && matchArea && matchFecha
+    })
+    if (sortFilter === "oldest") {
+      return [...filtered].sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""))
+    }
+    if (sortFilter === "ticket") {
+      return [...filtered].sort((a, b) => a.ticketNumber.localeCompare(b.ticketNumber))
+    }
+    return [...filtered].sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
+  }, [formattedItems, searchTerm, filtroEstado, filtroTipo, filtroArea, dateFrom, dateTo, sortFilter])
 
   const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
     items: filteredPQRSF,
     itemsPerPage,
-    dependencies: [searchTerm, filtroTipo, filtroArea],
+    dependencies: [searchTerm, filtroEstado, filtroTipo, filtroArea, dateFrom, dateTo, sortFilter],
   })
 
   if (!user || (user.rol !== "Administrador" && user.rol !== "Usuario de Área Responsable")) {
@@ -655,7 +827,7 @@ function CerradasTabContent() {
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <CardContent className="pb-2 px-0 mb-4 sm:mb-6 shrink-0">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -665,30 +837,89 @@ function CerradasTabContent() {
               className="pl-10"
             />
           </div>
-          <Select value={filtroTipo} onValueChange={setFiltroTipo}>
-            <SelectTrigger className="w-full sm:w-50">
+          <Select value={filtroEstado} onValueChange={setFiltroEstado}>
+            <SelectTrigger className="w-full md:w-50">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Estado (tipo)" />
+              <SelectValue placeholder="Todos los estados" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos los estados</SelectItem>
-              <SelectItem value="Petición">Petición</SelectItem>
-              <SelectItem value="Queja">Queja</SelectItem>
-              <SelectItem value="Reclamo">Reclamo</SelectItem>
-              <SelectItem value="Sugerencia">Sugerencia</SelectItem>
-              <SelectItem value="Felicitación">Felicitación</SelectItem>
+              {statusList.map((s) => (
+                <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Select value={filtroArea} onValueChange={setFiltroArea}>
-            <SelectTrigger className="w-full sm:w-50">
+          <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+            <SelectTrigger className="w-full md:w-50">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Área" />
+              <SelectValue placeholder="Todos los tipos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todas">Todas las áreas</SelectItem>
-              {areasCerradas.map((a) => (
-                <SelectItem key={a.id} value={a.name}>{a.name}</SelectItem>
+              <SelectItem value="todos">Todos los tipos</SelectItem>
+              {typesList.map((t) => (
+                <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          {user?.rol === "Administrador" && (
+            <Select value={filtroArea} onValueChange={setFiltroArea}>
+              <SelectTrigger className="w-full md:w-50">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Todas las áreas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas las áreas</SelectItem>
+                {areasCerradas.map((a) => (
+                  <SelectItem key={a.id} value={a.name}>{a.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full md:w-50 justify-start text-left font-normal pl-10 text-sm min-w-0 truncate",
+                  !dateFrom && !dateTo && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {dateFrom && dateTo
+                    ? `${formatDateLabel(dateFrom)} — ${formatDateLabel(dateTo)}`
+                    : dateFrom
+                      ? `Desde ${formatDateLabel(dateFrom)}`
+                      : "Rango de fechas (desde — hasta)"}
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                defaultMonth={dateFrom ? new Date(dateFrom + "T12:00:00") : undefined}
+                selected={
+                  dateFrom
+                    ? { from: new Date(dateFrom + "T12:00:00"), to: dateTo ? new Date(dateTo + "T12:00:00") : undefined }
+                    : undefined
+                }
+                onSelect={(range: DateRange | undefined) => {
+                  setDateFrom(range?.from ? range.from.toISOString().split("T")[0] : "")
+                  setDateTo(range?.to ? range.to.toISOString().split("T")[0] : "")
+                }}
+                numberOfMonths={1}
+              />
+            </PopoverContent>
+          </Popover>
+          <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
+            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+              <Filter className="h-4 w-4 mr-2 shrink-0" />
+              <SelectValue placeholder="Ordenar por" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Reciente</SelectItem>
+              <SelectItem value="oldest">Antigua</SelectItem>
+              <SelectItem value="ticket">Ticket</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -737,9 +968,15 @@ function CerradasTabContent() {
 function ApelacionTabContent() {
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
-  const [filtroArea, setFiltroArea] = useState("todas")
+  const [filtroEstado, setFiltroEstado] = useState("todos")
   const [filtroTipo, setFiltroTipo] = useState("todos")
+  const [filtroArea, setFiltroArea] = useState("todas")
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
+  const [sortFilter, setSortFilter] = useState<"recent" | "oldest" | "ticket">("recent")
   const [areasApelacion, setAreasApelacion] = useState<{ id: number; name: string }[]>([])
+  const [statusList, setStatusList] = useState<{ id: number; name: string }[]>([])
+  const [typesList, setTypesList] = useState<{ id: number; name: string }[]>([])
   const itemsPerPage = ITEMS_PER_PAGE
   const [items, setItems] = useState<ApelacionItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -754,6 +991,24 @@ function ApelacionTabContent() {
     }).catch(() => { if (active) setAreasApelacion([]) })
     return () => { active = false }
   }, [user])
+
+  useEffect(() => {
+    let active = true
+    catalogService.getPQRSStatus().then((list) => {
+      if (!active) return
+      setStatusList(list.map((s) => ({ id: s.id, name: s.name })))
+    }).catch(() => { if (active) setStatusList([]) })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    catalogService.getTypePQRSF().then((list) => {
+      if (!active) return
+      setTypesList(list.map((t) => ({ id: t.id, name: t.name })))
+    }).catch(() => { if (active) setTypesList([]) })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     if (!user || user.rol !== "Administrador") return
@@ -783,19 +1038,33 @@ function ApelacionTabContent() {
     return items.map(transformApelacionItem)
   }, [items])
 
-  const filteredPQRSF = formattedItems.filter((p) => {
-    const matchSearch =
-      p.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.clientName || "").toLowerCase().includes(searchTerm.toLowerCase())
-    const matchArea = filtroArea === "todas" || p.areaName === filtroArea
-    const matchTipo = filtroTipo === "todos" || p.typeName === filtroTipo
-    return matchSearch && matchArea && matchTipo
-  })
+  const filteredPQRSF = useMemo(() => {
+    const filtered = formattedItems.filter((p) => {
+      const matchSearch =
+        p.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.clientName || "").toLowerCase().includes(searchTerm.toLowerCase())
+      const matchEstado = filtroEstado === "todos" || p.statusName === filtroEstado
+      const matchTipo = filtroTipo === "todos" || p.typeName === filtroTipo
+      const matchArea = filtroArea === "todas" || p.areaName === filtroArea
+      const fechaItem = p.createdAt ? p.createdAt.slice(0, 10) : ""
+      const matchFecha =
+        (!dateFrom || (fechaItem && fechaItem >= dateFrom)) &&
+        (!dateTo || (fechaItem && fechaItem <= dateTo))
+      return matchSearch && matchEstado && matchTipo && matchArea && matchFecha
+    })
+    if (sortFilter === "oldest") {
+      return [...filtered].sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""))
+    }
+    if (sortFilter === "ticket") {
+      return [...filtered].sort((a, b) => a.ticketNumber.localeCompare(b.ticketNumber))
+    }
+    return [...filtered].sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
+  }, [formattedItems, searchTerm, filtroEstado, filtroTipo, filtroArea, dateFrom, dateTo, sortFilter])
 
   const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
     items: filteredPQRSF,
     itemsPerPage,
-    dependencies: [searchTerm, filtroArea, filtroTipo],
+    dependencies: [searchTerm, filtroEstado, filtroTipo, filtroArea, dateFrom, dateTo, sortFilter],
   })
 
   if (!user || user.rol !== "Administrador") {
@@ -805,7 +1074,7 @@ function ApelacionTabContent() {
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <CardContent className="pb-2 px-0 mb-4 sm:mb-6 shrink-0">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -815,30 +1084,89 @@ function ApelacionTabContent() {
               className="pl-10"
             />
           </div>
-          <Select value={filtroArea} onValueChange={setFiltroArea}>
-            <SelectTrigger className="w-full sm:w-50">
+          <Select value={filtroEstado} onValueChange={setFiltroEstado}>
+            <SelectTrigger className="w-full md:w-50">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Área" />
+              <SelectValue placeholder="Todos los estados" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todas">Todas las áreas</SelectItem>
-              {areasApelacion.map((a) => (
-                <SelectItem key={a.id} value={a.name}>{a.name}</SelectItem>
+              <SelectItem value="todos">Todos los estados</SelectItem>
+              {statusList.map((s) => (
+                <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={filtroTipo} onValueChange={setFiltroTipo}>
-            <SelectTrigger className="w-full sm:w-50">
+            <SelectTrigger className="w-full md:w-50">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Estado (tipo)" />
+              <SelectValue placeholder="Todos los tipos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">Todos los estados</SelectItem>
-              <SelectItem value="Petición">Petición</SelectItem>
-              <SelectItem value="Queja">Queja</SelectItem>
-              <SelectItem value="Reclamo">Reclamo</SelectItem>
-              <SelectItem value="Sugerencia">Sugerencia</SelectItem>
-              <SelectItem value="Felicitación">Felicitación</SelectItem>
+              <SelectItem value="todos">Todos los tipos</SelectItem>
+              {typesList.map((t) => (
+                <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {user?.rol === "Administrador" && (
+            <Select value={filtroArea} onValueChange={setFiltroArea}>
+              <SelectTrigger className="w-full md:w-50">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Todas las áreas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas las áreas</SelectItem>
+                {areasApelacion.map((a) => (
+                  <SelectItem key={a.id} value={a.name}>{a.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full md:w-50 justify-start text-left font-normal pl-10 text-sm min-w-0 truncate",
+                  !dateFrom && !dateTo && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {dateFrom && dateTo
+                    ? `${formatDateLabel(dateFrom)} — ${formatDateLabel(dateTo)}`
+                    : dateFrom
+                      ? `Desde ${formatDateLabel(dateFrom)}`
+                      : "Rango de fechas (desde — hasta)"}
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                defaultMonth={dateFrom ? new Date(dateFrom + "T12:00:00") : undefined}
+                selected={
+                  dateFrom
+                    ? { from: new Date(dateFrom + "T12:00:00"), to: dateTo ? new Date(dateTo + "T12:00:00") : undefined }
+                    : undefined
+                }
+                onSelect={(range: DateRange | undefined) => {
+                  setDateFrom(range?.from ? range.from.toISOString().split("T")[0] : "")
+                  setDateTo(range?.to ? range.to.toISOString().split("T")[0] : "")
+                }}
+                numberOfMonths={1}
+              />
+            </PopoverContent>
+          </Popover>
+          <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
+            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+              <Filter className="h-4 w-4 mr-2 shrink-0" />
+              <SelectValue placeholder="Ordenar por" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Reciente</SelectItem>
+              <SelectItem value="oldest">Antigua</SelectItem>
+              <SelectItem value="ticket">Ticket</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -892,10 +1220,32 @@ function AnalisisPendienteTabContent() {
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
-  const [priorityFilter, setPriorityFilter] = useState("todos")
+  const [filtroEstado, setFiltroEstado] = useState("todos")
+  const [filtroTipo, setFiltroTipo] = useState("todos")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
+  const [sortFilter, setSortFilter] = useState<"recent" | "oldest" | "ticket">("recent")
+  const [statusList, setStatusList] = useState<{ id: number; name: string }[]>([])
+  const [typesList, setTypesList] = useState<{ id: number; name: string }[]>([])
   const itemsPerPage = ITEMS_PER_PAGE
+
+  useEffect(() => {
+    let active = true
+    catalogService.getPQRSStatus().then((list) => {
+      if (!active) return
+      setStatusList(list.map((s) => ({ id: s.id, name: s.name })))
+    }).catch(() => { if (active) setStatusList([]) })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    catalogService.getTypePQRSF().then((list) => {
+      if (!active) return
+      setTypesList(list.map((t) => ({ id: t.id, name: t.name })))
+    }).catch(() => { if (active) setTypesList([]) })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     if (!user || user.rol !== "Usuario de Área Responsable") return
@@ -949,8 +1299,9 @@ function AnalisisPendienteTabContent() {
 
   const filteredPending = useMemo(() => {
     const query = searchTerm.toLowerCase()
-    return formattedItems.filter((item) => {
-      const matchesPriority = priorityFilter === "todos" || (item.priority?.toLowerCase() === priorityFilter)
+    const filtered = formattedItems.filter((item) => {
+      const matchesEstado = filtroEstado === "todos" || item.statusName === filtroEstado
+      const matchesTipo = filtroTipo === "todos" || item.typeName === filtroTipo
       const matchesQuery =
         item.ticketNumber.toLowerCase().includes(query) ||
         (item.clientName ?? "").toLowerCase().includes(query) ||
@@ -959,14 +1310,21 @@ function AnalisisPendienteTabContent() {
       const matchesDate =
         (!dateFrom && !dateTo) ||
         (itemDate !== "" && (!dateFrom || itemDate >= dateFrom) && (!dateTo || itemDate <= dateTo))
-      return matchesPriority && matchesQuery && matchesDate
+      return matchesEstado && matchesTipo && matchesQuery && matchesDate
     })
-  }, [formattedItems, searchTerm, priorityFilter, dateFrom, dateTo])
+    if (sortFilter === "oldest") {
+      return [...filtered].sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""))
+    }
+    if (sortFilter === "ticket") {
+      return [...filtered].sort((a, b) => a.ticketNumber.localeCompare(b.ticketNumber))
+    }
+    return [...filtered].sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
+  }, [formattedItems, searchTerm, filtroEstado, filtroTipo, dateFrom, dateTo, sortFilter])
 
   const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
     items: filteredPending,
     itemsPerPage,
-    dependencies: [searchTerm, priorityFilter, dateFrom, dateTo],
+    dependencies: [searchTerm, filtroEstado, filtroTipo, dateFrom, dateTo, sortFilter],
   })
 
   if (!user || user.rol !== "Usuario de Área Responsable") {
@@ -986,20 +1344,30 @@ function AnalisisPendienteTabContent() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-
-          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+          <Select value={filtroEstado} onValueChange={setFiltroEstado}>
             <SelectTrigger className="w-full md:w-50">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Prioridad" />
+              <SelectValue placeholder="Todos los estados" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">Todas las prioridades</SelectItem>
-              <SelectItem value="alta">Alta</SelectItem>
-              <SelectItem value="media">Media</SelectItem>
-              <SelectItem value="baja">Baja</SelectItem>
+              <SelectItem value="todos">Todos los estados</SelectItem>
+              {statusList.map((s) => (
+                <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
-
+          <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+            <SelectTrigger className="w-full md:w-50">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Todos los tipos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos los tipos</SelectItem>
+              {typesList.map((t) => (
+                <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -1039,6 +1407,17 @@ function AnalisisPendienteTabContent() {
               />
             </PopoverContent>
           </Popover>
+          <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
+            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+              <Filter className="h-4 w-4 mr-2 shrink-0" />
+              <SelectValue placeholder="Ordenar por" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Reciente</SelectItem>
+              <SelectItem value="oldest">Antigua</SelectItem>
+              <SelectItem value="ticket">Ticket</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </CardContent>
 
