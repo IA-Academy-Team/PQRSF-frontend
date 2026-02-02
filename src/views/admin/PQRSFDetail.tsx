@@ -437,12 +437,10 @@ export default function PQRSFDetail() {
       }
       const createdResponse = await pqrsfService.createResponse(detail.id, responsePayload)
 
-      if (detail.statusId !== 3) {
-        try {
-          await pqrsfService.getBotResponse(detail.id)
-        } catch (err) {
-          console.warn("[pqrsf-detail] bot-response error", err)
-        }
+      try {
+        await pqrsfService.getBotResponse(detail.id)
+      } catch (err) {
+        console.warn("[pqrsf-detail] bot-response error", err)
       }
 
       setResponses((prev) => [createdResponse, ...prev])
@@ -470,11 +468,6 @@ export default function PQRSFDetail() {
       if (action === "finalize") {
         await pqrsfService.finalize(detail.id)
         notifySuccess("PQRSF cerrada correctamente.")
-        try {
-          await pqrsfService.getBotResponse(detail.id)
-        } catch (err) {
-          console.warn("[pqrsf-detail] bot-response error", err)
-        }
         navigate("/pqrsf?tab=cerradas")
       } else {
         await pqrsfService.appeal(detail.id)
