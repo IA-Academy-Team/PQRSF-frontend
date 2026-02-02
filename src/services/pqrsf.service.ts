@@ -38,6 +38,7 @@ export interface PQRSFDetailItem {
   description: string
   isAutoResolved: boolean
   dueDate: string | null
+  appeal?: string | null
   createdAt: string | null
   updatedAt: string | null
   statusId: number
@@ -78,6 +79,9 @@ export interface PQRSFListQuery {
 export interface SeguimientoItem {
   id: number
   ticketNumber: string
+  description: string | null
+  /** Respuesta API a veces envía la descripción con nombre en español */
+  descripcion?: string | null
   createdAt: string | null
   statusId: number
   statusName: string
@@ -97,6 +101,9 @@ export interface SeguimientoItem {
 export interface ApelacionItem {
   id: number
   ticketNumber: string
+  description: string | null
+  /** Respuesta API a veces envía la descripción con nombre en español */
+  descripcion?: string | null
   createdAt: string | null
   statusId: number
   statusName: string
@@ -111,6 +118,9 @@ export interface ApelacionItem {
 export interface CerradaItem {
   id: number
   ticketNumber: string
+  description: string | null
+  /** Respuesta API a veces envía la descripción con nombre en español */
+  descripcion?: string | null
   createdAt: string | null
   updatedAt: string | null
   statusId: number

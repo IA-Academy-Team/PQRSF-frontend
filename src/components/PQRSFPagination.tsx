@@ -15,14 +15,12 @@ interface PQRSFPaginationProps {
 }
 
 export function PQRSFPagination({ currentPage, totalPages, onPageChange }: PQRSFPaginationProps) {
-  if (totalPages <= 1) return null
-
-  const visiblePages = getVisiblePages(currentPage, totalPages)
+  const visiblePages = totalPages >= 1 ? getVisiblePages(currentPage, totalPages) : []
 
   return (
     <Pagination>
       <PaginationContent>
-        {currentPage > 1 && (
+        {totalPages > 1 && currentPage > 1 && (
           <PaginationItem>
             <PaginationPrevious
               href="#"
@@ -47,7 +45,7 @@ export function PQRSFPagination({ currentPage, totalPages, onPageChange }: PQRSF
             </PaginationLink>
           </PaginationItem>
         ))}
-        {currentPage < totalPages && (
+        {totalPages > 1 && currentPage < totalPages && (
           <PaginationItem>
             <PaginationNext
               href="#"

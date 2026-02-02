@@ -11,10 +11,13 @@ import { useSidebar } from "@/contexts/sidebar-context"
 import { useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { HttpError } from "@/lib/api"
 import { notifyError, notifySuccess } from "@/lib/toast"
 import { areaService, type ResponsibleSummary } from "@/services/area.service"
+import { usePagination } from "@/hooks/usePagination"
+import { PQRSFPagination } from "@/components/PQRSFPagination"
 import { authService } from "@/services/auth.service"
 import { userService } from "@/services/user.service"
 import type { Area, DBUser } from "@/types/database"
@@ -42,6 +45,7 @@ export default function Usuarios() {
   const [responsables, setResponsables] = useState<ResponsibleSummary[]>([])
   const [areas, setAreas] = useState<Area[]>([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [areaFilterId, setAreaFilterId] = useState<string>("todas")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingResponsable, setEditingResponsable] = useState<ResponsibleSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -87,11 +91,20 @@ export default function Usuarios() {
 
   const filteredResponsables = responsables.filter((responsable) => {
     const query = searchTerm.toLowerCase()
-    return (
+    const matchesSearch =
       (responsable.userName ?? "").toLowerCase().includes(query) ||
       (responsable.userEmail ?? "").toLowerCase().includes(query) ||
       (responsable.areaName ?? "").toLowerCase().includes(query)
-    )
+    const matchesArea =
+      areaFilterId === "todas" || responsable.areaId === Number(areaFilterId)
+    return matchesSearch && matchesArea
+  })
+
+  const ITEMS_PER_PAGE = 10
+  const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
+    items: filteredResponsables,
+    itemsPerPage: ITEMS_PER_PAGE,
+    dependencies: [searchTerm, areaFilterId],
   })
 
   const handleCreateOrUpdate = async (formData: ResponsableFormValues) => {
@@ -226,33 +239,40 @@ export default function Usuarios() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
 
       <main
         className={cn(
-          "flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto min-h-screen transition-all duration-300",
+          "flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 transition-all duration-300 overflow-hidden",
           isCollapsed ? "lg:ml-24" : "lg:ml-64"
         )}
       >
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="shrink-0 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Gestión de Responsables</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl min-[1600px]:text-4xl font-bold text-foreground mb-1 sm:mb-2 min-[1600px]:mb-3">Gestión de Responsables</h1>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  onClick={() => {
-                    setEditingResponsable(null)
-                    setIsDialogOpen(true)
-                  }}
-                  className="w-full sm:w-auto"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Crear Responsable
-                </Button>
-              </DialogTrigger>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="icon"
+                      onClick={() => {
+                        setEditingResponsable(null)
+                        setIsDialogOpen(true)
+                      }}
+                      className="shrink-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Agregar nuevo responsable</p>
+                </TooltipContent>
+              </Tooltip>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <UserForm
                   responsable={editingResponsable}
@@ -269,74 +289,90 @@ export default function Usuarios() {
           </div>
         </div>
 
-        <CardContent className="pb-6 px-0 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nombre o correo..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+        <CardContent className="shrink-0 pb-4 sm:pb-6 px-0 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nombre o correo..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={areaFilterId} onValueChange={setAreaFilterId}>
+              <SelectTrigger className="w-full sm:w-56">
+                <SelectValue placeholder="Filtrar por área" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas las áreas</SelectItem>
+                {areas.map((area) => (
+                  <SelectItem key={area.id} value={String(area.id)}>
+                    {area.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
 
-        {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
+        {error && <p className="shrink-0 mb-4 text-sm min-[1600px]:text-base text-destructive">{error}</p>}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Lista de Responsables ({filteredResponsables.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted/50 border-b">
-                  <tr>
-                    <th className="text-left p-4 font-semibold text-sm">Nombre</th>
-                    <th className="text-left p-4 font-semibold text-sm">Correo</th>
-                    <th className="text-left p-4 font-semibold text-sm">Área</th>
-                    <th className="text-left p-4 font-semibold text-sm">Estado</th>
-                    <th className="text-right p-4 font-semibold text-sm">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <Card className="h-full flex flex-col min-h-0 overflow-hidden">
+            <CardHeader className="shrink-0 py-3 sm:py-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg min-[1600px]:text-xl">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 min-[1600px]:h-6 min-[1600px]:w-6" />
+                Lista de Responsables ({filteredResponsables.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 flex-1 min-h-0 overflow-auto">
+              <div className="overflow-x-auto min-h-0">
+                <table className="w-full">
+                  <thead className="bg-muted/50 border-b sticky top-0 z-10">
                     <tr>
-                      <td className="p-4 text-sm text-muted-foreground" colSpan={5}>
-                        Cargando responsables...
-                      </td>
+                      <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Nombre</th>
+                      <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Correo</th>
+                      <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Área</th>
+                      <th className="text-left p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Estado</th>
+                      <th className="text-right p-3 sm:p-4 min-[1600px]:p-5 font-semibold text-xs sm:text-sm min-[1600px]:text-base">Acciones</th>
                     </tr>
-                  ) : filteredResponsables.length === 0 ? (
-                    <tr>
-                      <td className="p-4 text-sm text-muted-foreground" colSpan={5}>
-                        No hay responsables registrados.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredResponsables.map((responsable) => (
-                      <tr key={responsable.id} className="border-b hover:bg-muted/30 transition-colors">
-                        <td className="p-4">
-                          <div className="font-medium">{responsable.userName ?? "Sin nombre"}</div>
+                  </thead>
+                  <tbody>
+                    {isLoading ? (
+                      <tr>
+                        <td className="p-3 sm:p-4 min-[1600px]:p-5 text-sm min-[1600px]:text-base text-muted-foreground" colSpan={5}>
+                          Cargando responsables...
                         </td>
-                        <td className="p-4 text-sm text-muted-foreground">
+                      </tr>
+                    ) : paginatedItems.length === 0 ? (
+                      <tr>
+                        <td className="p-3 sm:p-4 min-[1600px]:p-5 text-sm min-[1600px]:text-base text-muted-foreground" colSpan={5}>
+                          No hay responsables registrados.
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedItems.map((responsable) => (
+                      <tr key={responsable.id} className="border-b hover:bg-muted/30 transition-colors">
+                        <td className="p-3 sm:p-4 min-[1600px]:p-5">
+                          <div className="font-medium text-sm sm:text-base min-[1600px]:text-lg">{responsable.userName ?? "Sin nombre"}</div>
+                        </td>
+                        <td className="p-3 sm:p-4 min-[1600px]:p-5 text-xs sm:text-sm min-[1600px]:text-base text-muted-foreground">
                           {responsable.userEmail ?? "Sin correo"}
                         </td>
-                        <td className="p-4 text-sm">{responsable.areaName ?? "Sin área asignada"}</td>
-                        <td className="p-4">
+                        <td className="p-3 sm:p-4 min-[1600px]:p-5 text-xs sm:text-sm min-[1600px]:text-base">{responsable.areaName ?? "Sin área asignada"}</td>
+                        <td className="p-3 sm:p-4 min-[1600px]:p-5">
                           <button
                             onClick={() => handleToggleStatus(responsable)}
-                            className={`text-xs font-medium px-2 py-1 rounded-full ${
+                            className={`text-xs min-[1600px]:text-sm font-medium px-2 py-1 rounded-full ${
                               responsable.userIsActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                             }`}
                           >
                             {responsable.userIsActive ? "activo" : "inactivo"}
                           </button>
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="p-3 sm:p-4 min-[1600px]:p-5">
+                          <div className="flex items-center justify-end gap-2 min-[1600px]:gap-3">
                             <Button
                               size="sm"
                               variant="ghost"
@@ -359,12 +395,20 @@ export default function Usuarios() {
                         </td>
                       </tr>
                     ))
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+            <div className="shrink-0 border-t border-border p-3 sm:p-4">
+              <PQRSFPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </div>
-          </CardContent>
-        </Card>
+          </Card>
+        </div>
       </main>
     </div>
   )

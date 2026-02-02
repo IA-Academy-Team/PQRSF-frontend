@@ -91,66 +91,66 @@ export function PQRSFCard({
   const linkTo = actionLink || `/pqrsf/${item.id}`
 
   return (
-    <Card className="p-5 hover:shadow-md transition-shadow h-full flex flex-col">
-      <div className="flex items-start justify-between gap-4 flex-1 min-h-0">
-        <div className="flex-1 min-w-0 space-y-3 flex flex-col">
-          {/* Badges: Radicado, Tipo, Estado, Prioridad */}
-          <div className="flex items-center gap-2 flex-wrap shrink-0">
-            <span className="text-xs font-mono text-muted-foreground">{item.ticketNumber}</span>
-            <Badge variant="outline" className={`text-xs font-medium ${getTypeColor(item.typeName)}`}>
+    <Card className="h-full max-h-[70vh] flex flex-col min-h-0 overflow-hidden p-[clamp(0.5rem,4cqw,2.5rem)] hover:shadow-md transition-shadow @container-[size]">
+      <div className="flex items-start justify-between gap-[clamp(0.35rem,2.5cqw,1.75rem)] flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden space-y-[clamp(0.2rem,1.5cqh,1.25rem)]">
+          {/* Badges: Radicado, Tipo, Estado, Prioridad - una sola línea, el ID se trunca si no cabe */}
+          <div className="flex items-center gap-[clamp(0.2rem,1.2cqw,1rem)] flex-nowrap min-w-0 overflow-hidden">
+            <span className="font-mono text-muted-foreground truncate min-w-0 flex-1 text-[clamp(0.6rem,3.5cqw,1.375rem)]">{item.ticketNumber}</span>
+            <Badge variant="outline" className={`shrink-0 font-medium text-[clamp(0.6rem,3.5cqw,1.375rem)] whitespace-nowrap ${getTypeColor(item.typeName)}`}>
               {item.typeName}
             </Badge>
-            <Badge variant="outline" className={`text-xs font-medium capitalize ${getStatusStyle(item.statusName)}`}>
+            <Badge variant="outline" className={`shrink-0 font-medium text-[clamp(0.6rem,3.5cqw,1.375rem)] capitalize whitespace-nowrap ${getStatusStyle(item.statusName)}`}>
               {item.statusName}
             </Badge>
             {showPriority && item.priority && (
-              <Badge variant="outline" className={`text-xs font-medium ${getPriorityColor(item.priority)}`}>
+              <Badge variant="outline" className={`shrink-0 font-medium text-[clamp(0.6rem,3.5cqw,1.375rem)] whitespace-nowrap ${getPriorityColor(item.priority)}`}>
                 Prioridad {item.priority}
               </Badge>
             )}
           </div>
 
           {/* Descripción */}
-          <h3 className="font-medium text-foreground leading-snug line-clamp-2 flex-1 min-h-10">
+          <h3 className="font-medium text-foreground leading-snug line-clamp-2 flex-1 min-h-0 overflow-hidden text-[clamp(0.7rem,4cqw,1.75rem)]">
             {item.description || "Sin descripción"}
           </h3>
 
           {/* Información del solicitante y área - SIEMPRE VISIBLE */}
-          <div className="flex flex-col gap-2 text-sm text-muted-foreground shrink-0">
-            <div className="flex items-center gap-1.5">
-              <User className="h-3.5 w-3.5 shrink-0" />
+          <div className="flex flex-col gap-[clamp(0.15rem,1cqh,1rem)] text-[clamp(0.6rem,3.5cqw,1.375rem)] text-muted-foreground shrink-0">
+            <div className="flex items-center gap-[clamp(0.2rem,1.2cqw,1rem)]">
+              <User className="h-[clamp(0.65rem,4cqh,1.75rem)] w-[clamp(0.65rem,4cqh,1.75rem)] shrink-0" />
               <span className="truncate">{item.clientName || "Sin nombre"}</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <Building2 className="h-3.5 w-3.5 shrink-0" />
+            <div className="flex items-center gap-[clamp(0.2rem,1.2cqw,1rem)]">
+              <Building2 className="h-[clamp(0.65rem,4cqh,1.75rem)] w-[clamp(0.65rem,4cqh,1.75rem)] shrink-0" />
               <span className="truncate">{item.areaName}</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 shrink-0" />
+            <div className="flex items-center gap-[clamp(0.2rem,1.2cqw,1rem)]">
+              <Calendar className="h-[clamp(0.65rem,4cqh,1.75rem)] w-[clamp(0.65rem,4cqh,1.75rem)] shrink-0" />
               <span>{fechaRadicacion || "Sin fecha"}</span>
             </div>
 
             {/* Fecha de respuesta - SIEMPRE VISIBLE (vacío si no hay) */}
-            <div className="flex items-center gap-1.5">
-              <CheckCircle className="h-3.5 w-3.5 shrink-0 text-green-600" />
+            <div className="flex items-center gap-[clamp(0.2rem,1.2cqw,1rem)]">
+              <CheckCircle className="h-[clamp(0.65rem,4cqh,1.75rem)] w-[clamp(0.65rem,4cqh,1.75rem)] shrink-0 text-green-600" />
               <span className={fechaRespuesta ? "text-green-600" : "text-muted-foreground"}>
                 {fechaRespuesta ? `Respondido: ${fechaRespuesta}` : "Sin respuesta"}
               </span>
             </div>
 
             {/* Tiempo de respuesta - SIEMPRE VISIBLE (vacío si no hay) */}
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+            <div className="flex items-center gap-[clamp(0.2rem,1.2cqw,1rem)]">
+              <Clock className="h-[clamp(0.65rem,4cqh,1.75rem)] w-[clamp(0.65rem,4cqh,1.75rem)] shrink-0 text-blue-600" />
               <span className={item.responseTime ? "text-blue-600" : "text-muted-foreground"}>
                 {item.responseTime || "Sin tiempo registrado"}
               </span>
             </div>
 
             {/* Satisfacción del cliente - SIEMPRE VISIBLE (vacío si no hay) */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-foreground shrink-0">Satisfacción:</span>
+            <div className="flex items-center gap-[clamp(0.2rem,1.2cqw,1rem)]">
+              <span className="font-semibold text-foreground shrink-0 text-[clamp(0.6rem,3.5cqw,1.375rem)]">Satisfacción:</span>
               <span
-                className={`text-xs font-medium ${
+                className={`font-medium text-[clamp(0.6rem,3.5cqw,1.375rem)] ${
                   item.satisfaction
                     ? ["Satisfecho", "Muy Satisfecho"].includes(item.satisfaction)
                       ? "text-green-700"
@@ -168,8 +168,8 @@ export function PQRSFCard({
         <Tooltip>
           <TooltipTrigger asChild>
             <Link to={linkTo}>
-              <Button variant="ghost" size="sm" className="shrink-0">
-                <ArrowUpRight className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="shrink-0 size-[clamp(1.5rem,7cqh,3rem)] p-0">
+                <ArrowUpRight className="h-[clamp(0.75rem,4cqh,1.75rem)] w-[clamp(0.75rem,4cqh,1.75rem)]" />
               </Button>
             </Link>
           </TooltipTrigger>

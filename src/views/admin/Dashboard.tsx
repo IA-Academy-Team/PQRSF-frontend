@@ -6,6 +6,7 @@ import {
   AlertCircle,
   ClipboardList,
   MessageCircle,
+  Star,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -24,6 +25,7 @@ import {
   type AreaPendingItem,
 } from "@/services/dashboard.service"
 import { areaService } from "@/services/area.service"
+import { surveyService, getSurveyOverallAverage } from "@/services/survey.service"
 import { HttpError } from "@/lib/api"
 
 export default function Dashboard() {
@@ -40,6 +42,8 @@ export default function Dashboard() {
   const [areaName, setAreaName] = useState("")
   const [areaError, setAreaError] = useState("")
   const [isAreaLoading, setIsAreaLoading] = useState(false)
+  const [surveyOverallAverage, setSurveyOverallAverage] = useState<number | null>(null)
+  const [isSurveyAverageLoading, setIsSurveyAverageLoading] = useState(false)
   const chatItems = useMemo(() => {
     const rtf = new Intl.RelativeTimeFormat("es", { numeric: "auto" })
     const formatRelative = (value?: string | null) => {
@@ -94,6 +98,27 @@ export default function Dashboard() {
     }
 
     void loadDashboard()
+    return () => {
+      active = false
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (!user || user.rol !== "Administrador") return
+    let active = true
+    setIsSurveyAverageLoading(true)
+    surveyService
+      .listAdmin()
+      .then((list) => {
+        if (!active) return
+        setSurveyOverallAverage(getSurveyOverallAverage(list))
+      })
+      .catch(() => {
+        if (active) setSurveyOverallAverage(null)
+      })
+      .finally(() => {
+        if (active) setIsSurveyAverageLoading(false)
+      })
     return () => {
       active = false
     }
@@ -180,131 +205,140 @@ export default function Dashboard() {
 
         <main
           className={cn(
-            "flex-1 p-4 sm:p-6 lg:p-8 h-screen overflow-hidden transition-all duration-300 flex flex-col",
+            "flex-1 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 h-screen overflow-hidden transition-all duration-300 flex flex-col",
             isCollapsed ? "lg:ml-24" : "lg:ml-64"
           )}
         >
           <div className="mb-4 shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Panel de Administración</h1>
+                <h1 className="text-2xl sm:text-3xl min-[1600px]:text-4xl font-bold text-foreground mb-2 min-[1600px]:mb-3">Panel de Administración</h1>
               </div>
             </div>
           </div>
 
-          <div className="mb-4 shrink-0">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-              {user.rol}
-            </div>
-          </div>
 
           {dashboardError && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 min-[1600px]:p-4 text-sm min-[1600px]:text-base text-red-700">
               {dashboardError}
             </div>
           )}
 
-          <div className="grid gap-4 lg:grid-cols-2 lg:gap-6 flex-1 min-h-0 overflow-hidden">
+          <div className="grid gap-3 md:gap-4 md:grid-cols-2 lg:gap-5 min-[1600px]:gap-6 flex-1 min-h-0 overflow-hidden">
             {/* Columna Izquierda */}
-            <div className="flex flex-col gap-4 lg:gap-6 min-h-0 overflow-hidden">
-              {/* Fila 1: Cards */}
-              <div className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 shrink-0">
+            <div className="flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 min-h-0 overflow-hidden">
+              {/* Fila 1: Cards de métricas */}
+              <div className="grid gap-1.5 sm:gap-2 min-[1600px]:gap-3 grid-cols-2 sm:grid-cols-5 auto-rows-min min-h-[5rem] shrink-0">
                 <Link to="/pqrsf?tab=general&status=todos">
-                  <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0 cursor-pointer hover:opacity-90 transition-opacity">
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="bg-white/20 rounded-lg p-1 sm:p-1.5">
-                        <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <Card className="border-blue-200 bg-blue-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
+                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Total</span>
+                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
+                      <div className="flex items-center justify-center gap-[10%]">
+                        <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-blue-500/20 rounded-lg shrink-0">
+                          <FileText className="h-[70%] w-[70%] text-blue-600" />
+                        </div>
+                        <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
+                          {isDashboardLoading ? "..." : totalPqrs}
+                        </p>
                       </div>
-                    </div>
-                    <h3 className="text-xs font-medium mb-1 opacity-90">Total PQRSF</h3>
-                    <p className="text-xl sm:text-2xl font-bold">
-                      {isDashboardLoading ? "..." : totalPqrs}
-                    </p>
-                  </CardContent>
+                    </CardContent>
+                  </Card>
+                </Link>
+                <Link to="/encuestas">
+                  <Card className="border-amber-200 bg-amber-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
+                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Promedio</span>
+                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
+                      <div className="flex items-center justify-center gap-[10%]">
+                        <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-amber-500/20 rounded-lg shrink-0">
+                          <Star className="h-[70%] w-[70%] text-amber-600" />
+                        </div>
+                        <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap text-center">
+                          {isDashboardLoading || isSurveyAverageLoading ? "..." : surveyOverallAverage !== null ? surveyOverallAverage.toFixed(1) : "Sin datos"}
+                        </p>
+                      </div>
+                    </CardContent>
                   </Card>
                 </Link>
 
-                <Link to="/pqrsf?tab=general&status=2">
-                  <Card className="border-orange-200 bg-orange-50 cursor-pointer hover:opacity-90 transition-opacity">
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="bg-orange-500/20 rounded-lg p-1 sm:p-1.5">
-                        <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+                <Link to="/pqrsf?tab=seguimiento">
+                  <Card className="border-orange-200 bg-orange-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
+                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Seguimiento</span>
+                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
+                      <div className="flex items-center justify-center gap-[10%]">
+                        <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-orange-500/20 rounded-lg shrink-0">
+                          <Clock className="h-[70%] w-[70%] text-orange-600" />
+                        </div>
+                        <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
+                          {isDashboardLoading ? "..." : getStatusCount(2)}
+                        </p>
                       </div>
-                    </div>
-                    <h3 className="text-xs font-medium text-muted-foreground mb-1">En Seguimiento</h3>
-                    <p className="text-xl sm:text-2xl font-bold text-foreground">
-                      {isDashboardLoading ? "..." : getStatusCount(2)}
-                    </p>
-                  </CardContent>
+                    </CardContent>
                   </Card>
                 </Link>
 
-                <Link to="/pqrsf?tab=general&status=3">
-                  <Card className="border-red-200 bg-red-50 cursor-pointer hover:opacity-90 transition-opacity">
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="bg-red-500/20 rounded-lg p-1 sm:p-1.5">
-                        <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
+                <Link to="/pqrsf?tab=apelacion">
+                  <Card className="border-red-200 bg-red-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
+                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Apeladas</span>
+                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
+                      <div className="flex items-center justify-center gap-[10%]">
+                        <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-red-500/20 rounded-lg shrink-0">
+                          <AlertCircle className="h-[70%] w-[70%] text-red-600" />
+                        </div>
+                        <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
+                          {isDashboardLoading ? "..." : getAppealsCount()}
+                        </p>
                       </div>
-                    </div>
-                    <h3 className="text-xs font-medium text-muted-foreground mb-1">En Apelación</h3>
-                    <p className="text-xl sm:text-2xl font-bold text-foreground">
-                      {isDashboardLoading ? "..." : getAppealsCount()}
-                    </p>
-                  </CardContent>
+                    </CardContent>
                   </Card>
                 </Link>
 
-                <Link to="/pqrsf?tab=general&status=4">
-                  <Card className="border-green-200 bg-green-50 cursor-pointer hover:opacity-90 transition-opacity">
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="bg-green-500/20 rounded-lg p-1 sm:p-1.5">
-                        <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
+                <Link to="/pqrsf?tab=cerradas">
+                  <Card className="border-green-200 bg-green-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
+                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Cerradas</span>
+                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
+                      <div className="flex items-center justify-center gap-[10%]">
+                        <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-green-500/20 rounded-lg shrink-0">
+                          <CheckCircle2 className="h-[70%] w-[70%] text-green-600" />
+                        </div>
+                        <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
+                          {isDashboardLoading ? "..." : getStatusCount(4)}
+                        </p>
                       </div>
-                    </div>
-                    <h3 className="text-xs font-medium text-muted-foreground mb-1">Cerradas</h3>
-                    <p className="text-xl sm:text-2xl font-bold text-foreground">
-                      {isDashboardLoading ? "..." : getStatusCount(4)}
-                    </p>
-                  </CardContent>
+                    </CardContent>
                   </Card>
                 </Link>
               </div>
 
               {/* Fila 2: Chats Recientes */}
               <div className="min-h-0 flex flex-1">
-                <Card className="h-full w-full flex flex-col">
-                  <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 shrink-0">
-                    <CardTitle className="text-lg sm:text-xl">Chats Recientes</CardTitle>
+                <Card className="h-full w-full flex flex-col min-h-0">
+                  <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 px-3 pt-3 pb-0 sm:px-4 sm:pt-4 sm:pb-0 min-[1600px]:px-6 min-[1600px]:pt-6 min-[1600px]:pb-0 shrink-0">
+                    <CardTitle className="text-base sm:text-lg min-[1600px]:text-xl min-[1920px]:text-2xl">Chats Recientes</CardTitle>
                     <Link to="/chats">
-                      <Button variant="ghost" size="sm" className="w-full sm:w-auto">
-                        Ver Todos
-                        <ArrowUpRight className="h-4 w-4 ml-1" />
+                      <Button variant="ghost" size="sm" className="w-full sm:w-auto min-[1600px]:text-base min-[1920px]:text-lg">
+                        <ArrowUpRight className="h-4 w-4 min-[1600px]:h-5 min-[1600px]:w-5 min-[1920px]:h-6 min-[1920px]:w-6 ml-1" />
                       </Button>
                     </Link>
                   </CardHeader>
-                  <CardContent className="p-4 sm:p-6 flex-1 min-h-0 overflow-hidden">
-                    <div className="space-y-3">
+                  <CardContent className="px-3 pt-0 pb-3 sm:px-4 sm:pt-0 sm:pb-4 min-[1600px]:px-6 min-[1600px]:pt-0 min-[1600px]:pb-6 flex-1 min-h-0 flex flex-col overflow-hidden">
+                    <div className="flex flex-col flex-1 min-h-0 gap-2 sm:gap-2.5 min-[1600px]:gap-3">
                       {chatItems.length === 0 && !isDashboardLoading && (
-                        <div className="text-sm text-muted-foreground">Sin chats recientes.</div>
+                        <div className="text-sm min-[1600px]:text-base min-[1920px]:text-lg text-muted-foreground">Sin chats recientes.</div>
                       )}
-                      {(isDashboardLoading ? [] : chatItems).map((chat, index) => (
+                      {(isDashboardLoading ? [] : chatItems.slice(0, 6)).map((chat, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                          className="flex min-h-[3rem] flex-1 items-center justify-between gap-2 overflow-hidden rounded-lg border p-2.5 transition-colors hover:bg-muted/50 sm:p-3 min-[1600px]:p-4 min-[1920px]:p-5 [container-type:size]"
                         >
-                          <div className="flex items-center gap-3">
-                            <MessageCircle className="h-4 w-4 text-primary shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              <p className="font-semibold text-sm truncate">{chat.radicado}</p>
-                              <p className="text-xs text-muted-foreground truncate">{chat.cliente}</p>
-                              <p className="text-xs mt-1 line-clamp-2">{chat.ultimoMensaje}</p>
+                          <div className="flex min-w-0 flex-1 items-center gap-[clamp(0.5rem,2cqh,1.25rem)] min-[1600px]:gap-4 min-[1920px]:gap-5">
+                            <MessageCircle className="h-[clamp(0.875rem,4cqh,1.5rem)] w-[clamp(0.875rem,4cqh,1.5rem)] shrink-0 text-primary min-[1600px]:h-6 min-[1600px]:w-6 min-[1920px]:h-7 min-[1920px]:w-7" />
+                            <div className="min-w-0 flex-1 overflow-hidden">
+                              <p className="truncate font-semibold text-[clamp(0.5rem,4cqh,1.125rem)] min-[1600px]:text-base min-[1600px]:lg:text-lg min-[1920px]:text-xl">{chat.radicado}</p>
+                              <p className="truncate text-[clamp(0.45rem,3.5cqh,1rem)] text-muted-foreground min-[1600px]:text-sm min-[1920px]:text-base">{chat.cliente}</p>
+                              <p className="mt-0.5 line-clamp-2 text-[clamp(0.45rem,3.5cqh,1rem)] min-[1600px]:text-sm min-[1920px]:text-base">{chat.ultimoMensaje}</p>
                             </div>
                           </div>
-                          <span className="text-xs text-muted-foreground shrink-0 ml-2">{chat.fecha}</span>
+                          <span className="ml-2 shrink-0 text-[clamp(0.45rem,3cqh,0.875rem)] text-muted-foreground min-[1600px]:text-sm min-[1920px]:text-base">{chat.fecha}</span>
                         </div>
                       ))}
                     </div>
@@ -314,16 +348,16 @@ export default function Dashboard() {
             </div>
 
             {/* Columna Derecha */}
-            <div className="flex flex-col gap-4 lg:gap-6 min-h-0 overflow-hidden">
+            <div className="flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 min-h-0 overflow-hidden">
               {/* Fila 1: PQRSF por Tipo */}
-              <Card className="flex-2 min-h-0 flex flex-col">
-                <CardHeader className="shrink-0">
-                  <CardTitle className="text-lg">PQRSF por Tipo</CardTitle>
+              <Card className="flex-1 min-h-0 flex flex-col">
+                <CardHeader className="shrink-0 px-3 pt-3 pb-0 sm:px-4 sm:pt-4 sm:pb-0 min-[1600px]:px-6 min-[1600px]:pt-6 min-[1600px]:pb-0">
+                  <CardTitle className="text-base sm:text-lg min-[1600px]:text-xl">PQRSF por Tipo</CardTitle>
                 </CardHeader>
-                <CardContent className="flex-1 min-h-0 overflow-y-auto">
-                  <div className="space-y-4">
+                <CardContent className="flex-1 min-h-0 overflow-y-auto px-3 pt-0 pb-3 sm:px-4 sm:pt-0 sm:pb-4 min-[1600px]:px-6 min-[1600px]:pt-0 min-[1600px]:pb-6">
+                  <div className="space-y-3 min-[1600px]:space-y-5">
                     {pqrsByType.length === 0 && !isDashboardLoading && (
-                      <div className="text-sm text-muted-foreground">Sin datos disponibles.</div>
+                      <div className="text-sm min-[1600px]:text-base text-muted-foreground">Sin datos disponibles.</div>
                     )}
                     {(isDashboardLoading ? [] : pqrsByType).map((item) => {
                       const colorMap: Record<string, string> = {
@@ -335,13 +369,13 @@ export default function Dashboard() {
                       }
                       const color = colorMap[item.typeName] || "bg-gray-400"
                       return (
-                        <div key={item.typeName} className="flex items-center gap-4">
+                        <div key={item.typeName} className="flex items-center gap-4 min-[1600px]:gap-5">
                           <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium">{item.typeName}</span>
-                              <span className="text-sm text-muted-foreground">{item.count}</span>
+                            <div className="flex items-center justify-between mb-2 min-[1600px]:mb-3">
+                              <span className="text-sm min-[1600px]:text-base font-medium">{item.typeName}</span>
+                              <span className="text-sm min-[1600px]:text-base text-muted-foreground">{item.count}</span>
                             </div>
-                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div className="h-2 min-[1600px]:h-2.5 bg-muted rounded-full overflow-hidden">
                               <div
                                 className={`h-full ${color}`}
                                 style={{ width: `${(item.count / pqrsByTypeTotal) * 100}%` }}
@@ -357,20 +391,20 @@ export default function Dashboard() {
 
               {/* Fila 2: Tiempo Promedio de Respuesta */}
               <Card className="flex-1 min-h-0 flex flex-col">
-                <CardHeader className="shrink-0">
-                  <CardTitle className="text-lg">Tiempo Promedio de Respuesta</CardTitle>
+                <CardHeader className="shrink-0 px-3 pt-3 pb-0 sm:px-4 sm:pt-4 sm:pb-0 min-[1600px]:px-6 min-[1600px]:pt-6 min-[1600px]:pb-0">
+                  <CardTitle className="text-base sm:text-lg min-[1600px]:text-xl">Tiempo Promedio de Respuesta</CardTitle>
                 </CardHeader>
-                <CardContent className="flex-1 min-h-0 overflow-y-auto">
-                  <div className="space-y-2">
+                <CardContent className="flex-1 min-h-0 overflow-y-auto px-3 pt-0 pb-3 sm:px-4 sm:pt-0 sm:pb-4 min-[1600px]:px-6 min-[1600px]:pt-0 min-[1600px]:pb-6">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 sm:gap-x-4 sm:gap-y-2 min-[1600px]:gap-x-4 min-[1600px]:gap-y-3">
                     {avgResponseByArea.length === 0 && !isDashboardLoading && (
-                      <div className="text-sm text-muted-foreground">Sin datos disponibles.</div>
+                      <div className="col-span-2 text-sm min-[1600px]:text-base text-muted-foreground">Sin datos disponibles.</div>
                     )}
-                    {(isDashboardLoading ? [] : avgResponseByArea.slice(0, 3)).map((item, index) => {
-                      const colors = ["text-green-600", "text-blue-600", "text-purple-600"]
+                    {(isDashboardLoading ? [] : avgResponseByArea.slice(0, 14)).map((item, index) => {
+                      const colors = ["text-green-600", "text-blue-600", "text-purple-600", "text-amber-600", "text-cyan-600", "text-pink-600", "text-indigo-600"]
                       return (
-                        <div key={item.areaId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                          <span className="text-sm font-medium">{item.areaName}</span>
-                          <span className={`text-sm font-bold ${colors[index] || "text-muted-foreground"}`}>
+                        <div key={item.areaId} className="flex items-center justify-between p-2.5 sm:p-3 min-[1600px]:p-4 bg-muted/50 rounded-lg">
+                          <span className="text-sm min-[1600px]:text-base font-medium truncate pr-2">{item.areaName}</span>
+                          <span className={`text-sm min-[1600px]:text-base font-bold shrink-0 ${colors[index % colors.length] || "text-muted-foreground"}`}>
                             {item.avgDays} días
                           </span>
                         </div>
@@ -435,111 +469,111 @@ export default function Dashboard() {
 
         <main
           className={cn(
-            "flex-1 p-3 sm:p-4 lg:p-5 h-screen transition-all duration-300 flex flex-col overflow-hidden",
+            "flex-1 p-3 sm:p-4 lg:p-5 min-[1600px]:p-10 h-screen transition-all duration-300 flex flex-col overflow-hidden",
             isCollapsed ? "lg:ml-24" : "lg:ml-64"
           )}
         >
           <div className="mb-3 shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Panel del Área Responsable</h1>
+                <h1 className="text-xl sm:text-2xl min-[1600px]:text-3xl font-bold text-foreground mb-1 min-[1600px]:mb-2">Panel del Área Responsable</h1>
               </div>
             </div>
           </div>
 
           <div className="mb-3 shrink-0">
-            <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+            <div className="inline-flex items-center gap-2 px-2 py-0.5 min-[1600px]:px-3 min-[1600px]:py-1 rounded-full bg-primary/10 text-primary text-xs min-[1600px]:text-sm font-medium">
               {user.rol}
             </div>
           </div>
 
           {areaError && (
-            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-2 min-[1600px]:p-3 text-xs min-[1600px]:text-sm text-red-700">
               {areaError}
             </div>
           )}
 
-          <div className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4 mb-3 shrink-0">
+          <div className="grid gap-2 sm:gap-3 min-[1600px]:gap-4 grid-cols-2 lg:grid-cols-4 auto-rows-min min-h-[5rem] mb-3 shrink-0">
             <Link to="/pqrsf?tab=general&status=todos">
-              <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0 cursor-pointer hover:opacity-90 transition-opacity">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="bg-white/20 rounded-lg p-1.5">
-                    <FileText className="h-4 w-4" />
-                  </div>
-                </div>
-                <h3 className="text-xs font-medium mb-1 opacity-90">PQRSF Asignadas</h3>
-                <p className="text-2xl font-bold mb-0.5">{isAreaLoading ? "..." : totalAssigned}</p>
-              </CardContent>
-              </Card>
-            </Link>
+                <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
+                  <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium opacity-90 z-10">Asignadas</span>
+                  <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
+                    <div className="flex items-center justify-center gap-[10%]">
+                      <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-white/20 rounded-lg shrink-0">
+                        <FileText className="h-[70%] w-[70%]" />
+                      </div>
+                      <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold min-w-0 overflow-visible whitespace-nowrap">{isAreaLoading ? "..." : totalAssigned}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
 
-            <Link to="/pqrsf?tab=analisis">
-              <Card className="border-orange-200 bg-orange-50 cursor-pointer hover:opacity-90 transition-opacity">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="bg-orange-500/20 rounded-lg p-1.5">
-                    <ClipboardList className="h-4 w-4 text-orange-600" />
-                  </div>
-                </div>
-                <h3 className="text-xs font-medium text-muted-foreground mb-1">Pendientes</h3>
-                <p className="text-2xl font-bold text-foreground mb-0.5">
-                  {isAreaLoading ? "..." : pendingCount}
-                </p>
-              </CardContent>
-              </Card>
-            </Link>
+              <Link to="/pqrsf?tab=analisis">
+                <Card className="border-orange-200 bg-orange-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
+                  <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Pendientes</span>
+                  <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
+                    <div className="flex items-center justify-center gap-[10%]">
+                      <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-orange-500/20 rounded-lg shrink-0">
+                        <ClipboardList className="h-[70%] w-[70%] text-orange-600" />
+                      </div>
+                      <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
+                        {isAreaLoading ? "..." : pendingCount}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
 
-            <Link to="/pqrsf?tab=apelacion">
-              <Card className="border-red-200 bg-red-50 cursor-pointer hover:opacity-90 transition-opacity">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="bg-red-500/20 rounded-lg p-1.5">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                  </div>
-                </div>
-                <h3 className="text-xs font-medium text-muted-foreground mb-1">Apelaciones</h3>
-                <p className="text-2xl font-bold text-foreground mb-0.5">
-                  {isAreaLoading ? "..." : appealsCount}
-                </p>
-              </CardContent>
-              </Card>
-            </Link>
+              <Link to="/pqrsf?tab=apelacion">
+                <Card className="border-red-200 bg-red-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
+                  <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Apelaciones</span>
+                  <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
+                    <div className="flex items-center justify-center gap-[10%]">
+                      <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-red-500/20 rounded-lg shrink-0">
+                        <AlertCircle className="h-[70%] w-[70%] text-red-600" />
+                      </div>
+                      <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
+                        {isAreaLoading ? "..." : appealsCount}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
 
-            <Link to="/pqrsf?tab=cerradas">
-              <Card className="border-green-200 bg-green-50 cursor-pointer hover:opacity-90 transition-opacity">
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="bg-green-500/20 rounded-lg p-1.5">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  </div>
-                </div>
-                <h3 className="text-xs font-medium text-muted-foreground mb-1">Respondidas</h3>
-                <p className="text-2xl font-bold text-foreground mb-0.5">
-                  {isAreaLoading ? "..." : respondedCount}
-                </p>
-              </CardContent>
-              </Card>
-            </Link>
+              <Link to="/pqrsf?tab=cerradas">
+                <Card className="border-green-200 bg-green-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
+                  <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Cerradas</span>
+                  <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
+                    <div className="flex items-center justify-center gap-[10%]">
+                      <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-green-500/20 rounded-lg shrink-0">
+                        <CheckCircle2 className="h-[70%] w-[70%] text-green-600" />
+                      </div>
+                      <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
+                        {isAreaLoading ? "..." : respondedCount}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 min-[1600px]:gap-5 flex-1 min-h-0">
             <Card className="h-full flex flex-col">
-              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 shrink-0">
-                <CardTitle className="text-sm sm:text-base">PQRSF Pendientes de Respuesta</CardTitle>
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 min-[1600px]:p-5 shrink-0">
+                <CardTitle className="text-sm sm:text-base min-[1600px]:text-lg">PQRSF Pendientes de Respuesta</CardTitle>
                 <Link to="/analisis-pendientes">
-                  <Button variant="ghost" size="sm" className="w-full sm:w-auto h-7 text-xs">
+                  <Button variant="ghost" size="sm" className="w-full sm:w-auto h-7 min-[1600px]:h-8 text-xs min-[1600px]:text-sm">
                     Ver Todas
-                    <ArrowUpRight className="h-3 w-3 ml-1" />
+                    <ArrowUpRight className="h-3 w-3 min-[1600px]:h-4 min-[1600px]:w-4 ml-1" />
                   </Button>
                 </Link>
               </CardHeader>
-              <CardContent className="p-3 flex-1 min-h-0 overflow-y-auto">
-                <div className="space-y-2">
+              <CardContent className="p-3 min-[1600px]:p-5 flex-1 min-h-0 overflow-y-auto">
+                <div className="space-y-2 min-[1600px]:space-y-3">
                   {isAreaLoading ? (
-                    <div className="text-xs text-muted-foreground">Cargando pendientes...</div>
+                    <div className="text-xs min-[1600px]:text-sm text-muted-foreground">Cargando pendientes...</div>
                   ) : areaPending.length === 0 ? (
-                    <div className="text-xs text-muted-foreground">Sin PQRSF pendientes.</div>
+                    <div className="text-xs min-[1600px]:text-sm text-muted-foreground">Sin PQRSF pendientes.</div>
                   ) : (
                     areaPending.slice(0, 2).map((item) => {
                       const prioridad = getPriorityLabel(item.dueDate, item.createdAt)
@@ -553,28 +587,28 @@ export default function Dashboard() {
                       return (
                         <div
                           key={item.id}
-                          className={`flex flex-col lg:flex-row lg:items-center justify-between p-2.5 border-l-4 ${borderColor} bg-card rounded-lg hover:shadow-md transition-shadow gap-2`}
+                          className={`flex flex-col lg:flex-row lg:items-center justify-between p-2.5 min-[1600px]:p-4 border-l-4 ${borderColor} bg-card rounded-lg hover:shadow-md transition-shadow gap-2 min-[1600px]:gap-3`}
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-mono text-xs font-semibold text-primary">{item.ticketNumber}</span>
-                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                            <div className="flex items-center gap-2 min-[1600px]:gap-3 mb-1">
+                              <span className="font-mono text-xs min-[1600px]:text-sm font-semibold text-primary">{item.ticketNumber}</span>
+                              <span className="text-[10px] min-[1600px]:text-xs font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
                                 {item.typeName}
                               </span>
                             </div>
-                            <h4 className="font-semibold text-foreground text-xs mb-0.5 truncate">
+                            <h4 className="font-semibold text-foreground text-xs min-[1600px]:text-sm mb-0.5 truncate">
                               {item.description}
                             </h4>
-                            <p className="text-[10px] text-muted-foreground truncate">
+                            <p className="text-[10px] min-[1600px]:text-xs text-muted-foreground truncate">
                               {item.clientName || areaName || "Cliente"} • {item.createdAt?.split("T")[0] ?? ""}
                             </p>
                           </div>
 
-                          <div className="flex flex-row items-center gap-2">
+                          <div className="flex flex-row items-center gap-2 min-[1600px]:gap-3">
                             <div className="text-left">
-                              <p className="text-[10px] text-muted-foreground mb-0.5">PRIORIDAD</p>
+                              <p className="text-[10px] min-[1600px]:text-xs text-muted-foreground mb-0.5">PRIORIDAD</p>
                               <span
-                                className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                                className={`text-[10px] min-[1600px]:text-xs font-medium px-1.5 py-0.5 rounded-full ${
                                   prioridad === "Alta"
                                     ? "bg-red-100 text-red-700"
                                     : prioridad === "Media"
@@ -587,13 +621,13 @@ export default function Dashboard() {
                             </div>
 
                             <div className="text-left">
-                              <p className="text-[10px] text-muted-foreground mb-0.5">TIEMPO</p>
-                              <p className="text-xs font-medium">{diasTranscurridos}d</p>
+                              <p className="text-[10px] min-[1600px]:text-xs text-muted-foreground mb-0.5">TIEMPO</p>
+                              <p className="text-xs min-[1600px]:text-sm font-medium">{diasTranscurridos}d</p>
                             </div>
 
                             <Link to={`/pqrsf/${item.id}`}>
-                              <Button size="sm" className="h-7 text-xs px-2">
-                                <ClipboardList className="h-3 w-3 mr-1" />
+                              <Button size="sm" className="h-7 min-[1600px]:h-8 text-xs min-[1600px]:text-sm px-2">
+                                <ClipboardList className="h-3 w-3 min-[1600px]:h-4 min-[1600px]:w-4 mr-1" />
                                 Responder
                               </Button>
                             </Link>
@@ -607,38 +641,38 @@ export default function Dashboard() {
             </Card>
 
             <Card className="h-full flex flex-col">
-              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 shrink-0">
-                <CardTitle className="text-lg sm:text-xl">Apelaciones Recientes</CardTitle>
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 min-[1600px]:p-8 shrink-0">
+                <CardTitle className="text-lg sm:text-xl min-[1600px]:text-2xl">Apelaciones Recientes</CardTitle>
                 <Link to="/apelaciones">
-                  <Button variant="ghost" size="sm" className="w-full sm:w-auto">
+                  <Button variant="ghost" size="sm" className="w-full sm:w-auto min-[1600px]:text-base">
                     Ver Todas
-                    <ArrowUpRight className="h-4 w-4 ml-1" />
+                    <ArrowUpRight className="h-4 w-4 min-[1600px]:h-5 min-[1600px]:w-5 ml-1" />
                   </Button>
                 </Link>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6 flex-1 min-h-0 overflow-y-auto">
-                <div className="space-y-4">
+              <CardContent className="p-4 sm:p-6 min-[1600px]:p-8 flex-1 min-h-0 overflow-y-auto">
+                <div className="space-y-4 min-[1600px]:space-y-5">
                   {isAreaLoading ? (
-                    <div className="text-xs text-muted-foreground">Cargando apelaciones...</div>
+                    <div className="text-xs min-[1600px]:text-sm text-muted-foreground">Cargando apelaciones...</div>
                   ) : areaAppeals.length === 0 ? (
-                    <div className="text-xs text-muted-foreground">Sin apelaciones recientes.</div>
+                    <div className="text-xs min-[1600px]:text-sm text-muted-foreground">Sin apelaciones recientes.</div>
                   ) : (
                     areaAppeals.slice(0, 1).map((item) => (
                       <div
                         key={item.id}
-                        className="flex flex-col lg:flex-row lg:items-center justify-between p-4 border-l-4 border-l-red-500 bg-card rounded-lg gap-4"
+                        className="flex flex-col lg:flex-row lg:items-center justify-between p-4 min-[1600px]:p-5 border-l-4 border-l-red-500 bg-card rounded-lg gap-4 min-[1600px]:gap-5"
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-3 sm:gap-4">
-                            <span className="font-mono text-sm font-semibold text-primary">{item.ticketNumber}</span>
-                            <span className="text-xs font-medium px-2 py-1 rounded-full bg-red-100 text-red-700">
+                            <span className="font-mono text-sm min-[1600px]:text-base font-semibold text-primary">{item.ticketNumber}</span>
+                            <span className="text-xs min-[1600px]:text-sm font-medium px-2 py-1 rounded-full bg-red-100 text-red-700">
                               Apelada
                             </span>
                           </div>
-                          <h4 className="font-semibold text-foreground text-sm sm:text-base mb-1">
+                          <h4 className="font-semibold text-foreground text-sm sm:text-base min-[1600px]:text-lg mb-1">
                             {item.description}
                           </h4>
-                          <p className="text-xs sm:text-sm text-muted-foreground">
+                          <p className="text-xs sm:text-sm min-[1600px]:text-base text-muted-foreground">
                             {item.clientName || areaName || "Cliente"} • {item.responseContent || "Requiere reanálisis"}
                           </p>
                         </div>
@@ -663,5 +697,14 @@ export default function Dashboard() {
     )
   }
 
-  return null
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="text-center space-y-4 p-6">
+        <p className="text-muted-foreground">No tienes acceso a este panel.</p>
+        <Button variant="outline" onClick={() => navigate("/")}>
+          Volver al inicio
+        </Button>
+      </div>
+    </div>
+  )
 }

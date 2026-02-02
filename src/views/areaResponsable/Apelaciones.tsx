@@ -11,6 +11,9 @@ import { useEffect, useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
 import { areaService } from "@/services/area.service"
 import { dashboardService, type AreaAppealItem } from "@/services/dashboard.service"
+import { ITEMS_PER_PAGE } from "@/lib/pqrsf-utils"
+import { usePagination } from "@/hooks/usePagination"
+import { PQRSFPagination } from "@/components/PQRSFPagination"
 
 const DAY_MS = 1000 * 60 * 60 * 24
 
@@ -105,6 +108,12 @@ export default function Apelaciones() {
     })
   }, [appeals, searchTerm, typeFilter, dateFilter])
 
+  const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
+    items: filteredAppeals,
+    itemsPerPage: ITEMS_PER_PAGE,
+    dependencies: [searchTerm, typeFilter, dateFilter],
+  })
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case "Petición":
@@ -131,26 +140,26 @@ export default function Apelaciones() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
 
       <main
         className={cn(
-          "flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto min-h-screen transition-all duration-300",
+          "flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 transition-all duration-300 overflow-hidden",
           isCollapsed ? "lg:ml-24" : "lg:ml-64"
         )}
       >
-        <div className="mb-6 sm:mb-8">
+        <div className="shrink-0 mb-4 sm:mb-6">
           <div className="flex items-center gap-3 mb-2">
-            <AlertCircle className="h-8 w-8 text-red-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Apelaciones</h1>
+            <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">Apelaciones</h1>
           </div>
           <p className="text-sm sm:text-base text-muted-foreground">
             PQRSF de {areaName || "tu área"} que requieren reanálisis por apelación del usuario
           </p>
         </div>
 
-        <Card className="mb-6">
+        <Card className="shrink-0 mb-4 sm:mb-6">
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1 relative">
@@ -191,32 +200,37 @@ export default function Apelaciones() {
           </CardContent>
         </Card>
 
-        {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
+        {error && <p className="shrink-0 mb-4 text-sm text-destructive">{error}</p>}
 
         {!isLoadingData && filteredAppeals.length > 0 && (
-          <div className="mb-4">
+          <div className="shrink-0 mb-4">
             <p className="text-sm text-muted-foreground">
-              Mostrando {filteredAppeals.length} apelaciones activas
+              {filteredAppeals.length} apelación(es) • Página {currentPage} de {totalPages}
             </p>
           </div>
         )}
 
-        <div className="space-y-4">
-          {isLoadingData ? (
-            <p className="text-sm text-muted-foreground">Cargando apelaciones...</p>
-          ) : filteredAppeals.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay apelaciones registradas.</p>
-          ) : (
-            filteredAppeals.map((item) => {
+        <div className="flex-1 min-h-0 overflow-hidden mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 auto-rows-fr min-h-full gap-3 md:gap-4 min-[1600px]:gap-5">
+            {isLoadingData ? (
+              <Card className="col-span-full border-dashed p-4">
+                <CardContent className="p-4 text-sm text-muted-foreground">Cargando apelaciones...</CardContent>
+              </Card>
+            ) : paginatedItems.length === 0 ? (
+              <Card className="col-span-full border-dashed p-4">
+                <CardContent className="p-4 text-sm text-muted-foreground">No hay apelaciones registradas.</CardContent>
+              </Card>
+            ) : (
+              paginatedItems.map((item) => {
               const urgent = isUrgent(item.dueDate)
               const motivo = item.responseContent ?? item.analysisAnswer ?? "Sin información registrada"
               const analisisAnterior = item.analysisAnswer ?? "Sin análisis registrado"
               return (
                 <Card
                   key={item.id}
-                  className={`hover:shadow-lg transition-shadow ${urgent ? "border-2 border-red-300" : ""}`}
+                  className={`h-full flex flex-col min-h-0 overflow-hidden hover:shadow-lg transition-shadow ${urgent ? "border-2 border-red-300" : ""}`}
                 >
-                  <CardContent className="p-4 sm:p-6">
+                  <CardContent className="p-4 sm:p-6 flex-1 min-h-0 overflow-hidden flex flex-col">
                     {urgent && (
                       <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
                         <AlertCircle className="h-5 w-5 text-red-600" />
@@ -226,12 +240,12 @@ export default function Apelaciones() {
 
                     <div className="flex flex-col lg:flex-row items-start justify-between gap-4">
                       <div className="flex-1 w-full">
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
-                          <span className="font-mono text-sm font-semibold text-primary">{item.ticketNumber}</span>
-                          <span className={`text-xs font-medium px-3 py-1 rounded-full border ${getTypeColor(item.typeName)}`}>
+                        <div className="flex flex-nowrap items-center gap-2 sm:gap-3 mb-3 min-w-0 overflow-hidden">
+                          <span className="font-mono text-sm font-semibold text-primary truncate min-w-0 flex-1">{item.ticketNumber}</span>
+                          <span className={`shrink-0 text-xs font-medium px-3 py-1 rounded-full border whitespace-nowrap ${getTypeColor(item.typeName)}`}>
                             {item.typeName}
                           </span>
-                          <span className="text-xs font-medium px-3 py-1 rounded-full bg-red-100 text-red-700">
+                          <span className="shrink-0 text-xs font-medium px-3 py-1 rounded-full bg-red-100 text-red-700 whitespace-nowrap">
                             Apelada
                           </span>
                         </div>
@@ -275,7 +289,16 @@ export default function Apelaciones() {
                 </Card>
               )
             })
-          )}
+            )}
+          </div>
+        </div>
+
+<div className="shrink-0 border-t border-border pt-4 mt-auto">
+            <PQRSFPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </div>
       </main>
     </div>

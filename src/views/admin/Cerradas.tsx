@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
-import { CheckCircle, Search, ArrowUpRight } from "lucide-react"
+import { CheckCircle, Search, ArrowUpRight, Filter } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +19,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { pqrsfService, type CerradaItem } from "@/services/pqrsf.service"
+import { areaService } from "@/services/area.service"
+import { ITEMS_PER_PAGE } from "@/lib/pqrsf-utils"
 
 export default function Cerradas() {
   const { user } = useAuth()
@@ -26,8 +28,10 @@ export default function Cerradas() {
   const { isCollapsed } = useSidebar()
   const [searchTerm, setSearchTerm] = useState("")
   const [filtroTipo, setFiltroTipo] = useState("todos")
+  const [filtroArea, setFiltroArea] = useState("todas")
+  const [areasList, setAreasList] = useState<{ id: number; name: string }[]>([])
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 4
+  const itemsPerPage = ITEMS_PER_PAGE
   const [items, setItems] = useState<CerradaItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -59,6 +63,15 @@ export default function Cerradas() {
     return () => {
       active = false
     }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    areaService.getAll().then((list) => {
+      if (!active) return
+      setAreasList(list.map((a) => ({ id: a.id, name: a.name })))
+    }).catch(() => { if (active) setAreasList([]) })
+    return () => { active = false }
   }, [])
 
   const computeAvgScore = (item: CerradaItem) => {
@@ -111,14 +124,15 @@ export default function Cerradas() {
       p.radicado.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.solicitante.toLowerCase().includes(searchTerm.toLowerCase())
     const matchTipo = filtroTipo === "todos" || p.tipo === filtroTipo
-    return matchSearch && matchTipo
+    const matchArea = filtroArea === "todas" || p.area === filtroArea
+    return matchSearch && matchTipo && matchArea
   })
 
   const totalPages = Math.ceil(filteredPQRSF.length / itemsPerPage) || 1
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchTerm, filtroTipo])
+  }, [searchTerm, filtroTipo, filtroArea])
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
@@ -154,24 +168,24 @@ export default function Cerradas() {
   const visiblePages = getVisiblePages(safeCurrentPage, totalPages)
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
 
       <main
         className={cn(
-          "flex-1 p-4 sm:p-6 lg:p-8 h-screen transition-all duration-300 flex flex-col",
+          "flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 transition-all duration-300 overflow-hidden",
           isCollapsed ? "lg:ml-24" : "lg:ml-64",
         )}
       >
-        <div className="mb-6 sm:mb-8 shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="shrink-0 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">PQRSF Cerradas</h1>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl min-[1600px]:text-4xl font-bold text-foreground mb-1 sm:mb-2 min-[1600px]:mb-3">PQRSF Cerradas</h1>
             </div>
           </div>
         </div>
 
-        <CardContent className="pb-6 px-0 mb-6 shrink-0">
+        <CardContent className="pb-4 sm:pb-6 px-0 mb-4 sm:mb-6 shrink-0">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -184,10 +198,11 @@ export default function Cerradas() {
             </div>
             <Select value={filtroTipo} onValueChange={setFiltroTipo}>
               <SelectTrigger className="w-full sm:w-50">
-                <SelectValue placeholder="Filtrar por tipo" />
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Estado (tipo)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">Todos los tipos</SelectItem>
+                <SelectItem value="todos">Todos los estados</SelectItem>
                 <SelectItem value="Petición">Petición</SelectItem>
                 <SelectItem value="Queja">Queja</SelectItem>
                 <SelectItem value="Reclamo">Reclamo</SelectItem>
@@ -195,46 +210,58 @@ export default function Cerradas() {
                 <SelectItem value="Felicitación">Felicitación</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={filtroArea} onValueChange={setFiltroArea}>
+              <SelectTrigger className="w-full sm:w-50">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Área" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas las áreas</SelectItem>
+                {areasList.map((a) => (
+                  <SelectItem key={a.id} value={a.name}>{a.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
 
         {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="shrink-0 mb-4 rounded-lg border border-red-200 bg-red-50 p-4 min-[1600px]:p-5 text-sm min-[1600px]:text-base text-red-700">
             {error}
           </div>
         )}
 
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div className="grid grid-cols-2 grid-rows-2 gap-4">
+        <div className="flex-1 min-h-0 overflow-hidden mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 auto-rows-fr min-h-full gap-3 md:gap-4 min-[1600px]:gap-5">
             {isLoading && (
-              <Card className="col-span-2 border-dashed">
+              <Card className="col-span-full border-dashed min-h-0 overflow-hidden">
                 <CardContent className="p-4 text-sm text-muted-foreground">Cargando cerradas...</CardContent>
               </Card>
             )}
             {!isLoading && paginatedItems.length === 0 && (
-              <Card className="col-span-2 border-dashed">
+              <Card className="col-span-full border-dashed min-h-0 overflow-hidden">
                 <CardContent className="p-4 text-sm text-muted-foreground">No hay PQRSF cerradas.</CardContent>
               </Card>
             )}
             {paginatedItems.map((pqrsf, index) => (
-              <Card key={`${pqrsf.radicado}-${startIndex + index}`} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-3">
-                  <div className="flex flex-col lg:flex-row lg:items-start gap-6">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="font-mono text-sm font-semibold text-primary">{pqrsf.radicado}</span>
-                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+              <Card key={`${pqrsf.radicado}-${startIndex + index}`} className="h-full flex flex-col min-h-0 overflow-hidden hover:shadow-md transition-shadow">
+                <CardContent className="p-3 sm:p-4 flex-1 min-h-0 overflow-hidden flex flex-col">
+                  <div className="flex flex-col lg:flex-row lg:items-start gap-4 sm:gap-6 min-h-0 overflow-hidden">
+                    <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3 flex-nowrap min-w-0 overflow-hidden">
+                        <span className="font-mono text-xs sm:text-sm font-semibold text-primary truncate min-w-0 flex-1">{pqrsf.radicado}</span>
+                        <span className="shrink-0 text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-700 whitespace-nowrap">
                           {pqrsf.tipo}
                         </span>
-                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <CheckCircle className="h-4 w-4 shrink-0 text-green-600" />
                       </div>
 
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Solicitante: <span className="font-medium text-foreground">{pqrsf.solicitante}</span> • Área: {" "}
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-4 truncate">
+                        Solicitante: <span className="font-medium text-foreground">{pqrsf.solicitante}</span> • Área:{" "}
                         <span className="font-medium text-foreground">{pqrsf.area}</span>
                       </p>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-2 sm:mb-4">
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">FECHA RADICACIÓN</p>
                           <p className="text-sm font-medium">{pqrsf.fechaRadicacion}</p>
