@@ -28,9 +28,11 @@ export default function EnApelacion() {
   const { isCollapsed } = useSidebar()
   const [searchTerm, setSearchTerm] = useState("")
   const [filtroArea, setFiltroArea] = useState("todas")
+  const [filtroTipo, setFiltroTipo] = useState("todos")
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = ITEMS_PER_PAGE
   const [items, setItems] = useState<ApelacionItem[]>([])
+  const [areasList, setAreasList] = useState<Array<{ id: number; name: string }>>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
