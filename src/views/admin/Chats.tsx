@@ -320,7 +320,7 @@ export default function Chats() {
       <Sidebar />
       <div
         className={cn(
-          "flex-1 flex min-h-0 overflow-hidden transition-all duration-300",
+          "flex-1 flex min-h-0 overflow-hidden pt-14 md:pt-0 transition-all duration-300",
           isCollapsed ? "lg:ml-24" : "lg:ml-64"
         )}
       >

@@ -145,7 +145,8 @@ export default function Apelaciones() {
 
       <main
         className={cn(
-          "flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 transition-all duration-300 overflow-hidden",
+          "flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 pt-14 md:pt-4 transition-all duration-300",
+          "max-md:min-h-screen max-md:overflow-y-auto max-md:h-auto md:overflow-hidden",
           isCollapsed ? "lg:ml-24" : "lg:ml-64"
         )}
       >

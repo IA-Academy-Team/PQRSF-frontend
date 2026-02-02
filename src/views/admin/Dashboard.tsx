@@ -200,12 +200,13 @@ export default function Dashboard() {
     const pqrsByTypeTotal = totalPqrs > 0 ? totalPqrs : 1
 
     return (
-      <div className="flex min-h-screen bg-background">
+      <div className="flex min-h-screen bg-background max-md:overflow-visible md:h-screen md:overflow-hidden">
         <Sidebar />
 
         <main
           className={cn(
-            "flex-1 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 h-screen overflow-hidden transition-all duration-300 flex flex-col",
+            "flex-1 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 pt-14 md:pt-4 flex flex-col transition-all duration-300",
+            "max-md:min-h-screen max-md:overflow-y-auto max-md:h-auto md:h-screen md:overflow-hidden",
             isCollapsed ? "lg:ml-24" : "lg:ml-64"
           )}
         >
@@ -224,11 +225,11 @@ export default function Dashboard() {
             </div>
           )}
 
-          <div className="grid gap-3 md:gap-4 md:grid-cols-2 lg:gap-5 min-[1600px]:gap-6 flex-1 min-h-0 overflow-hidden">
+          <div className="grid gap-3 md:gap-4 md:grid-cols-2 lg:gap-5 min-[1600px]:gap-6 max-md:flex-initial max-md:overflow-visible flex-1 min-h-0 overflow-hidden">
             {/* Columna Izquierda */}
-            <div className="flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 min-h-0 overflow-hidden">
+            <div className="flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 max-md:min-h-0 max-md:overflow-visible min-h-0 overflow-hidden">
               {/* Fila 1: Cards de métricas */}
-              <div className="grid gap-1.5 sm:gap-2 min-[1600px]:gap-3 grid-cols-2 sm:grid-cols-5 auto-rows-min min-h-[5rem] shrink-0">
+              <div className="grid gap-1.5 sm:gap-2 min-[1600px]:gap-3 grid-cols-1 sm:grid-cols-5 auto-rows-min min-h-[5rem] shrink-0">
                 <Link to="/pqrsf?tab=general&status=todos">
                   <Card className="border-blue-200 bg-blue-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
                     <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Total</span>
@@ -348,7 +349,7 @@ export default function Dashboard() {
             </div>
 
             {/* Columna Derecha */}
-            <div className="flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 min-h-0 overflow-hidden">
+            <div className="flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 max-md:min-h-0 max-md:overflow-visible min-h-0 overflow-hidden">
               {/* Fila 1: PQRSF por Tipo */}
               <Card className="flex-1 min-h-0 flex flex-col">
                 <CardHeader className="shrink-0 px-3 pt-3 pb-0 sm:px-4 sm:pt-4 sm:pb-0 min-[1600px]:px-6 min-[1600px]:pt-6 min-[1600px]:pb-0">
@@ -464,12 +465,13 @@ export default function Dashboard() {
     }
 
     return (
-      <div className="flex h-screen bg-background overflow-hidden">
+      <div className="flex h-screen bg-background overflow-hidden max-md:overflow-visible max-md:h-auto max-md:min-h-screen">
         <Sidebar />
 
         <main
           className={cn(
-            "flex-1 p-3 sm:p-4 lg:p-5 min-[1600px]:p-10 h-screen transition-all duration-300 flex flex-col overflow-hidden",
+            "flex-1 p-3 sm:p-4 lg:p-5 min-[1600px]:p-10 pt-14 md:pt-3 flex flex-col transition-all duration-300",
+            "max-md:min-h-screen max-md:overflow-y-auto max-md:h-auto md:h-screen md:overflow-hidden",
             isCollapsed ? "lg:ml-24" : "lg:ml-64"
           )}
         >
@@ -493,7 +495,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          <div className="grid gap-2 sm:gap-3 min-[1600px]:gap-4 grid-cols-2 lg:grid-cols-4 auto-rows-min min-h-[5rem] mb-3 shrink-0">
+          <div className="grid gap-2 sm:gap-3 min-[1600px]:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-min min-h-[5rem] mb-3 shrink-0">
             <Link to="/pqrsf?tab=general&status=todos">
                 <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
                   <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium opacity-90 z-10">Asignadas</span>
@@ -557,7 +559,7 @@ export default function Dashboard() {
               </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 min-[1600px]:gap-5 flex-1 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 min-[1600px]:gap-5 max-md:flex-initial max-md:overflow-visible flex-1 min-h-0">
             <Card className="h-full flex flex-col">
               <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 min-[1600px]:p-5 shrink-0">
                 <CardTitle className="text-sm sm:text-base min-[1600px]:text-lg">PQRSF Pendientes de Respuesta</CardTitle>
