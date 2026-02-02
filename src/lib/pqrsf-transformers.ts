@@ -1,6 +1,6 @@
 import type { SeguimientoItem, CerradaItem, ApelacionItem } from "@/services/pqrsf.service"
 import type { PQRSFSurveyDetailed } from "@/types/database"
-import type { AreaPendingItem } from "@/services/dashboard.service"
+import type { AreaPendingItem, AreaAppealItem } from "@/services/dashboard.service"
 import type { UnifiedPQRSFItem } from "@/components/PQRSFCard"
 import {
   computeAvgScore,
@@ -117,6 +117,31 @@ export function transformAreaPendingItem(item: AreaPendingItem): UnifiedPQRSFIte
     ticketNumber: item.ticketNumber,
     typeName: item.typeName,
     statusName: "Pendiente",
+    description: item.description || null,
+    clientName: item.clientName ?? null,
+    areaName: item.areaName,
+    createdAt: item.createdAt || null,
+    priority,
+    responseSentAt: item.responseSentAt || null,
+    updatedAt: item.updatedAt || null,
+    daysElapsed,
+    responseTime: null,
+    satisfaction: null,
+    dueDate: item.dueDate || null,
+  }
+}
+
+/**
+ * Transforma un AreaAppealItem a UnifiedPQRSFItem (apelaciones del área del responsable)
+ */
+export function transformAreaAppealItem(item: AreaAppealItem): UnifiedPQRSFItem {
+  const daysElapsed = calculateDaysElapsed(item.createdAt ?? null)
+  const priority = calculatePriorityByDays(daysElapsed)
+  return {
+    id: item.id,
+    ticketNumber: item.ticketNumber,
+    typeName: item.typeName,
+    statusName: "En apelación",
     description: item.description || null,
     clientName: item.clientName ?? null,
     areaName: item.areaName,

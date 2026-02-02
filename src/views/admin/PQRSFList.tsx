@@ -15,7 +15,7 @@ import { pqrsfService, type PQRSFListItem, type PQRSFListQuery, type Seguimiento
 import { areaService } from "@/services/area.service"
 import { catalogService } from "@/services/catalog.service"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { dashboardService, type AreaPendingItem } from "@/services/dashboard.service"
+import { dashboardService, type AreaPendingItem, type AreaAppealItem } from "@/services/dashboard.service"
 import { PQRSFCard, type UnifiedPQRSFItem } from "@/components/PQRSFCard"
 import { PQRSFPagination } from "@/components/PQRSFPagination"
 import { usePagination } from "@/hooks/usePagination"
@@ -25,6 +25,7 @@ import {
   transformCerradaItem,
   transformApelacionItem,
   transformAreaPendingItem,
+  transformAreaAppealItem,
   getDescription,
 } from "@/lib/pqrsf-transformers"
 import { ITEMS_PER_PAGE } from "@/lib/pqrsf-utils"
@@ -240,13 +241,14 @@ export default function PQRSFList() {
             {user?.rol === "Administrador" && (
               <>
                 <TabsTrigger value="seguimiento">Seguimiento</TabsTrigger>
-                <TabsTrigger value="cerradas">Cerradas</TabsTrigger>
                 <TabsTrigger value="apelacion">En Apelación</TabsTrigger>
+                <TabsTrigger value="cerradas">Cerradas</TabsTrigger>
               </>
             )}
             {user?.rol === "Usuario de Área Responsable" && (
               <>
                 <TabsTrigger value="analisis">Análisis Pendiente</TabsTrigger>
+                <TabsTrigger value="apelacion">En Apelación</TabsTrigger>
                 <TabsTrigger value="cerradas">Cerradas</TabsTrigger>
               </>
             )}
@@ -423,6 +425,10 @@ export default function PQRSFList() {
             <>
               <TabsContent value="analisis" className="flex-1 flex flex-col min-h-0 mt-0">
                 <AnalisisPendienteTabContent />
+              </TabsContent>
+
+              <TabsContent value="apelacion" className="flex-1 flex flex-col min-h-0 mt-0">
+                <ApelacionAreaTabContent />
               </TabsContent>
 
               <TabsContent value="cerradas" className="flex-1 flex flex-col min-h-0 mt-0">
@@ -1188,6 +1194,250 @@ function ApelacionTabContent() {
           {!isLoading && paginatedItems.length === 0 && (
             <Card className="col-span-full border-dashed p-4 sm:p-5">
               <div className="text-sm text-muted-foreground">No hay PQRSF en apelación.</div>
+            </Card>
+          )}
+          {paginatedItems.map((pqrsf) => (
+            <PQRSFCard
+              key={pqrsf.id}
+              item={pqrsf}
+              actionLabel="Ver Detalle Completo"
+              showPriority={true}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="shrink-0 mt-auto">
+        <PQRSFPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
+      </div>
+    </div>
+  )
+}
+
+// Componente interno para En Apelación (solo área del responsable)
+function ApelacionAreaTabContent() {
+  const { user } = useAuth()
+  const [areaId, setAreaId] = useState<number | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filtroEstado, setFiltroEstado] = useState("todos")
+  const [filtroTipo, setFiltroTipo] = useState("todos")
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
+  const [sortFilter, setSortFilter] = useState<"recent" | "oldest" | "ticket">("recent")
+  const [statusList, setStatusList] = useState<{ id: number; name: string }[]>([])
+  const [typesList, setTypesList] = useState<{ id: number; name: string }[]>([])
+  const itemsPerPage = ITEMS_PER_PAGE
+  const [items, setItems] = useState<AreaAppealItem[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    if (!user || user.rol !== "Usuario de Área Responsable") return
+    let active = true
+    const loadArea = async () => {
+      try {
+        const responsable = await areaService.getResponsibleByUser(Number(user.id))
+        if (active) setAreaId(responsable.areaId ?? null)
+      } catch (err) {
+        console.error("[apelacion-area] load area error", err)
+        if (active) setAreaId(null)
+      }
+    }
+    void loadArea()
+    return () => { active = false }
+  }, [user])
+
+  useEffect(() => {
+    let active = true
+    catalogService.getPQRSStatus().then((list) => {
+      if (!active) return
+      setStatusList(list.map((s) => ({ id: s.id, name: s.name })))
+    }).catch(() => { if (active) setStatusList([]) })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    catalogService.getTypePQRSF().then((list) => {
+      if (!active) return
+      setTypesList(list.map((t) => ({ id: t.id, name: t.name })))
+    }).catch(() => { if (active) setTypesList([]) })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    if (!user || user.rol !== "Usuario de Área Responsable" || !areaId) return
+    let active = true
+    const loadApelaciones = async () => {
+      setIsLoading(true)
+      setError("")
+      try {
+        const data = await dashboardService.getAreaAppeals(areaId)
+        if (!active) return
+        setItems(data)
+      } catch (err) {
+        if (!active) return
+        console.error("[apelacion-area] load error", err)
+        setError("No se pudo cargar las PQRSF en apelación de tu área.")
+      } finally {
+        if (active) setIsLoading(false)
+      }
+    }
+    void loadApelaciones()
+    return () => { active = false }
+  }, [user, areaId])
+
+  const formattedItems = useMemo<UnifiedPQRSFItem[]>(() => {
+    return items.map(transformAreaAppealItem)
+  }, [items])
+
+  const filteredPQRSF = useMemo(() => {
+    const filtered = formattedItems.filter((p) => {
+      const matchSearch =
+        p.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.clientName || "").toLowerCase().includes(searchTerm.toLowerCase())
+      const matchEstado = filtroEstado === "todos" || p.statusName === filtroEstado
+      const matchTipo = filtroTipo === "todos" || p.typeName === filtroTipo
+      const fechaItem = p.createdAt ? p.createdAt.slice(0, 10) : ""
+      const matchFecha =
+        (!dateFrom || (fechaItem && fechaItem >= dateFrom)) &&
+        (!dateTo || (fechaItem && fechaItem <= dateTo))
+      return matchSearch && matchEstado && matchTipo && matchFecha
+    })
+    if (sortFilter === "oldest") {
+      return [...filtered].sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""))
+    }
+    if (sortFilter === "ticket") {
+      return [...filtered].sort((a, b) => a.ticketNumber.localeCompare(b.ticketNumber))
+    }
+    return [...filtered].sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
+  }, [formattedItems, searchTerm, filtroEstado, filtroTipo, dateFrom, dateTo, sortFilter])
+
+  const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
+    items: filteredPQRSF,
+    itemsPerPage,
+    dependencies: [searchTerm, filtroEstado, filtroTipo, dateFrom, dateTo, sortFilter],
+  })
+
+  if (!user || user.rol !== "Usuario de Área Responsable") {
+    return <div className="text-sm text-muted-foreground">No tienes permisos para ver esta sección.</div>
+  }
+
+  if (areaId === null && !isLoading) {
+    return (
+      <div className="flex-1 flex flex-col min-h-0 p-4">
+        <div className="text-sm text-muted-foreground">No tienes un área asignada.</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      <CardContent className="pb-2 px-0 mb-4 sm:mb-6 shrink-0">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por radicado o solicitante..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={filtroEstado} onValueChange={setFiltroEstado}>
+            <SelectTrigger className="w-full md:w-50">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Todos los estados" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos los estados</SelectItem>
+              {statusList.map((s) => (
+                <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+            <SelectTrigger className="w-full md:w-50">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Todos los tipos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos los tipos</SelectItem>
+              {typesList.map((t) => (
+                <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full md:w-50 justify-start text-left font-normal pl-10 text-sm min-w-0 truncate",
+                  !dateFrom && !dateTo && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {dateFrom && dateTo
+                    ? `${formatDateLabel(dateFrom)} — ${formatDateLabel(dateTo)}`
+                    : dateFrom
+                      ? `Desde ${formatDateLabel(dateFrom)}`
+                      : "Rango de fechas (desde — hasta)"}
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                defaultMonth={dateFrom ? new Date(dateFrom + "T12:00:00") : undefined}
+                selected={
+                  dateFrom
+                    ? { from: new Date(dateFrom + "T12:00:00"), to: dateTo ? new Date(dateTo + "T12:00:00") : undefined }
+                    : undefined
+                }
+                onSelect={(range: DateRange | undefined) => {
+                  setDateFrom(range?.from ? range.from.toISOString().split("T")[0] : "")
+                  setDateTo(range?.to ? range.to.toISOString().split("T")[0] : "")
+                }}
+                numberOfMonths={1}
+              />
+            </PopoverContent>
+          </Popover>
+          <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
+            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+              <Filter className="h-4 w-4 mr-2 shrink-0" />
+              <SelectValue placeholder="Ordenar por" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Reciente</SelectItem>
+              <SelectItem value="oldest">Antigua</SelectItem>
+              <SelectItem value="ticket">Ticket</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardContent>
+
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className="flex-1 min-h-0 overflow-hidden mb-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 auto-rows-fr min-h-full gap-3 md:gap-4 min-[1600px]:gap-5">
+          {isLoading && (
+            <Card className="col-span-full border-dashed p-4 sm:p-5">
+              <div className="text-sm text-muted-foreground">Cargando apelaciones de tu área...</div>
+            </Card>
+          )}
+          {!isLoading && paginatedItems.length === 0 && (
+            <Card className="col-span-full border-dashed p-4 sm:p-5">
+              <div className="text-sm text-muted-foreground">No hay PQRSF en apelación en tu área.</div>
             </Card>
           )}
           {paginatedItems.map((pqrsf) => (

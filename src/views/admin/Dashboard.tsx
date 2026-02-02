@@ -260,7 +260,7 @@ export default function Dashboard() {
                   </Card>
                 </Link>
 
-                <Link to="/pqrsf?tab=general&status=2">
+                <Link to="/pqrsf?tab=seguimiento">
                   <Card className="border-orange-200 bg-orange-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
                     <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Seguimiento</span>
                     <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
@@ -276,7 +276,7 @@ export default function Dashboard() {
                   </Card>
                 </Link>
 
-                <Link to="/pqrsf?tab=general&status=3">
+                <Link to="/pqrsf?tab=apelacion">
                   <Card className="border-red-200 bg-red-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
                     <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Apeladas</span>
                     <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
@@ -292,7 +292,7 @@ export default function Dashboard() {
                   </Card>
                 </Link>
 
-                <Link to="/pqrsf?tab=general&status=4">
+                <Link to="/pqrsf?tab=cerradas">
                   <Card className="border-green-200 bg-green-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
                     <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Cerradas</span>
                     <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
@@ -542,7 +542,7 @@ export default function Dashboard() {
 
               <Link to="/pqrsf?tab=cerradas">
                 <Card className="border-green-200 bg-green-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
-                  <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Respondidas</span>
+                  <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Cerradas</span>
                   <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
                     <div className="flex items-center justify-center gap-[10%]">
                       <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-green-500/20 rounded-lg shrink-0">
