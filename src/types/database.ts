@@ -102,7 +102,7 @@ export interface TypePerson {
   name: string
 }
 
-export interface StateHolder {
+export interface StakeHolder {
   id: number
   name: string
 }
@@ -263,8 +263,8 @@ export type UpdateDBUser = Partial<Omit<DBUser, "id" | "createdAt" | "updatedAt"
 export type CreateTypePerson = Omit<TypePerson, "id">
 export type UpdateTypePerson = Partial<Omit<TypePerson, "id">>
 
-export type CreateStateHolder = Omit<StateHolder, "id">
-export type UpdateStateHolder = Partial<Omit<StateHolder, "id">>
+export type CreateStateHolder = Omit<StakeHolder, "id">
+export type UpdateStateHolder = Partial<Omit<StakeHolder, "id">>
 
 export type CreateDBPQRSF = Omit<DBPQRSF, "id" | "createdAt" | "updatedAt">
 export type UpdateDBPQRSF = Partial<Omit<DBPQRSF, "id" | "createdAt" | "updatedAt">>

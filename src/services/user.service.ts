@@ -5,8 +5,6 @@ import type {
   UpdateDBUser,
   TypePerson,
   CreateTypePerson,
-  StateHolder,
-  CreateStateHolder,
 } from '@/types/database'
 
 export const userService = {
@@ -58,26 +56,5 @@ export const userService = {
 
   deleteTypePerson: async (id: number): Promise<void> => {
     return api.del<void>(`/users/type-person/${id}`)
-  },
-
-  // State Holder
-  getStateHolders: async (): Promise<StateHolder[]> => {
-    return api.get<StateHolder[]>('/users/state-holder')
-  },
-
-  getStateHolderById: async (id: number): Promise<StateHolder> => {
-    return api.get<StateHolder>(`/users/state-holder/${id}`)
-  },
-
-  createStateHolder: async (data: CreateStateHolder): Promise<StateHolder> => {
-    return api.post<StateHolder>('/users/state-holder', data)
-  },
-
-  updateStateHolder: async (id: number, data: Partial<CreateStateHolder>): Promise<StateHolder> => {
-    return api.put<StateHolder>(`/users/state-holder/${id}`, data)
-  },
-
-  deleteStateHolder: async (id: number): Promise<void> => {
-    return api.del<void>(`/users/state-holder/${id}`)
   },
 }

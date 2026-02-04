@@ -49,6 +49,7 @@ export function Sidebar() {
       return [
         { name: "Responsables", href: "/responsables", icon: Users }, // responsables son personas como Jerson, Alexa, jefes de areas
         { name: "Areas", href: "/areas", icon: Briefcase }, // areas son áreas de campuslands
+        { name: "Stakeholders", href: "/stakeholders", icon: Users },
       ]
     } else if (user?.rol === "Usuario de Área Responsable") {
       return []
