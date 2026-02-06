@@ -81,6 +81,13 @@ export const chatService = {
   sendMessage: async (data: { chatId: number; content: string; channel?: 'whatsapp' | 'telegram' }): Promise<Message> => {
     return api.post<Message>('/chats/messages/send', data)
   },
+  sendFile: async (params: { chatId: number; file: File; channel?: 'whatsapp' | 'telegram' }): Promise<Message> => {
+    const formData = new FormData()
+    formData.append('chatId', String(params.chatId))
+    if (params.channel) formData.append('channel', params.channel)
+    formData.append('file', params.file)
+    return api.post<Message>('/chats/messages/send-file', formData)
+  },
 
   updateMessage: async (id: number, data: UpdateMessage): Promise<Message> => {
     return api.put<Message>(`/chats/messages/${id}`, data)
