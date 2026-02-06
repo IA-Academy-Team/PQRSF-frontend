@@ -410,11 +410,13 @@ export default function Chats() {
             ) : (
               filteredChats.map((chat) => {
                 const lastMessageText = (chat.lastMessage ?? "").toLowerCase()
-                const isAnonymous =
+                const isAnonymousByText =
                   lastMessageText.includes("anonim") ||
                   lastMessageText.includes("anónimo") ||
                   lastMessageText.includes("anonimo")
-                const chatName = chat.clientName ?? (isAnonymous ? "Anónimo" : "Sin nombre")
+                const isAnonymousByIdentity = !chat.clientName && !chat.clientPhone
+                const isAnonymous = isAnonymousByText || isAnonymousByIdentity
+                const chatName = isAnonymous ? "Anónimo" : chat.clientName ?? "Sin nombre"
                 const chatPhone = chat.clientPhone ?? "Sin teléfono"
                 const lastMessage = chat.lastMessage ?? "Sin mensajes aún"
                 const lastMessageAt = parseChatDate(chat.lastMessageAt)
