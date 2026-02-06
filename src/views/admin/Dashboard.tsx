@@ -492,7 +492,7 @@ export default function Dashboard() {
           <div className="grid gap-2 sm:gap-3 min-[1600px]:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-min min-h-20 mb-3 shrink-0">
             <Link to="/pqrsf?tab=general&status=todos">
               <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0 cursor-pointer hover:opacity-90 transition-opacity min-h-16 h-full w-full relative @container">
-                <span className="absolute top-1.5 left-2.5 text-[clamp(0.6rem,4cqw,1.1rem)] font-semibold opacity-90 z-10">Asignadas</span>
+                <span className="absolute top-1.5 left-2.5 text-[clamp(0.8rem,4.2cqw,1.2rem)] font-semibold opacity-90 z-10">Asignadas</span>
                 <CardContent className="p-2 sm:p-2.5 min-[1600px]:p-3 h-full w-full flex items-center justify-center @container">
                   <div className="flex items-center justify-center gap-3">
                     <div className="w-9 h-9 min-[1600px]:w-10 min-[1600px]:h-10 flex items-center justify-center bg-white/20 rounded-lg shrink-0">
@@ -573,7 +573,24 @@ export default function Dashboard() {
                   ) : areaPending.length === 0 ? (
                     <div className="text-xs min-[1600px]:text-sm text-muted-foreground">Sin PQRSF pendientes.</div>
                   ) : (
-                    areaPending.slice(0, 2).map((item) => {
+                    [...areaPending]
+                      .sort((a, b) => {
+                        const priorityRank = (value?: string | null) => {
+                          if (value === "Alta") return 0
+                          if (value === "Media") return 1
+                          if (value === "Baja") return 2
+                          return 3
+                        }
+                        const pa = getPriorityLabel(a.dueDate, a.createdAt)
+                        const pb = getPriorityLabel(b.dueDate, b.createdAt)
+                        const diff = priorityRank(pa) - priorityRank(pb)
+                        if (diff !== 0) return diff
+                        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0
+                        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0
+                        return db - da
+                      })
+                      .slice(0, 4)
+                      .map((item) => {
                       const prioridad = getPriorityLabel(item.dueDate, item.createdAt)
                       const diasTranscurridos = getDaysElapsed(item.createdAt)
                       const borderColor =

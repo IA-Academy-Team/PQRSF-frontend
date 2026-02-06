@@ -126,7 +126,7 @@ export default function AnalisisPendientes() {
 
   const filteredPending = useMemo(() => {
     const query = searchTerm.toLowerCase()
-    return pending.filter((item) => {
+    const filtered = pending.filter((item) => {
       const priority = getPriority(item.dueDate, item.createdAt)
       const matchesPriority = priorityFilter === "todos" || priority.toLowerCase() === priorityFilter
       const matchesQuery =
@@ -136,6 +136,26 @@ export default function AnalisisPendientes() {
       const matchesDate = dateFilter ? formatDate(item.createdAt) === dateFilter : true
       return matchesPriority && matchesQuery && matchesDate
     })
+
+    if (priorityFilter === "todos") {
+      const rank = (value?: string | null) => {
+        if (value === "Alta") return 0
+        if (value === "Media") return 1
+        if (value === "Baja") return 2
+        return 3
+      }
+      return [...filtered].sort((a, b) => {
+        const pa = getPriority(a.dueDate, a.createdAt)
+        const pb = getPriority(b.dueDate, b.createdAt)
+        const diff = rank(pa) - rank(pb)
+        if (diff !== 0) return diff
+        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        return db - da
+      })
+    }
+
+    return filtered
   }, [pending, searchTerm, priorityFilter, dateFilter])
 
   useEffect(() => {

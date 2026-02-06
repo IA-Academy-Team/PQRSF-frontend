@@ -356,7 +356,7 @@ export default function PQRSFList() {
                 </Popover>
 
                 <Select value={sortFilter} onValueChange={setSortFilter}>
-                  <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+                  <SelectTrigger className="w-full md:w-55 **:data-[slot=select-value]:flex-1 **:data-[slot=select-value]:justify-center">
                     <Filter className="h-4 w-4 mr-2 shrink-0" />
                     <SelectValue placeholder="Ordenar por" />
                   </SelectTrigger>
@@ -672,7 +672,7 @@ function SeguimientoTabContent() {
             </PopoverContent>
           </Popover>
           <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
-            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+            <SelectTrigger className="w-full md:w-55 **:data-[slot=select-value]:flex-1 **:data-[slot=select-value]:justify-center">
               <Filter className="h-4 w-4 mr-2 shrink-0" />
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
@@ -919,7 +919,7 @@ function CerradasTabContent() {
             </PopoverContent>
           </Popover>
           <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
-            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+            <SelectTrigger className="w-full md:w-55 **:data-[slot=select-value]:flex-1 **:data-[slot=select-value]:justify-center">
               <Filter className="h-4 w-4 mr-2 shrink-0" />
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
@@ -1166,7 +1166,7 @@ function ApelacionTabContent() {
             </PopoverContent>
           </Popover>
           <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
-            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+            <SelectTrigger className="w-full md:w-55 **:data-[slot=select-value]:flex-1 **:data-[slot=select-value]:justify-center">
               <Filter className="h-4 w-4 mr-2 shrink-0" />
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
@@ -1410,7 +1410,7 @@ function ApelacionAreaTabContent() {
             </PopoverContent>
           </Popover>
           <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
-            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+            <SelectTrigger className="w-full md:w-55 **:data-[slot=select-value]:flex-1 **:data-[slot=select-value]:justify-center">
               <Filter className="h-4 w-4 mr-2 shrink-0" />
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
@@ -1659,7 +1659,7 @@ function AnalisisPendienteTabContent() {
             </PopoverContent>
           </Popover>
           <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
-            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+            <SelectTrigger className="w-full md:w-55 **:data-[slot=select-value]:flex-1 **:data-[slot=select-value]:justify-center">
               <Filter className="h-4 w-4 mr-2 shrink-0" />
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
