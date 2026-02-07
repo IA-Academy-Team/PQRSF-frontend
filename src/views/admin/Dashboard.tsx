@@ -351,11 +351,11 @@ export default function Dashboard() {
             {/* Columna Derecha */}
             <div className="flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 max-md:min-h-0 max-md:overflow-visible min-h-0 overflow-hidden">
               {/* Fila 1: PQRSF por Tipo */}
-              <Card className="flex-1 min-h-0 flex flex-col">
+              <Card className="flex-[1.25] min-h-[320px] flex flex-col">
                 <CardHeader className="shrink-0 px-3 pt-3 pb-0 sm:px-4 sm:pt-4 sm:pb-0 min-[1600px]:px-6 min-[1600px]:pt-6 min-[1600px]:pb-0">
                   <CardTitle className="text-base sm:text-lg min-[1600px]:text-xl">PQRSF por Tipo</CardTitle>
                 </CardHeader>
-                <CardContent className="flex-1 min-h-0 overflow-y-auto px-3 pt-0 pb-3 sm:px-4 sm:pt-0 sm:pb-4 min-[1600px]:px-6 min-[1600px]:pt-0 min-[1600px]:pb-6">
+                <CardContent className="flex-1 overflow-y-auto px-3 pt-0 pb-3 sm:px-4 sm:pt-0 sm:pb-4 min-[1600px]:px-6 min-[1600px]:pt-0 min-[1600px]:pb-6">
                   <div className="space-y-3 min-[1600px]:space-y-5">
                     {pqrsByType.length === 0 && !isDashboardLoading && (
                       <div className="text-sm min-[1600px]:text-base text-muted-foreground">Sin datos disponibles.</div>
