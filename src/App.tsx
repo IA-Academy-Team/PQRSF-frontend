@@ -17,6 +17,7 @@ import Cerradas from '@/views/admin/Cerradas'
 import Chats from '@/views/admin/Chats'
 import Usuarios from '@/views/admin/Responsables'
 import Areas from '@/views/admin/Areas'
+import Stakeholders from '@/views/admin/Stakeholders'
 import Surveys from '@/views/admin/Surveys'
 // Area Responsable views
 import AnalisisPendientes from '@/views/areaResponsable/AnalisisPendientes'
@@ -40,6 +41,7 @@ function App() {
           <Route path="/analisis-pendientes" element={<AnalisisPendientes />} />
           <Route path="/apelaciones" element={<Apelaciones />} />
           <Route path="/areas" element={<Areas />} />
+          <Route path="/stakeholders" element={<Stakeholders />} />
           <Route path="/cerradas" element={<Cerradas />} />
           <Route path="/chats" element={<Chats />} />
           <Route path="/en-apelacion" element={<EnApelacion />} />

@@ -200,19 +200,20 @@ export default function Dashboard() {
     const pqrsByTypeTotal = totalPqrs > 0 ? totalPqrs : 1
 
     return (
-      <div className="flex min-h-screen bg-background">
+      <div className="flex min-h-screen bg-background max-md:overflow-visible md:h-screen md:overflow-hidden">
         <Sidebar />
 
         <main
           className={cn(
-            "flex-1 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 h-screen overflow-hidden transition-all duration-300 flex flex-col",
+            "flex-1 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 pt-14 md:pt-4 flex flex-col transition-all duration-300",
+            "max-md:min-h-screen max-md:overflow-y-auto max-md:h-auto md:h-screen md:overflow-hidden",
             isCollapsed ? "lg:ml-24" : "lg:ml-64"
           )}
         >
           <div className="mb-4 shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl min-[1600px]:text-4xl font-bold text-foreground mb-2 min-[1600px]:mb-3">Panel de Administración</h1>
+                <h1 className="text-3xl sm:text-4xl min-[1600px]:text-5xl font-bold text-foreground mb-2 min-[1600px]:mb-3">Panel de Administración</h1>
               </div>
             </div>
           </div>
@@ -224,20 +225,20 @@ export default function Dashboard() {
             </div>
           )}
 
-          <div className="grid gap-3 md:gap-4 md:grid-cols-2 lg:gap-5 min-[1600px]:gap-6 flex-1 min-h-0 overflow-hidden">
+          <div className="grid gap-3 md:gap-4 md:grid-cols-2 lg:gap-5 min-[1600px]:gap-6 max-md:flex-initial max-md:overflow-visible flex-1 min-h-0 overflow-hidden">
             {/* Columna Izquierda */}
-            <div className="flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 min-h-0 overflow-hidden">
+            <div className="flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 max-md:min-h-0 max-md:overflow-visible min-h-0 overflow-hidden">
               {/* Fila 1: Cards de métricas */}
-              <div className="grid gap-1.5 sm:gap-2 min-[1600px]:gap-3 grid-cols-2 sm:grid-cols-5 auto-rows-min min-h-[5rem] shrink-0">
+              <div className="grid gap-1.5 sm:gap-2 min-[1600px]:gap-3 grid-cols-1 sm:grid-cols-5 auto-rows-min min-h-20 shrink-0">
                 <Link to="/pqrsf?tab=general&status=todos">
-                  <Card className="border-blue-200 bg-blue-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
-                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Total</span>
-                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
+                  <Card className="border-blue-200 bg-blue-50 cursor-pointer hover:opacity-90 transition-opacity min-h-16 h-full w-full relative @container">
+                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.6rem,4.5cqw,1.4rem)] font-semibold text-muted-foreground z-10">Total</span>
+                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center @container">
                       <div className="flex items-center justify-center gap-[10%]">
-                        <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-blue-500/20 rounded-lg shrink-0">
-                          <FileText className="h-[70%] w-[70%] text-blue-600" />
+                        <div className="w-[28%] min-w-7 max-w-28 aspect-square flex items-center justify-center bg-blue-500/20 rounded-lg shrink-0">
+                          <FileText className="h-[65%] w-[65%] text-blue-600" />
                         </div>
-                        <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
+                        <p className="text-[clamp(1rem,14cqw,3rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
                           {isDashboardLoading ? "..." : totalPqrs}
                         </p>
                       </div>
@@ -245,14 +246,14 @@ export default function Dashboard() {
                   </Card>
                 </Link>
                 <Link to="/encuestas">
-                  <Card className="border-amber-200 bg-amber-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
-                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Promedio</span>
-                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
+                  <Card className="border-amber-200 bg-amber-50 cursor-pointer hover:opacity-90 transition-opacity min-h-16 h-full w-full relative @container">
+                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.6rem,4.5cqw,1.4rem)] font-semibold text-muted-foreground z-10">Promedio</span>
+                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center @container">
                       <div className="flex items-center justify-center gap-[10%]">
-                        <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-amber-500/20 rounded-lg shrink-0">
-                          <Star className="h-[70%] w-[70%] text-amber-600" />
+                        <div className="w-[28%] min-w-7 max-w-28 aspect-square flex items-center justify-center bg-amber-500/20 rounded-lg shrink-0">
+                          <Star className="h-[65%] w-[65%] text-amber-600" />
                         </div>
-                        <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap text-center">
+                        <p className="text-[clamp(1rem,14cqw,3rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap text-center">
                           {isDashboardLoading || isSurveyAverageLoading ? "..." : surveyOverallAverage !== null ? surveyOverallAverage.toFixed(1) : "Sin datos"}
                         </p>
                       </div>
@@ -261,14 +262,14 @@ export default function Dashboard() {
                 </Link>
 
                 <Link to="/pqrsf?tab=seguimiento">
-                  <Card className="border-orange-200 bg-orange-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
-                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Seguimiento</span>
-                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
+                  <Card className="border-orange-200 bg-orange-50 cursor-pointer hover:opacity-90 transition-opacity min-h-16 h-full w-full relative @container">
+                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.6rem,4.5cqw,1.4rem)] font-semibold text-muted-foreground z-10">Seguimiento</span>
+                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center @container">
                       <div className="flex items-center justify-center gap-[10%]">
-                        <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-orange-500/20 rounded-lg shrink-0">
-                          <Clock className="h-[70%] w-[70%] text-orange-600" />
+                        <div className="w-[28%] min-w-7 max-w-28 aspect-square flex items-center justify-center bg-orange-500/20 rounded-lg shrink-0">
+                          <Clock className="h-[65%] w-[65%] text-orange-600" />
                         </div>
-                        <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
+                        <p className="text-[clamp(1rem,14cqw,3rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
                           {isDashboardLoading ? "..." : getStatusCount(2)}
                         </p>
                       </div>
@@ -277,14 +278,14 @@ export default function Dashboard() {
                 </Link>
 
                 <Link to="/pqrsf?tab=apelacion">
-                  <Card className="border-red-200 bg-red-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
-                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Apeladas</span>
-                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
+                  <Card className="border-red-200 bg-red-50 cursor-pointer hover:opacity-90 transition-opacity min-h-16 h-full w-full relative @container">
+                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.6rem,4.5cqw,1.4rem)] font-semibold text-muted-foreground z-10">Apeladas</span>
+                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center @container">
                       <div className="flex items-center justify-center gap-[10%]">
-                        <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-red-500/20 rounded-lg shrink-0">
-                          <AlertCircle className="h-[70%] w-[70%] text-red-600" />
+                        <div className="w-[28%] min-w-7 max-w-28 aspect-square flex items-center justify-center bg-red-500/20 rounded-lg shrink-0">
+                          <AlertCircle className="h-[65%] w-[65%] text-red-600" />
                         </div>
-                        <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
+                        <p className="text-[clamp(1rem,14cqw,3rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
                           {isDashboardLoading ? "..." : getAppealsCount()}
                         </p>
                       </div>
@@ -293,14 +294,14 @@ export default function Dashboard() {
                 </Link>
 
                 <Link to="/pqrsf?tab=cerradas">
-                  <Card className="border-green-200 bg-green-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
-                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Cerradas</span>
-                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
+                  <Card className="border-green-200 bg-green-50 cursor-pointer hover:opacity-90 transition-opacity min-h-16 h-full w-full relative @container">
+                    <span className="absolute top-1.5 left-2.5 text-[clamp(0.6rem,4.5cqw,1.4rem)] font-semibold text-muted-foreground z-10">Cerradas</span>
+                    <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center @container">
                       <div className="flex items-center justify-center gap-[10%]">
-                        <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-green-500/20 rounded-lg shrink-0">
-                          <CheckCircle2 className="h-[70%] w-[70%] text-green-600" />
+                        <div className="w-[28%] min-w-7 max-w-28 aspect-square flex items-center justify-center bg-green-500/20 rounded-lg shrink-0">
+                          <CheckCircle2 className="h-[65%] w-[65%] text-green-600" />
                         </div>
-                        <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
+                        <p className="text-[clamp(1rem,14cqw,3rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
                           {isDashboardLoading ? "..." : getStatusCount(4)}
                         </p>
                       </div>
@@ -313,32 +314,32 @@ export default function Dashboard() {
               <div className="min-h-0 flex flex-1">
                 <Card className="h-full w-full flex flex-col min-h-0">
                   <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 px-3 pt-3 pb-0 sm:px-4 sm:pt-4 sm:pb-0 min-[1600px]:px-6 min-[1600px]:pt-6 min-[1600px]:pb-0 shrink-0">
-                    <CardTitle className="text-base sm:text-lg min-[1600px]:text-xl min-[1920px]:text-2xl">Chats Recientes</CardTitle>
+                    <CardTitle className="text-sm sm:text-base min-[1600px]:text-lg min-[1920px]:text-xl">Chats Recientes</CardTitle>
                     <Link to="/chats">
-                      <Button variant="ghost" size="sm" className="w-full sm:w-auto min-[1600px]:text-base min-[1920px]:text-lg">
-                        <ArrowUpRight className="h-4 w-4 min-[1600px]:h-5 min-[1600px]:w-5 min-[1920px]:h-6 min-[1920px]:w-6 ml-1" />
+                      <Button variant="ghost" size="sm" className="w-full sm:w-auto text-xs min-[1600px]:text-sm">
+                        <ArrowUpRight className="h-3 w-3 min-[1600px]:h-4 min-[1600px]:w-4 ml-1" />
                       </Button>
                     </Link>
                   </CardHeader>
                   <CardContent className="px-3 pt-0 pb-3 sm:px-4 sm:pt-0 sm:pb-4 min-[1600px]:px-6 min-[1600px]:pt-0 min-[1600px]:pb-6 flex-1 min-h-0 flex flex-col overflow-hidden">
                     <div className="flex flex-col flex-1 min-h-0 gap-2 sm:gap-2.5 min-[1600px]:gap-3">
                       {chatItems.length === 0 && !isDashboardLoading && (
-                        <div className="text-sm min-[1600px]:text-base min-[1920px]:text-lg text-muted-foreground">Sin chats recientes.</div>
+                        <div className="text-xs min-[1600px]:text-sm text-muted-foreground">Sin chats recientes.</div>
                       )}
                       {(isDashboardLoading ? [] : chatItems.slice(0, 6)).map((chat, index) => (
                         <div
                           key={index}
-                          className="flex min-h-[3rem] flex-1 items-center justify-between gap-2 overflow-hidden rounded-lg border p-2.5 transition-colors hover:bg-muted/50 sm:p-3 min-[1600px]:p-4 min-[1920px]:p-5 [container-type:size]"
+                          className="flex min-h-12 flex-1 items-center justify-between gap-2 overflow-hidden rounded-lg border p-2 transition-colors hover:bg-muted/50 sm:p-2.5 min-[1600px]:p-3 @container-[size]"
                         >
                           <div className="flex min-w-0 flex-1 items-center gap-[clamp(0.5rem,2cqh,1.25rem)] min-[1600px]:gap-4 min-[1920px]:gap-5">
-                            <MessageCircle className="h-[clamp(0.875rem,4cqh,1.5rem)] w-[clamp(0.875rem,4cqh,1.5rem)] shrink-0 text-primary min-[1600px]:h-6 min-[1600px]:w-6 min-[1920px]:h-7 min-[1920px]:w-7" />
+                            <MessageCircle className="h-4 w-4 shrink-0 text-primary min-[1600px]:h-5 min-[1600px]:w-5" />
                             <div className="min-w-0 flex-1 overflow-hidden">
-                              <p className="truncate font-semibold text-[clamp(0.5rem,4cqh,1.125rem)] min-[1600px]:text-base min-[1600px]:lg:text-lg min-[1920px]:text-xl">{chat.radicado}</p>
-                              <p className="truncate text-[clamp(0.45rem,3.5cqh,1rem)] text-muted-foreground min-[1600px]:text-sm min-[1920px]:text-base">{chat.cliente}</p>
-                              <p className="mt-0.5 line-clamp-2 text-[clamp(0.45rem,3.5cqh,1rem)] min-[1600px]:text-sm min-[1920px]:text-base">{chat.ultimoMensaje}</p>
+                              <p className="truncate font-semibold text-xs min-[1600px]:text-sm">{chat.radicado}</p>
+                              <p className="truncate text-[11px] text-muted-foreground min-[1600px]:text-xs">{chat.cliente}</p>
+                              <p className="mt-0.5 line-clamp-2 text-[11px] min-[1600px]:text-xs">{chat.ultimoMensaje}</p>
                             </div>
                           </div>
-                          <span className="ml-2 shrink-0 text-[clamp(0.45rem,3cqh,0.875rem)] text-muted-foreground min-[1600px]:text-sm min-[1920px]:text-base">{chat.fecha}</span>
+                          <span className="ml-2 shrink-0 text-[11px] text-muted-foreground min-[1600px]:text-xs">{chat.fecha}</span>
                         </div>
                       ))}
                     </div>
@@ -348,13 +349,13 @@ export default function Dashboard() {
             </div>
 
             {/* Columna Derecha */}
-            <div className="flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 min-h-0 overflow-hidden">
+            <div className="flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 max-md:min-h-0 max-md:overflow-visible min-h-0 overflow-hidden">
               {/* Fila 1: PQRSF por Tipo */}
-              <Card className="flex-1 min-h-0 flex flex-col">
+              <Card className="flex-[1.25] min-h-[320px] flex flex-col">
                 <CardHeader className="shrink-0 px-3 pt-3 pb-0 sm:px-4 sm:pt-4 sm:pb-0 min-[1600px]:px-6 min-[1600px]:pt-6 min-[1600px]:pb-0">
                   <CardTitle className="text-base sm:text-lg min-[1600px]:text-xl">PQRSF por Tipo</CardTitle>
                 </CardHeader>
-                <CardContent className="flex-1 min-h-0 overflow-y-auto px-3 pt-0 pb-3 sm:px-4 sm:pt-0 sm:pb-4 min-[1600px]:px-6 min-[1600px]:pt-0 min-[1600px]:pb-6">
+                <CardContent className="flex-1 overflow-y-auto px-3 pt-0 pb-3 sm:px-4 sm:pt-0 sm:pb-4 min-[1600px]:px-6 min-[1600px]:pt-0 min-[1600px]:pb-6">
                   <div className="space-y-3 min-[1600px]:space-y-5">
                     {pqrsByType.length === 0 && !isDashboardLoading && (
                       <div className="text-sm min-[1600px]:text-base text-muted-foreground">Sin datos disponibles.</div>
@@ -464,12 +465,13 @@ export default function Dashboard() {
     }
 
     return (
-      <div className="flex h-screen bg-background overflow-hidden">
+      <div className="flex h-screen bg-background overflow-hidden max-md:overflow-visible max-md:h-auto max-md:min-h-screen">
         <Sidebar />
 
         <main
           className={cn(
-            "flex-1 p-3 sm:p-4 lg:p-5 min-[1600px]:p-10 h-screen transition-all duration-300 flex flex-col overflow-hidden",
+            "flex-1 p-3 sm:p-4 lg:p-5 min-[1600px]:p-10 pt-14 md:pt-3 flex flex-col transition-all duration-300",
+            "max-md:min-h-screen max-md:overflow-y-auto max-md:h-auto md:h-screen md:overflow-hidden",
             isCollapsed ? "lg:ml-24" : "lg:ml-64"
           )}
         >
@@ -481,83 +483,79 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="mb-3 shrink-0">
-            <div className="inline-flex items-center gap-2 px-2 py-0.5 min-[1600px]:px-3 min-[1600px]:py-1 rounded-full bg-primary/10 text-primary text-xs min-[1600px]:text-sm font-medium">
-              {user.rol}
-            </div>
-          </div>
-
           {areaError && (
             <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-2 min-[1600px]:p-3 text-xs min-[1600px]:text-sm text-red-700">
               {areaError}
             </div>
           )}
 
-          <div className="grid gap-2 sm:gap-3 min-[1600px]:gap-4 grid-cols-2 lg:grid-cols-4 auto-rows-min min-h-[5rem] mb-3 shrink-0">
+          <div className="grid gap-2 sm:gap-3 min-[1600px]:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-min min-h-20 mb-3 shrink-0">
             <Link to="/pqrsf?tab=general&status=todos">
-                <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
-                  <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium opacity-90 z-10">Asignadas</span>
-                  <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
-                    <div className="flex items-center justify-center gap-[10%]">
-                      <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-white/20 rounded-lg shrink-0">
-                        <FileText className="h-[70%] w-[70%]" />
-                      </div>
-                      <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold min-w-0 overflow-visible whitespace-nowrap">{isAreaLoading ? "..." : totalAssigned}</p>
+              <Card className="bg-linear-to-br from-blue-500 to-blue-600 text-white border-0 cursor-pointer hover:opacity-90 transition-opacity min-h-16 h-full w-full relative @container">
+                <span className="absolute top-1.5 left-2.5 text-[clamp(0.8rem,4.2cqw,1.2rem)] font-semibold opacity-90 z-10">Asignadas</span>
+                <CardContent className="p-2 sm:p-2.5 min-[1600px]:p-3 h-full w-full flex items-center justify-center @container">
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="w-9 h-9 min-[1600px]:w-10 min-[1600px]:h-10 flex items-center justify-center bg-white/20 rounded-lg shrink-0">
+                      <FileText className="h-4 w-4 min-[1600px]:h-6 min-[1600px]:w-6" />
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                    <p className="text-[clamp(1.3rem,6cqw,3rem)] font-bold min-w-0 overflow-visible whitespace-nowrap">
+                      {isAreaLoading ? "..." : totalAssigned}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
 
-              <Link to="/pqrsf?tab=analisis">
-                <Card className="border-orange-200 bg-orange-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
-                  <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Pendientes</span>
-                  <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
-                    <div className="flex items-center justify-center gap-[10%]">
-                      <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-orange-500/20 rounded-lg shrink-0">
-                        <ClipboardList className="h-[70%] w-[70%] text-orange-600" />
-                      </div>
-                      <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
-                        {isAreaLoading ? "..." : pendingCount}
-                      </p>
+            <Link to="/pqrsf?tab=analisis">
+              <Card className="border-orange-200 bg-orange-50 cursor-pointer hover:opacity-90 transition-opacity min-h-16 h-full w-full relative @container">
+                <span className="absolute top-1.5 left-2.5 text-[clamp(0.6rem,4cqw,1.1rem)] font-semibold text-muted-foreground z-10">Pendientes</span>
+                <CardContent className="p-2 sm:p-2.5 min-[1600px]:p-3 h-full w-full flex items-center justify-center @container">
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="w-9 h-9 min-[1600px]:w-10 min-[1600px]:h-10 flex items-center justify-center bg-orange-500/20 rounded-lg shrink-0">
+                      <ClipboardList className="h-3 w-4 min-[1600px]:h-6 min-[1600px]:w-6 text-orange-600" />
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                    <p className="text-[clamp(1.3rem,6cqw,3rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
+                      {isAreaLoading ? "..." : pendingCount}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
 
-              <Link to="/pqrsf?tab=apelacion">
-                <Card className="border-red-200 bg-red-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
-                  <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Apelaciones</span>
-                  <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
-                    <div className="flex items-center justify-center gap-[10%]">
-                      <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-red-500/20 rounded-lg shrink-0">
-                        <AlertCircle className="h-[70%] w-[70%] text-red-600" />
-                      </div>
-                      <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
-                        {isAreaLoading ? "..." : appealsCount}
-                      </p>
+            <Link to="/pqrsf?tab=apelacion">
+              <Card className="border-red-200 bg-red-50 cursor-pointer hover:opacity-90 transition-opacity min-h-16 h-full w-full relative @container">
+                <span className="absolute top-1.5 left-2.5 text-[clamp(0.6rem,4cqw,1.1rem)] font-semibold text-muted-foreground z-10">Apelaciones</span>
+                <CardContent className="p-2 sm:p-2.5 min-[1600px]:p-3 h-full w-full flex items-center justify-center @container">
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="w-9 h-9 min-[1600px]:w-10 min-[1600px]:h-10 flex items-center justify-center bg-red-500/20 rounded-lg shrink-0">
+                      <AlertCircle className="h-4 w-4 min-[1600px]:h-6 min-[1600px]:w-6 text-red-600" />
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                    <p className="text-[clamp(1.3rem,6cqw,3rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
+                      {isAreaLoading ? "..." : appealsCount}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
 
-              <Link to="/pqrsf?tab=cerradas">
-                <Card className="border-green-200 bg-green-50 cursor-pointer hover:opacity-90 transition-opacity min-h-[4rem] h-full w-full relative [container-type:inline-size]">
-                  <span className="absolute top-1.5 left-2.5 text-[clamp(0.5rem,6cqw,1.75rem)] font-medium text-muted-foreground z-10">Cerradas</span>
-                  <CardContent className="p-1.5 sm:p-2 min-[1600px]:p-2.5 h-full w-full flex items-center justify-center [container-type:inline-size]">
-                    <div className="flex items-center justify-center gap-[10%]">
-                      <div className="w-[28%] min-w-[1.5rem] max-w-[7rem] aspect-square flex items-center justify-center bg-green-500/20 rounded-lg shrink-0">
-                        <CheckCircle2 className="h-[70%] w-[70%] text-green-600" />
-                      </div>
-                      <p className="text-[clamp(0.875rem,14cqw,2.75rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
-                        {isAreaLoading ? "..." : respondedCount}
-                      </p>
+            <Link to="/pqrsf?tab=cerradas">
+              <Card className="border-green-200 bg-green-50 cursor-pointer hover:opacity-90 transition-opacity min-h-16 h-full w-full relative @container">
+                <span className="absolute top-1.5 left-2.5 text-[clamp(0.6rem,4cqw,1.1rem)] font-semibold text-muted-foreground z-10">Cerradas</span>
+                <CardContent className="p-2 sm:p-2.5 min-[1600px]:p-3 h-full w-full flex items-center justify-center @container">
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="w-9 h-9 min-[1600px]:w-10 min-[1600px]:h-10 flex items-center justify-center bg-green-500/20 rounded-lg shrink-0">
+                      <CheckCircle2 className="h-4 w-4 min-[1600px]:h-6 min-[1600px]:w-6 text-green-600" />
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                    <p className="text-[clamp(1.3rem,6cqw,3rem)] font-bold text-foreground min-w-0 overflow-visible whitespace-nowrap">
+                      {isAreaLoading ? "..." : respondedCount}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 min-[1600px]:gap-5 flex-1 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 min-[1600px]:gap-5 max-md:flex-initial max-md:overflow-visible flex-1 min-h-0">
             <Card className="h-full flex flex-col">
               <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 min-[1600px]:p-5 shrink-0">
                 <CardTitle className="text-sm sm:text-base min-[1600px]:text-lg">PQRSF Pendientes de Respuesta</CardTitle>
@@ -575,7 +573,24 @@ export default function Dashboard() {
                   ) : areaPending.length === 0 ? (
                     <div className="text-xs min-[1600px]:text-sm text-muted-foreground">Sin PQRSF pendientes.</div>
                   ) : (
-                    areaPending.slice(0, 2).map((item) => {
+                    [...areaPending]
+                      .sort((a, b) => {
+                        const priorityRank = (value?: string | null) => {
+                          if (value === "Alta") return 0
+                          if (value === "Media") return 1
+                          if (value === "Baja") return 2
+                          return 3
+                        }
+                        const pa = getPriorityLabel(a.dueDate, a.createdAt)
+                        const pb = getPriorityLabel(b.dueDate, b.createdAt)
+                        const diff = priorityRank(pa) - priorityRank(pb)
+                        if (diff !== 0) return diff
+                        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0
+                        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0
+                        return db - da
+                      })
+                      .slice(0, 4)
+                      .map((item) => {
                       const prioridad = getPriorityLabel(item.dueDate, item.createdAt)
                       const diasTranscurridos = getDaysElapsed(item.createdAt)
                       const borderColor =

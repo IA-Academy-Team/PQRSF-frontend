@@ -70,13 +70,68 @@ export interface AreaAppealItem extends AreaPendingItem {}
 
 export const dashboardService = {
   getAdminMetrics: async (): Promise<AdminMetrics> => {
-    return api.get<AdminMetrics>("/dashboard/admin/metrics")
+    const data = await api.get<AdminMetrics>("/dashboard/admin/metrics")
+    const toNumber = (value: unknown) => {
+      if (typeof value === "number") return Number.isNaN(value) ? 0 : value
+      if (typeof value === "string" && value.trim() !== "") {
+        const parsed = Number(value)
+        return Number.isNaN(parsed) ? 0 : parsed
+      }
+      return 0
+    }
+    const flatten = <T,>(rows: Array<T | T[]> | undefined): T[] => {
+      if (!rows) return []
+      return rows.flatMap((row) => (Array.isArray(row) ? row : [row]))
+    }
+    return {
+      ...data,
+      totalPqrs: toNumber(data.totalPqrs),
+      totalChats: toNumber(data.totalChats),
+      totalClients: toNumber(data.totalClients),
+      surveyAverage: toNumber(data.surveyAverage),
+      byStatus: flatten(data.byStatus).map((item) => ({
+        ...item,
+        statusId: toNumber(item.statusId),
+        count: toNumber(item.count),
+      })),
+      byType: flatten(data.byType).map((item) => ({
+        ...item,
+        typeId: toNumber(item.typeId),
+        count: toNumber(item.count),
+      })),
+      avgResponseByArea: flatten(data.avgResponseByArea).map((item) => ({
+        ...item,
+        areaId: toNumber(item.areaId),
+        avgDays: toNumber(item.avgDays),
+      })),
+    }
   },
   getAdminChats: async (): Promise<AdminChat[]> => {
     return api.get<AdminChat[]>("/dashboard/admin/chats")
   },
   getAreaMetrics: async (areaId: number): Promise<AreaMetrics> => {
-    return api.get<AreaMetrics>(`/dashboard/area/${areaId}/metrics`)
+    const data = await api.get<AreaMetrics>(`/dashboard/area/${areaId}/metrics`)
+    const toNumber = (value: unknown) => {
+      if (typeof value === "number") return Number.isNaN(value) ? 0 : value
+      if (typeof value === "string" && value.trim() !== "") {
+        const parsed = Number(value)
+        return Number.isNaN(parsed) ? 0 : parsed
+      }
+      return 0
+    }
+    const flatten = <T,>(rows: Array<T | T[]> | undefined): T[] => {
+      if (!rows) return []
+      return rows.flatMap((row) => (Array.isArray(row) ? row : [row]))
+    }
+    return {
+      ...data,
+      totalPqrs: toNumber(data.totalPqrs),
+      byStatus: flatten(data.byStatus).map((item) => ({
+        ...item,
+        statusId: toNumber(item.statusId),
+        count: toNumber(item.count),
+      })),
+    }
   },
   getAreaPending: async (areaId: number): Promise<AreaPendingItem[]> => {
     return api.get<AreaPendingItem[]>(`/dashboard/area/${areaId}/pending`)

@@ -13,6 +13,20 @@ import { io } from "socket.io-client"
 import { notifyError, notifySuccess } from "@/lib/toast"
 
 // Función para formatear fechas tipo WhatsApp
+const parseChatDate = (value: string | Date | null | undefined): Date | null => {
+  if (!value) return null
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
+  const raw = String(value).trim()
+  if (!raw) return null
+  if (raw.endsWith("Z")) {
+    const local = raw.slice(0, -1)
+    const localDate = new Date(local)
+    if (!Number.isNaN(localDate.getTime())) return localDate
+  }
+  const parsed = new Date(raw)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
 function formatWhatsAppDate(date: Date) {
   const now = new Date()
   const diffTime = now.getTime() - date.getTime()
@@ -54,12 +68,12 @@ const inferChannel = (chat: ChatListItem): "whatsapp" | "telegram" => {
 
 const isMessageWithinPqrsWindow = (chat: ChatListItem | undefined, createdAt: Date) => {
   if (!chat?.pqrsCreatedAt) return true
-  const start = new Date(chat.pqrsCreatedAt)
-  if (Number.isNaN(start.getTime())) return true
+  const start = parseChatDate(chat.pqrsCreatedAt)
+  if (!start) return true
   if (createdAt < start) return false
   if (chat.pqrsEndAt) {
-    const end = new Date(chat.pqrsEndAt)
-    if (!Number.isNaN(end.getTime()) && createdAt >= end) return false
+    const end = parseChatDate(chat.pqrsEndAt)
+    if (end && createdAt >= end) return false
   }
   return true
 }
@@ -70,6 +84,7 @@ export default function Chats() {
   const [selectedPqrsId, setSelectedPqrsId] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [message, setMessage] = useState("")
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [chatView, setChatView] = useState<"persona" | "pqrs">("persona")
   const [chats, setChats] = useState<ChatListItem[]>([])
   const [isLoadingChats, setIsLoadingChats] = useState(true)
@@ -79,6 +94,9 @@ export default function Chats() {
   const [messageError, setMessageError] = useState<string | null>(null)
   const [isUpdatingMode, setIsUpdatingMode] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const emojiList = ["😀", "😁", "😂", "🤣", "😊", "😍", "😘", "😎", "😅", "😇", "🤔", "😢", "😡", "👍", "🙏", "👏", "🎉", "💬", "✅", "❤️"]
 
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior })
@@ -147,8 +165,8 @@ export default function Chats() {
             ? (() => {
                 const lastMessageAt = summary.lastMessageAt ?? chat.lastMessageAt
                 if (chatView === "pqrs" && lastMessageAt) {
-                  const lastDate = new Date(lastMessageAt)
-                  if (!Number.isNaN(lastDate.getTime()) && !isMessageWithinPqrsWindow(chat, lastDate)) {
+                  const lastDate = parseChatDate(lastMessageAt)
+                  if (lastDate && !isMessageWithinPqrsWindow(chat, lastDate)) {
                     return { ...chat, mode: summary.mode ?? chat.mode }
                   }
                 }
@@ -315,12 +333,37 @@ export default function Chats() {
     }
   }
 
+  const handleSendFile = async (file: File) => {
+    if (!selectedChatId) return
+    setMessageError(null)
+    try {
+      const created = await chatService.sendFile({
+        chatId: selectedChatId,
+        file,
+        channel: currentChat ? inferChannel(currentChat) : "whatsapp",
+      })
+      setMessages((prev) => [...prev, created])
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.id === selectedChatId
+            ? { ...chat, lastMessage: created.content ?? file.name, lastMessageAt: created.createdAt ?? null }
+            : chat
+        )
+      )
+      scrollToBottom("smooth")
+    } catch (error) {
+      console.error("[admin-chats] send file error", error)
+      setMessageError("No pudimos enviar el archivo. Intenta nuevamente.")
+      notifyError("No pudimos enviar el archivo.")
+    }
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
       <div
         className={cn(
-          "flex-1 flex min-h-0 overflow-hidden transition-all duration-300",
+          "flex-1 flex min-h-0 overflow-hidden pt-14 md:pt-0 transition-all duration-300",
           isCollapsed ? "lg:ml-24" : "lg:ml-64"
         )}
       >
@@ -366,10 +409,17 @@ export default function Chats() {
               <div className="p-4 min-[1600px]:p-5 text-sm min-[1600px]:text-base text-muted-foreground">No hay chats que coincidan.</div>
             ) : (
               filteredChats.map((chat) => {
-                const chatName = chat.clientName ?? "Sin nombre"
+                const lastMessageText = (chat.lastMessage ?? "").toLowerCase()
+                const isAnonymousByText =
+                  lastMessageText.includes("anonim") ||
+                  lastMessageText.includes("anónimo") ||
+                  lastMessageText.includes("anonimo")
+                const isAnonymousByIdentity = !chat.clientName && !chat.clientPhone
+                const isAnonymous = isAnonymousByText || isAnonymousByIdentity
+                const chatName = isAnonymous ? "Anónimo" : chat.clientName ?? "Sin nombre"
                 const chatPhone = chat.clientPhone ?? "Sin teléfono"
                 const lastMessage = chat.lastMessage ?? "Sin mensajes aún"
-                const lastMessageAt = chat.lastMessageAt ? new Date(chat.lastMessageAt) : null
+                const lastMessageAt = parseChatDate(chat.lastMessageAt)
                 const ticketLabel = chatView === "pqrs" ? chat.ticketNumber ?? "PQRS" : null
                 const channelLabel = inferChannel(chat) === "telegram" ? "Telegram" : "WhatsApp"
                 const isSelected =
@@ -451,7 +501,7 @@ export default function Chats() {
                 messages.map((msg) => {
                   const sender = msg.type === 1 ? "user" : msg.type === 2 ? "bot" : "admin"
                   const isOutgoing = sender === "admin" || sender === "bot"
-                  const createdAt = msg.createdAt ? new Date(msg.createdAt) : null
+                  const createdAt = parseChatDate(msg.createdAt)
                   return (
                     <div key={msg.id} className={`flex ${isOutgoing ? "justify-end" : "justify-start"}`}>
                       <div
@@ -466,7 +516,7 @@ export default function Chats() {
                           {sender === "bot" && <Bot className="h-3 w-3 text-muted-foreground" />}
                           {sender === "admin" && <User className="h-3 w-3 text-muted-foreground" />}
                           <span className="text-[10px] text-muted-foreground">
-                            {createdAt ? createdAt.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}
+                            {createdAt ? createdAt.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : ""}
                           </span>
                           {sender === "user" && (
                             <span className="text-muted-foreground">
@@ -485,12 +535,54 @@ export default function Chats() {
             {/* Input de mensaje */}
             <div className="bg-card border-t border-border p-4">
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon">
-                  <Smile className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon">
+                <div className="relative">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowEmojiPicker((prev) => !prev)}
+                    disabled={!isAdminMode}
+                  >
+                    <Smile className="h-5 w-5" />
+                  </Button>
+                  {showEmojiPicker && (
+                    <div className="absolute bottom-12 left-0 z-50 w-64 rounded-lg border border-border bg-card p-3 shadow-lg">
+                      <div className="grid grid-cols-8 gap-2 text-lg">
+                        {emojiList.map((emoji) => (
+                          <button
+                            key={emoji}
+                            className="hover:bg-accent rounded"
+                            onClick={() => {
+                              setMessage((prev) => `${prev}${emoji}`)
+                              setShowEmojiPicker(false)
+                            }}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={!isAdminMode}
+                >
                   <Paperclip className="h-5 w-5" />
                 </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    if (file) {
+                      handleSendFile(file)
+                      event.target.value = ""
+                    }
+                  }}
+                />
                 <Input
                   placeholder="Escribe un mensaje..."
                   value={message}

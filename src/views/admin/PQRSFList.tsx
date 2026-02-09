@@ -222,12 +222,13 @@ export default function PQRSFList() {
   })
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden bg-background max-md:overflow-visible max-md:h-auto max-md:min-h-screen">
       <Sidebar />
 
       <main
         className={cn(
-          "flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 transition-all duration-300 overflow-hidden",
+          "flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 pt-14 md:pt-4 transition-all duration-300",
+          "max-md:min-h-screen max-md:overflow-y-auto max-md:h-auto md:overflow-hidden",
           isCollapsed ? "lg:ml-24" : "lg:ml-64",
         )}
       >
@@ -236,20 +237,20 @@ export default function PQRSFList() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <TabsList className="mb-4 sm:mb-6 shrink-0">
-            <TabsTrigger value="general">Listado General</TabsTrigger>
+          <TabsList className="mb-4 sm:mb-6 shrink-0 w-full max-w-full overflow-x-auto flex-nowrap justify-start md:justify-center md:w-fit [&>button]:shrink-0">
+            <TabsTrigger value="general" className="whitespace-nowrap">Listado General</TabsTrigger>
             {user?.rol === "Administrador" && (
               <>
-                <TabsTrigger value="seguimiento">Seguimiento</TabsTrigger>
-                <TabsTrigger value="apelacion">En Apelación</TabsTrigger>
-                <TabsTrigger value="cerradas">Cerradas</TabsTrigger>
+                <TabsTrigger value="seguimiento" className="whitespace-nowrap">Seguimiento</TabsTrigger>
+                <TabsTrigger value="apelacion" className="whitespace-nowrap">En Apelación</TabsTrigger>
+                <TabsTrigger value="cerradas" className="whitespace-nowrap">Cerradas</TabsTrigger>
               </>
             )}
             {user?.rol === "Usuario de Área Responsable" && (
               <>
-                <TabsTrigger value="analisis">Análisis Pendiente</TabsTrigger>
-                <TabsTrigger value="apelacion">En Apelación</TabsTrigger>
-                <TabsTrigger value="cerradas">Cerradas</TabsTrigger>
+                <TabsTrigger value="analisis" className="whitespace-nowrap">Análisis Pendiente</TabsTrigger>
+                <TabsTrigger value="apelacion" className="whitespace-nowrap">En Apelación</TabsTrigger>
+                <TabsTrigger value="cerradas" className="whitespace-nowrap">Cerradas</TabsTrigger>
               </>
             )}
           </TabsList>
@@ -355,7 +356,7 @@ export default function PQRSFList() {
                 </Popover>
 
                 <Select value={sortFilter} onValueChange={setSortFilter}>
-                  <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+                  <SelectTrigger className="w-full md:w-55 **:data-[slot=select-value]:flex-1 **:data-[slot=select-value]:justify-center">
                     <Filter className="h-4 w-4 mr-2 shrink-0" />
                     <SelectValue placeholder="Ordenar por" />
                   </SelectTrigger>
@@ -671,7 +672,7 @@ function SeguimientoTabContent() {
             </PopoverContent>
           </Popover>
           <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
-            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+            <SelectTrigger className="w-full md:w-55 **:data-[slot=select-value]:flex-1 **:data-[slot=select-value]:justify-center">
               <Filter className="h-4 w-4 mr-2 shrink-0" />
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
@@ -918,7 +919,7 @@ function CerradasTabContent() {
             </PopoverContent>
           </Popover>
           <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
-            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+            <SelectTrigger className="w-full md:w-55 **:data-[slot=select-value]:flex-1 **:data-[slot=select-value]:justify-center">
               <Filter className="h-4 w-4 mr-2 shrink-0" />
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
@@ -1165,7 +1166,7 @@ function ApelacionTabContent() {
             </PopoverContent>
           </Popover>
           <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
-            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+            <SelectTrigger className="w-full md:w-55 **:data-[slot=select-value]:flex-1 **:data-[slot=select-value]:justify-center">
               <Filter className="h-4 w-4 mr-2 shrink-0" />
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
@@ -1409,7 +1410,7 @@ function ApelacionAreaTabContent() {
             </PopoverContent>
           </Popover>
           <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
-            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+            <SelectTrigger className="w-full md:w-55 **:data-[slot=select-value]:flex-1 **:data-[slot=select-value]:justify-center">
               <Filter className="h-4 w-4 mr-2 shrink-0" />
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
@@ -1658,7 +1659,7 @@ function AnalisisPendienteTabContent() {
             </PopoverContent>
           </Popover>
           <Select value={sortFilter} onValueChange={(v) => setSortFilter(v as "recent" | "oldest" | "ticket")}>
-            <SelectTrigger className="w-full md:w-55 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:justify-center">
+            <SelectTrigger className="w-full md:w-55 **:data-[slot=select-value]:flex-1 **:data-[slot=select-value]:justify-center">
               <Filter className="h-4 w-4 mr-2 shrink-0" />
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
