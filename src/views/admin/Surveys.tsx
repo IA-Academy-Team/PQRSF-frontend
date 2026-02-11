@@ -108,13 +108,15 @@ export default function Surveys() {
   const overallAverage = useMemo(() => getSurveyOverallAverage(items), [items])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden bg-background [@media(max-height:1080px)]:h-auto [@media(max-height:1080px)]:min-h-screen [@media(max-height:1080px)]:overflow-visible">
       {showSidebar && <Sidebar />}
 
       <main
         className={cn(
           "flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 pt-14 md:pt-4 transition-all duration-300",
-          "max-md:min-h-screen max-md:overflow-y-auto max-md:h-auto md:overflow-hidden",
+          "max-md:min-h-screen max-md:overflow-y-auto max-md:h-auto",
+          "md:overflow-hidden",
+          "[@media(max-height:1080px)]:overflow-y-auto [@media(max-height:1080px)]:min-h-screen [@media(max-height:1080px)]:h-auto",
           showSidebar ? (isCollapsed ? "lg:ml-24" : "lg:ml-64") : "",
         )}
       >
@@ -157,11 +159,12 @@ export default function Surveys() {
           </div>
         )}
 
-        <div className="flex-1 min-h-0 overflow-hidden mb-2 flex flex-col">
+        <div className="flex-1 min-h-0 overflow-hidden mb-2 flex flex-col [@media(max-height:1080px)]:overflow-visible [@media(max-height:1080px)]:min-h-0">
           <div
             className={cn(
-              "grid grid-cols-1 md:grid-cols-3 grid-rows-3 auto-rows-min min-h-0 flex-1 gap-2 md:gap-3 min-[1600px]:gap-5",
-              "[@media(max-height:1079px)]:auto-rows-fr [@media(max-height:1079px)]:min-h-full",
+              "grid grid-cols-1 md:grid-cols-3 min-h-0 flex-1 gap-2 md:gap-3 min-[1600px]:gap-5",
+              "[@media(min-height:1081px)]:grid-rows-3 [@media(min-height:1081px)]:auto-rows-fr",
+              "[@media(max-height:1080px)]:auto-rows-min [@media(max-height:1080px)]:grid-rows-none",
             )}
             style={{ minHeight: 0 }}
           >
@@ -184,7 +187,7 @@ export default function Surveys() {
                   key={item.id}
                     className={cn(
                       "h-full flex flex-col min-h-0 overflow-hidden hover:shadow-sm transition-shadow @container/survey-card",
-                      "[@media(max-height:1079px)]:max-h-full [@media(min-height:1080px)]:max-h-[70vh]",
+                      "[@media(max-height:1080px)]:max-h-none [@media(min-height:1081px)]:max-h-[70vh]",
                     )}
                 >
                   <CardContent className="p-[clamp(0.35rem,2cqw,1rem)] space-y-[clamp(0.2rem,1.2cqh,1rem)] flex-1 min-h-0 overflow-hidden flex flex-col">
