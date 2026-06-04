@@ -127,7 +127,7 @@ export default function LoginPage() {
             <form onSubmit={handleLogin} className="space-y-4 md:space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-primary-foreground text-sm md:text-base">
-                   email
+                  Email
                 </Label>
                 <Input
                   id="email"
@@ -142,18 +142,6 @@ export default function LoginPage() {
                   onBlur={handleCheckUser}
                   required
                 />
-                {userCheck === "checking" && (
-                  <p className="text-xs text-primary-foreground/80">Verificando usuario...</p>
-                )}
-                {userCheck === "exists" && (
-                  <p className="text-xs text-emerald-200">Usuario encontrado.</p>
-                )}
-                {userCheck === "not-found" && (
-                  <p className="text-xs text-red-200">Este usuario no está registrado.</p>
-                )}
-                {userCheck === "error" && (
-                  <p className="text-xs text-red-200">No pudimos validar el usuario.</p>
-                )}
               </div>
 
               <div className="space-y-2">
