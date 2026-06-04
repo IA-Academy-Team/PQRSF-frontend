@@ -12,7 +12,7 @@ import { API_BASE } from "@/lib/api"
 import { io } from "socket.io-client"
 import { notifyError, notifySuccess } from "@/lib/toast"
 
-// Función para formatear fechas tipo WhatsApp
+// Función para formatear fechas del chat
 const parseChatDate = (value: string | Date | null | undefined): Date | null => {
   if (!value) return null
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
@@ -27,7 +27,7 @@ const parseChatDate = (value: string | Date | null | undefined): Date | null => 
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
-function formatWhatsAppDate(date: Date) {
+function formatChatDate(date: Date) {
   const now = new Date()
   const diffTime = now.getTime() - date.getTime()
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
@@ -52,18 +52,22 @@ const getInitials = (name: string) => {
 
 type ChatListItem = ChatSummary & Partial<ChatPqrsSummary>
 
+const chatToastOptions = { position: "top-left" as const }
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error && typeof error === "object" && "message" in error) {
+    const message = String((error as { message?: unknown }).message ?? "").trim()
+    if (message) return message
+  }
+  return fallback
+}
+
 const normalizeChatSearch = (chat: ChatListItem, query: string) => {
   const name = chat.clientName?.toLowerCase() ?? ""
   const phone = chat.clientPhone ?? ""
   const lastMessage = chat.lastMessage?.toLowerCase() ?? ""
   const ticket = chat.ticketNumber?.toLowerCase() ?? ""
   return name.includes(query) || phone.includes(query) || lastMessage.includes(query) || ticket.includes(query)
-}
-
-const inferChannel = (chat: ChatListItem): "whatsapp" | "telegram" => {
-  const phone = chat.clientPhone?.toLowerCase() ?? ""
-  if (phone.startsWith("tg:") || phone.startsWith("telegram:")) return "telegram"
-  return "whatsapp"
 }
 
 const isMessageWithinPqrsWindow = (chat: ChatListItem | undefined, createdAt: Date) => {
@@ -296,10 +300,10 @@ export default function Chats() {
       const updated = await chatService.update(currentChat.id, { mode: nextMode })
       const mode = updated.mode ?? currentChat.mode ?? 1
       setChats((prev) => prev.map((chat) => (chat.id === currentChat.id ? { ...chat, mode } : chat)))
-      notifySuccess(checked ? "Modo Administrador activado." : "Modo IA activado.")
+      notifySuccess(checked ? "Modo Administrador activado." : "Modo IA activado.", chatToastOptions)
     } catch (error) {
       console.error("[admin-chats] mode update error", error)
-      notifyError("No pudimos actualizar el modo del chat.")
+      notifyError(getErrorMessage(error, "No pudimos actualizar el modo del chat."), chatToastOptions)
     } finally {
       setIsUpdatingMode(false)
     }
@@ -314,7 +318,7 @@ export default function Chats() {
       const created = await chatService.sendMessage({
         chatId: selectedChatId,
         content,
-        channel: currentChat ? inferChannel(currentChat) : "whatsapp",
+        channel: "telegram",
       })
       setMessages((prev) => [...prev, created])
       setChats((prev) =>
@@ -327,8 +331,9 @@ export default function Chats() {
       scrollToBottom("smooth")
     } catch (error) {
       console.error("[admin-chats] send error", error)
-      setMessageError("No pudimos enviar el mensaje. Intenta nuevamente.")
-      notifyError("No pudimos enviar el mensaje.")
+      const errorMessage = getErrorMessage(error, "No pudimos enviar el mensaje. Intenta nuevamente.")
+      setMessageError(errorMessage)
+      notifyError(errorMessage, chatToastOptions)
       setMessage(content)
     }
   }
@@ -340,7 +345,7 @@ export default function Chats() {
       const created = await chatService.sendFile({
         chatId: selectedChatId,
         file,
-        channel: currentChat ? inferChannel(currentChat) : "whatsapp",
+        channel: "telegram",
       })
       setMessages((prev) => [...prev, created])
       setChats((prev) =>
@@ -353,8 +358,9 @@ export default function Chats() {
       scrollToBottom("smooth")
     } catch (error) {
       console.error("[admin-chats] send file error", error)
-      setMessageError("No pudimos enviar el archivo. Intenta nuevamente.")
-      notifyError("No pudimos enviar el archivo.")
+      const errorMessage = getErrorMessage(error, "No pudimos enviar el archivo. Intenta nuevamente.")
+      setMessageError(errorMessage)
+      notifyError(errorMessage, chatToastOptions)
     }
   }
 
@@ -421,7 +427,7 @@ export default function Chats() {
                 const lastMessage = chat.lastMessage ?? "Sin mensajes aún"
                 const lastMessageAt = parseChatDate(chat.lastMessageAt)
                 const ticketLabel = chatView === "pqrs" ? chat.ticketNumber ?? "PQRS" : null
-                const channelLabel = inferChannel(chat) === "telegram" ? "Telegram" : "WhatsApp"
+                const channelLabel = "Telegram"
                 const isSelected =
                   chatView === "pqrs"
                     ? selectedChatId === chat.id && selectedPqrsId === chat.pqrsId
@@ -447,7 +453,7 @@ export default function Chats() {
                           {ticketLabel && <span className="ml-2 text-xs min-[1600px]:text-sm text-muted-foreground">{ticketLabel}</span>}
                         </h3>
                         <span className="text-xs min-[1600px]:text-sm text-muted-foreground">
-                          {lastMessageAt ? formatWhatsAppDate(lastMessageAt) : ""}
+                          {lastMessageAt ? formatChatDate(lastMessageAt) : ""}
                         </span>
                       </div>
                       <p className="text-sm min-[1600px]:text-base text-muted-foreground truncate">{lastMessage}</p>
