@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { useSidebar } from "@/contexts/sidebar-context"
 import { Search, Send, Paperclip, Smile, CheckCheck, MessageCircle, Bot, User } from "lucide-react"
@@ -18,14 +18,15 @@ const parseChatDate = (value: string | Date | null | undefined): Date | null => 
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
   const raw = String(value).trim()
   if (!raw) return null
-  if (raw.endsWith("Z")) {
-    const local = raw.slice(0, -1)
-    const localDate = new Date(local)
-    if (!Number.isNaN(localDate.getTime())) return localDate
-  }
   const parsed = new Date(raw)
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
+
+const chatTimeFormatter = new Intl.DateTimeFormat("es-CO", {
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Bogota",
+})
 
 function formatChatDate(date: Date) {
   const now = new Date()
@@ -33,7 +34,7 @@ function formatChatDate(date: Date) {
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
 
   if (diffDays === 0) {
-    return date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+    return chatTimeFormatter.format(date)
   } else if (diffDays === 1) {
     return "Ayer"
   } else if (diffDays < 7) {
@@ -82,6 +83,14 @@ const isMessageWithinPqrsWindow = (chat: ChatListItem | undefined, createdAt: Da
   return true
 }
 
+const sortChatsByLastMessage = (items: ChatListItem[]) =>
+  [...items].sort((a, b) => {
+    const aTime = parseChatDate(a.lastMessageAt)?.getTime() ?? 0
+    const bTime = parseChatDate(b.lastMessageAt)?.getTime() ?? 0
+    if (aTime !== bTime) return bTime - aTime
+    return Number(b.id) - Number(a.id)
+  })
+
 export default function Chats() {
   const { isCollapsed } = useSidebar()
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null)
@@ -99,6 +108,7 @@ export default function Chats() {
   const [isUpdatingMode, setIsUpdatingMode] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const chatsRef = useRef<ChatListItem[]>([])
 
   const emojiList = ["😀", "😁", "😂", "🤣", "😊", "😍", "😘", "😎", "😅", "😇", "🤔", "😢", "😡", "👍", "🙏", "👏", "🎉", "💬", "✅", "❤️"]
 
@@ -115,38 +125,90 @@ export default function Chats() {
     }
   }
 
+  const loadChats = useCallback(async (showLoading = true) => {
+    if (showLoading) setIsLoadingChats(true)
+    setChatError(null)
+    try {
+      const data =
+        chatView === "pqrs"
+          ? await chatService.getSummariesByPqrs()
+          : await chatService.getSummaries()
+      setChats(sortChatsByLastMessage(data))
+    } catch (error) {
+      console.error("[admin-chats] load error", error)
+      setChatError("No pudimos cargar los chats. Intenta nuevamente.")
+    } finally {
+      if (showLoading) setIsLoadingChats(false)
+    }
+  }, [chatView])
+
+  useEffect(() => {
+    chatsRef.current = chats
+  }, [chats])
+
   useEffect(() => {
     let active = true
 
-    const loadChats = async () => {
-      setIsLoadingChats(true)
-      setChatError(null)
-      try {
-        const data =
-          chatView === "pqrs"
-            ? await chatService.getSummariesByPqrs()
-            : await chatService.getSummaries()
-        if (active) {
-          setChats(data)
-        }
-      } catch (error) {
-        console.error("[admin-chats] load error", error)
-        if (active) {
-          setChatError("No pudimos cargar los chats. Intenta nuevamente.")
-        }
-      } finally {
-        if (active) {
-          setIsLoadingChats(false)
-        }
-      }
+    const syncInitialChats = async () => {
+      if (!active) return
+      await loadChats(true)
     }
 
-    loadChats()
+    syncInitialChats()
 
     return () => {
       active = false
     }
-  }, [chatView])
+  }, [loadChats])
+
+  useEffect(() => {
+    if (!selectedChatId) return
+    const stillExists = chats.some(
+      (chat) => chat.id === selectedChatId && (chatView !== "pqrs" || chat.pqrsId === selectedPqrsId)
+    )
+    if (!stillExists) {
+      setSelectedChatId(null)
+      setSelectedPqrsId(null)
+      setMessages([])
+    }
+  }, [chats, selectedChatId, selectedPqrsId, chatView])
+
+  const applySummaryUpdate = useCallback((summary: Partial<ChatSummary> & { chatId?: number }) => {
+    const chatId = summary.chatId ?? summary.id
+    if (!chatId) return
+
+    const knownChat = chatsRef.current.some((chat) => chat.id === chatId)
+    if (!knownChat) {
+      void loadChats(false)
+      return
+    }
+
+    setChats((prev) => {
+      let changed = false
+      const next = prev.map((chat) => {
+        if (chat.id !== chatId) return chat
+        changed = true
+        const lastMessageAt = summary.lastMessageAt ?? chat.lastMessageAt
+        if (chatView === "pqrs" && lastMessageAt) {
+          const lastDate = parseChatDate(lastMessageAt)
+          if (lastDate && !isMessageWithinPqrsWindow(chat, lastDate)) {
+            return { ...chat, mode: summary.mode ?? chat.mode }
+          }
+        }
+        return {
+          ...chat,
+          lastMessage: summary.lastMessage ?? chat.lastMessage,
+          lastMessageAt,
+          mode: summary.mode ?? chat.mode,
+        }
+      })
+      if (!changed) {
+        void loadChats(false)
+        return prev
+      }
+      return sortChatsByLastMessage(next)
+    })
+  }, [chatView, loadChats])
 
   useEffect(() => {
     setSelectedChatId(null)
@@ -160,33 +222,14 @@ export default function Chats() {
       query: { scope: "summary" },
     })
 
-    socket.on("chat_summary", (summary: Partial<ChatSummary> & { chatId?: number }) => {
-      const chatId = summary.chatId ?? summary.id
-      if (!chatId) return
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === chatId
-            ? (() => {
-                const lastMessageAt = summary.lastMessageAt ?? chat.lastMessageAt
-                if (chatView === "pqrs" && lastMessageAt) {
-                  const lastDate = parseChatDate(lastMessageAt)
-                  if (lastDate && !isMessageWithinPqrsWindow(chat, lastDate)) {
-                    return { ...chat, mode: summary.mode ?? chat.mode }
-                  }
-                }
-                return {
-                  ...chat,
-                  lastMessage: summary.lastMessage ?? chat.lastMessage,
-                  lastMessageAt,
-                  mode: summary.mode ?? chat.mode,
-                }
-              })()
-            : chat
-        )
-      )
-    })
+    socket.on("chat_summary", applySummaryUpdate)
 
     socket.on("chat_mode", (payload: { chatId: number; mode: number | null }) => {
+      const knownChat = chatsRef.current.some((chat) => chat.id === payload.chatId)
+      if (!knownChat) {
+        void loadChats(false)
+        return
+      }
       setChats((prev) => prev.map((chat) => (chat.id === payload.chatId ? { ...chat, mode: payload.mode } : chat)))
     })
 
@@ -197,7 +240,7 @@ export default function Chats() {
     return () => {
       socket.disconnect()
     }
-  }, [chatView])
+  }, [applySummaryUpdate, loadChats])
 
   useEffect(() => {
     if (!selectedChatId) {
@@ -312,26 +355,56 @@ export default function Chats() {
   const handleSendMessage = async () => {
     if (!selectedChatId || !message.trim()) return
     const content = message.trim()
+    const optimisticId = -Date.now()
+    const optimisticCreatedAt = new Date().toISOString()
+    const optimisticMessage: Message = {
+      id: optimisticId,
+      content,
+      type: 3,
+      createdAt: optimisticCreatedAt,
+      chatId: selectedChatId,
+    }
+
     setMessage("")
     setMessageError(null)
+    setMessages((prev) => [...prev, optimisticMessage])
+    setChats((prev) =>
+      sortChatsByLastMessage(
+        prev.map((chat) =>
+          chat.id === selectedChatId
+            ? { ...chat, lastMessage: content, lastMessageAt: optimisticCreatedAt }
+            : chat
+        )
+      )
+    )
+    scrollToBottom("smooth")
+
     try {
       const created = await chatService.sendMessage({
         chatId: selectedChatId,
         content,
         channel: "telegram",
       })
-      setMessages((prev) => [...prev, created])
+      setMessages((prev) => {
+        if (prev.some((msg) => msg.id === created.id)) {
+          return prev.filter((msg) => msg.id !== optimisticId)
+        }
+        return prev.map((msg) => (msg.id === optimisticId ? created : msg))
+      })
       setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === selectedChatId
-            ? { ...chat, lastMessage: created.content ?? content, lastMessageAt: created.createdAt ?? null }
-            : chat
+        sortChatsByLastMessage(
+          prev.map((chat) =>
+            chat.id === selectedChatId
+              ? { ...chat, lastMessage: created.content ?? content, lastMessageAt: created.createdAt ?? null }
+              : chat
+          )
         )
       )
       scrollToBottom("smooth")
     } catch (error) {
       console.error("[admin-chats] send error", error)
       const errorMessage = getErrorMessage(error, "No pudimos enviar el mensaje. Intenta nuevamente.")
+      setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
       setMessageError(errorMessage)
       notifyError(errorMessage, chatToastOptions)
       setMessage(content)
@@ -347,12 +420,14 @@ export default function Chats() {
         file,
         channel: "telegram",
       })
-      setMessages((prev) => [...prev, created])
+      setMessages((prev) => (prev.some((msg) => msg.id === created.id) ? prev : [...prev, created]))
       setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === selectedChatId
-            ? { ...chat, lastMessage: created.content ?? file.name, lastMessageAt: created.createdAt ?? null }
-            : chat
+        sortChatsByLastMessage(
+          prev.map((chat) =>
+            chat.id === selectedChatId
+              ? { ...chat, lastMessage: created.content ?? file.name, lastMessageAt: created.createdAt ?? null }
+              : chat
+          )
         )
       )
       scrollToBottom("smooth")
@@ -522,9 +597,9 @@ export default function Chats() {
                           {sender === "bot" && <Bot className="h-3 w-3 text-muted-foreground" />}
                           {sender === "admin" && <User className="h-3 w-3 text-muted-foreground" />}
                           <span className="text-[10px] text-muted-foreground">
-                            {createdAt ? createdAt.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : ""}
+                            {createdAt ? chatTimeFormatter.format(createdAt) : ""}
                           </span>
-                          {sender === "user" && (
+                          {isOutgoing && (
                             <span className="text-muted-foreground">
                               <CheckCheck className="h-3 w-3 text-blue-500" />
                             </span>
