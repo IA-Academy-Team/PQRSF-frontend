@@ -142,6 +142,27 @@ export default function Chats() {
     }
   }, [chatView])
 
+  const loadSelectedMessages = useCallback(async (showLoading = true) => {
+    if (!selectedChatId) {
+      setMessages([])
+      setMessageError(null)
+      return
+    }
+
+    if (showLoading) setIsLoadingMessages(true)
+    setMessageError(null)
+    try {
+      const pqrsId = chatView === "pqrs" ? selectedPqrsId ?? undefined : undefined
+      const data = await chatService.getMessages(selectedChatId, pqrsId)
+      setMessages(data)
+    } catch (error) {
+      console.error("[admin-chats] messages error", error)
+      setMessageError("No pudimos cargar los mensajes de este chat.")
+    } finally {
+      if (showLoading) setIsLoadingMessages(false)
+    }
+  }, [selectedChatId, selectedPqrsId, chatView])
+
   useEffect(() => {
     chatsRef.current = chats
   }, [chats])
@@ -250,33 +271,38 @@ export default function Chats() {
     }
 
     let active = true
-    const loadMessages = async () => {
-      setIsLoadingMessages(true)
-      setMessageError(null)
-      try {
-        const pqrsId = chatView === "pqrs" ? selectedPqrsId ?? undefined : undefined
-        const data = await chatService.getMessages(selectedChatId, pqrsId)
-        if (active) {
-          setMessages(data)
-        }
-      } catch (error) {
-        console.error("[admin-chats] messages error", error)
-        if (active) {
-          setMessageError("No pudimos cargar los mensajes de este chat.")
-        }
-      } finally {
-        if (active) {
-          setIsLoadingMessages(false)
-        }
-      }
+    const syncMessages = async () => {
+      if (!active) return
+      await loadSelectedMessages(true)
     }
 
-    loadMessages()
+    syncMessages()
 
     return () => {
       active = false
     }
-  }, [selectedChatId, selectedPqrsId, chatView])
+  }, [selectedChatId, loadSelectedMessages])
+
+  useEffect(() => {
+    const syncVisibleChats = () => {
+      void loadChats(false)
+      void loadSelectedMessages(false)
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        syncVisibleChats()
+      }
+    }
+
+    window.addEventListener("focus", syncVisibleChats)
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener("focus", syncVisibleChats)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
+  }, [loadChats, loadSelectedMessages])
 
   useEffect(() => {
     if (messages.length === 0) return

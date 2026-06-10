@@ -37,11 +37,11 @@ export const chatService = {
   },
 
   getSummaries: async (): Promise<ChatSummary[]> => {
-    return api.get<ChatSummary[]>('/chats/summary')
+    return api.get<ChatSummary[]>('/chats/summary', { cache: 'no-store' })
   },
 
   getSummariesByPqrs: async (): Promise<ChatPqrsSummary[]> => {
-    return api.get<ChatPqrsSummary[]>('/chats/summary/pqrs')
+    return api.get<ChatPqrsSummary[]>('/chats/summary/pqrs', { cache: 'no-store' })
   },
 
   getById: async (id: number): Promise<Chat> => {
@@ -71,7 +71,7 @@ export const chatService = {
   // Messages
   getMessages: async (chatId: number, pqrsId?: number): Promise<Message[]> => {
     const query = pqrsId ? `?pqrsId=${pqrsId}` : ''
-    return api.get<Message[]>(`/chats/${chatId}/messages${query}`)
+    return api.get<Message[]>(`/chats/${chatId}/messages${query}`, { cache: 'no-store' })
   },
 
   createMessage: async (data: CreateMessage): Promise<Message> => {
