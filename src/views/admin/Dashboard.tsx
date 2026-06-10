@@ -14,6 +14,7 @@ import { Sidebar } from "@/components/sidebar"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "@/contexts/auth-context"
 import { useSidebar } from "@/contexts/sidebar-context"
+import { useChatsVisibleLimit } from "@/hooks/use-mobile"
 import { useEffect, useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
 import {
@@ -32,6 +33,7 @@ export default function Dashboard() {
   const { user, isLoading } = useAuth()
   const navigate = useNavigate()
   const { isCollapsed } = useSidebar()
+  const chatsVisibleLimit = useChatsVisibleLimit()
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null)
   const [chats, setChats] = useState<AdminChat[]>([])
   const [isDashboardLoading, setIsDashboardLoading] = useState(false)
@@ -66,6 +68,14 @@ export default function Dashboard() {
       fecha: formatRelative(chat.lastMessageAt),
     }))
   }, [chats])
+
+  const visibleChatItems = useMemo(
+    () =>
+      isDashboardLoading
+        ? []
+        : chatItems.slice(0, chatsVisibleLimit),
+    [chatItems, isDashboardLoading, chatsVisibleLimit]
+  )
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -200,13 +210,15 @@ export default function Dashboard() {
     const pqrsByTypeTotal = totalPqrs > 0 ? totalPqrs : 1
 
     return (
-      <div className="flex min-h-screen bg-background max-md:overflow-visible md:h-screen md:overflow-hidden">
+      <div className="flex min-h-screen bg-background max-md:overflow-visible md:h-screen md:overflow-hidden [@media(max-height:1080px)]:h-auto [@media(max-height:1080px)]:min-h-screen [@media(max-height:1080px)]:overflow-visible">
         <Sidebar />
 
         <main
           className={cn(
             "flex-1 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 pt-14 md:pt-4 flex flex-col transition-all duration-300",
-            "max-md:min-h-screen max-md:overflow-y-auto max-md:h-auto md:h-screen md:overflow-hidden",
+            "max-md:min-h-screen max-md:overflow-y-auto max-md:h-auto",
+            "md:h-screen md:overflow-hidden",
+            "[@media(max-height:1080px)]:overflow-y-auto [@media(max-height:1080px)]:h-auto [@media(max-height:1080px)]:min-h-screen",
             isCollapsed ? "lg:ml-24" : "lg:ml-64"
           )}
         >
@@ -225,9 +237,17 @@ export default function Dashboard() {
             </div>
           )}
 
-          <div className="grid gap-3 md:gap-4 md:grid-cols-2 lg:gap-5 min-[1600px]:gap-6 max-md:flex-initial max-md:overflow-visible flex-1 min-h-0 overflow-hidden">
+          <div className={cn(
+            "grid gap-3 md:gap-4 md:grid-cols-2 lg:gap-5 min-[1600px]:gap-6 flex-1 min-h-0 overflow-hidden",
+            "max-md:overflow-visible",
+            "[@media(max-height:1080px)]:overflow-visible [@media(max-height:1080px)]:min-h-0 [@media(max-height:1080px)]:flex-initial"
+          )}>
             {/* Columna Izquierda */}
-            <div className="flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 max-md:min-h-0 max-md:overflow-visible min-h-0 overflow-hidden">
+            <div className={cn(
+              "flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 min-h-0 overflow-hidden",
+              "max-md:min-h-0 max-md:overflow-visible",
+              "[@media(max-height:1080px)]:min-h-0 [@media(max-height:1080px)]:overflow-visible [@media(max-height:1080px)]:flex-initial"
+            )}>
               {/* Fila 1: Cards de métricas */}
               <div className="grid gap-1.5 sm:gap-2 min-[1600px]:gap-3 grid-cols-1 sm:grid-cols-5 auto-rows-min min-h-20 shrink-0">
                 <Link to="/pqrsf?tab=general&status=todos">
@@ -311,8 +331,8 @@ export default function Dashboard() {
               </div>
 
               {/* Fila 2: Chats Recientes */}
-              <div className="min-h-0 flex flex-1">
-                <Card className="h-full w-full flex flex-col min-h-0">
+              <div className="min-h-0 flex flex-1 [@media(max-height:1080px)]:min-h-[200px] [@media(max-height:1080px)]:flex-initial">
+                <Card className="h-full w-full flex flex-col min-h-0 [@media(max-height:1080px)]:min-h-0">
                   <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 px-3 pt-3 pb-0 sm:px-4 sm:pt-4 sm:pb-0 min-[1600px]:px-6 min-[1600px]:pt-6 min-[1600px]:pb-0 shrink-0">
                     <CardTitle className="text-sm sm:text-base min-[1600px]:text-lg min-[1920px]:text-xl">Chats Recientes</CardTitle>
                     <Link to="/chats">
@@ -321,25 +341,25 @@ export default function Dashboard() {
                       </Button>
                     </Link>
                   </CardHeader>
-                  <CardContent className="px-3 pt-0 pb-3 sm:px-4 sm:pt-0 sm:pb-4 min-[1600px]:px-6 min-[1600px]:pt-0 min-[1600px]:pb-6 flex-1 min-h-0 flex flex-col overflow-hidden">
+                  <CardContent className="px-3 pt-0 pb-3 sm:px-4 sm:pt-0 sm:pb-4 min-[1600px]:px-6 min-[1600px]:pt-0 min-[1600px]:pb-6 flex-1 min-h-0 flex flex-col overflow-y-auto">
                     <div className="flex flex-col flex-1 min-h-0 gap-2 sm:gap-2.5 min-[1600px]:gap-3">
-                      {chatItems.length === 0 && !isDashboardLoading && (
+                      {visibleChatItems.length === 0 && (
                         <div className="text-xs min-[1600px]:text-sm text-muted-foreground">Sin chats recientes.</div>
                       )}
-                      {(isDashboardLoading ? [] : chatItems.slice(0, 6)).map((chat, index) => (
+                      {visibleChatItems.map((chat, index) => (
                         <div
                           key={index}
-                          className="flex min-h-12 flex-1 items-center justify-between gap-2 overflow-hidden rounded-lg border p-2 transition-colors hover:bg-muted/50 sm:p-2.5 min-[1600px]:p-3 @container-[size]"
+                          className="flex min-h-24 flex-initial items-start justify-between gap-2 overflow-hidden rounded-lg border p-2 transition-colors hover:bg-muted/50 sm:p-2.5 min-[1600px]:p-3 @container-[size]"
                         >
-                          <div className="flex min-w-0 flex-1 items-center gap-[clamp(0.5rem,2cqh,1.25rem)] min-[1600px]:gap-4 min-[1920px]:gap-5">
-                            <MessageCircle className="h-4 w-4 shrink-0 text-primary min-[1600px]:h-5 min-[1600px]:w-5" />
+                          <div className="flex min-w-0 flex-1 items-start gap-[clamp(0.5rem,2cqh,1.25rem)] min-[1600px]:gap-4 min-[1920px]:gap-5">
+                            <MessageCircle className="h-4 w-4 shrink-0 text-primary min-[1600px]:h-5 min-[1600px]:w-5 mt-0.5" />
                             <div className="min-w-0 flex-1 overflow-hidden">
                               <p className="truncate font-semibold text-xs min-[1600px]:text-sm">{chat.radicado}</p>
                               <p className="truncate text-[11px] text-muted-foreground min-[1600px]:text-xs">{chat.cliente}</p>
-                              <p className="mt-0.5 line-clamp-2 text-[11px] min-[1600px]:text-xs">{chat.ultimoMensaje}</p>
+                              <p className="mt-0.5 line-clamp-4 text-[11px] min-[1600px]:text-xs wrap-break-word">{chat.ultimoMensaje}</p>
                             </div>
                           </div>
-                          <span className="ml-2 shrink-0 text-[11px] text-muted-foreground min-[1600px]:text-xs">{chat.fecha}</span>
+                          <span className="ml-2 shrink-0 text-[11px] text-muted-foreground min-[1600px]:text-xs mt-0.5">{chat.fecha}</span>
                         </div>
                       ))}
                     </div>
@@ -349,9 +369,13 @@ export default function Dashboard() {
             </div>
 
             {/* Columna Derecha */}
-            <div className="flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 max-md:min-h-0 max-md:overflow-visible min-h-0 overflow-hidden">
+            <div className={cn(
+              "flex flex-col gap-3 md:gap-4 lg:gap-5 min-[1600px]:gap-6 min-h-0 overflow-hidden",
+              "max-md:min-h-0 max-md:overflow-visible",
+              "[@media(max-height:1080px)]:min-h-0 [@media(max-height:1080px)]:overflow-visible [@media(max-height:1080px)]:flex-initial"
+            )}>
               {/* Fila 1: PQRSF por Tipo */}
-              <Card className="flex-[1.25] min-h-[320px] flex flex-col">
+              <Card className="flex-[1.25] min-h-[320px] flex flex-col [@media(max-height:1080px)]:min-h-0 [@media(max-height:1080px)]:flex-initial">
                 <CardHeader className="shrink-0 px-3 pt-3 pb-0 sm:px-4 sm:pt-4 sm:pb-0 min-[1600px]:px-6 min-[1600px]:pt-6 min-[1600px]:pb-0">
                   <CardTitle className="text-base sm:text-lg min-[1600px]:text-xl">PQRSF por Tipo</CardTitle>
                 </CardHeader>
@@ -465,13 +489,15 @@ export default function Dashboard() {
     }
 
     return (
-      <div className="flex h-screen bg-background overflow-hidden max-md:overflow-visible max-md:h-auto max-md:min-h-screen">
+      <div className="flex h-screen bg-background overflow-hidden max-md:overflow-visible max-md:h-auto max-md:min-h-screen [@media(max-height:1080px)]:h-auto [@media(max-height:1080px)]:min-h-screen [@media(max-height:1080px)]:overflow-visible">
         <Sidebar />
 
         <main
           className={cn(
             "flex-1 p-3 sm:p-4 lg:p-5 min-[1600px]:p-10 pt-14 md:pt-3 flex flex-col transition-all duration-300",
-            "max-md:min-h-screen max-md:overflow-y-auto max-md:h-auto md:h-screen md:overflow-hidden",
+            "max-md:min-h-screen max-md:overflow-y-auto max-md:h-auto",
+            "md:h-screen md:overflow-hidden",
+            "[@media(max-height:1080px)]:overflow-y-auto [@media(max-height:1080px)]:min-h-screen [@media(max-height:1080px)]:h-auto",
             isCollapsed ? "lg:ml-24" : "lg:ml-64"
           )}
         >

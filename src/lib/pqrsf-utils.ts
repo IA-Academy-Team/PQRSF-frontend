@@ -1,8 +1,10 @@
 import type { CerradaItem, SeguimientoItem } from "@/services/pqrsf.service"
 import type { UnifiedPQRSFItem } from "@/components/PQRSFCard"
 
-/** Número de cards por página en todas las vistas: 3 columnas × 2 filas = 6 */
+/** Número de cards por página en escritorio: 3 columnas × 2 filas = 6 */
 export const ITEMS_PER_PAGE = 6
+/** En móvil se muestran menos para que cada card tenga espacio y no se corte */
+export const ITEMS_PER_PAGE_MOBILE = 4
 
 /** Clases del grid para listados de cards: 3 columnas (1 en móvil) */
 export const CARDS_GRID_CLASS = "grid grid-cols-1 md:grid-cols-3 auto-rows-fr gap-3 md:gap-4"

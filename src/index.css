@@ -132,6 +132,17 @@
       clip-path: polygon(20% 0%, 100% 0, 100% 100%, 0 100%) !important;
     }
   }
+
+  /* Pantallas con poca altura (< 1080px): permitir scroll y evitar cortes */
+  @media (max-height: 1080px) {
+    .low-height-scroll {
+      overflow-y: auto !important;
+      min-height: 0 !important;
+    }
+    .low-height-no-min {
+      min-height: 0 !important;
+    }
+  }
 }
 
 /* Particles Effect */

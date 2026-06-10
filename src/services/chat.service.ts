@@ -37,11 +37,11 @@ export const chatService = {
   },
 
   getSummaries: async (): Promise<ChatSummary[]> => {
-    return api.get<ChatSummary[]>('/chats/summary')
+    return api.get<ChatSummary[]>('/chats/summary', { cache: 'no-store' })
   },
 
   getSummariesByPqrs: async (): Promise<ChatPqrsSummary[]> => {
-    return api.get<ChatPqrsSummary[]>('/chats/summary/pqrs')
+    return api.get<ChatPqrsSummary[]>('/chats/summary/pqrs', { cache: 'no-store' })
   },
 
   getById: async (id: number): Promise<Chat> => {
@@ -71,17 +71,17 @@ export const chatService = {
   // Messages
   getMessages: async (chatId: number, pqrsId?: number): Promise<Message[]> => {
     const query = pqrsId ? `?pqrsId=${pqrsId}` : ''
-    return api.get<Message[]>(`/chats/${chatId}/messages${query}`)
+    return api.get<Message[]>(`/chats/${chatId}/messages${query}`, { cache: 'no-store' })
   },
 
   createMessage: async (data: CreateMessage): Promise<Message> => {
     return api.post<Message>('/chats/messages', data)
   },
 
-  sendMessage: async (data: { chatId: number; content: string; channel?: 'whatsapp' | 'telegram' }): Promise<Message> => {
+  sendMessage: async (data: { chatId: number; content: string; channel?: 'telegram' }): Promise<Message> => {
     return api.post<Message>('/chats/messages/send', data)
   },
-  sendFile: async (params: { chatId: number; file: File; channel?: 'whatsapp' | 'telegram' }): Promise<Message> => {
+  sendFile: async (params: { chatId: number; file: File; channel?: 'telegram' }): Promise<Message> => {
     const formData = new FormData()
     formData.append('chatId', String(params.chatId))
     if (params.channel) formData.append('channel', params.channel)

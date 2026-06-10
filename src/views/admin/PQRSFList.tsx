@@ -28,7 +28,13 @@ import {
   transformAreaAppealItem,
   getDescription,
 } from "@/lib/pqrsf-transformers"
-import { ITEMS_PER_PAGE } from "@/lib/pqrsf-utils"
+import { ITEMS_PER_PAGE, ITEMS_PER_PAGE_MOBILE } from "@/lib/pqrsf-utils"
+import { useIsMobile } from "@/hooks/use-mobile"
+
+function useItemsPerPage() {
+  const isMobile = useIsMobile()
+  return isMobile ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE
+}
 
 /** Formatea YYYY-MM-DD a texto corto legible (ej: 28 ene 2026) */
 function formatDateLabel(isoDate: string): string {
@@ -40,9 +46,10 @@ function formatDateLabel(isoDate: string): string {
 export default function PQRSFList() {
   const { isCollapsed } = useSidebar()
   const { user } = useAuth()
+  const isMobile = useIsMobile()
   const [activeTab, setActiveTab] = useState("general")
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = ITEMS_PER_PAGE
+  const itemsPerPage = isMobile ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE
   const [items, setItems] = useState<PQRSFListItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -218,17 +225,19 @@ export default function PQRSFList() {
   const { currentPage: safeCurrentPage, totalPages, paginatedItems, setCurrentPage: setSafeCurrentPage } = usePagination({
     items: formattedItems,
     itemsPerPage,
-    dependencies: [searchTerm, statusFilter, typeFilter, dateFrom, dateTo, sortFilter],
+    dependencies: [searchTerm, statusFilter, typeFilter, dateFrom, dateTo, sortFilter, isMobile],
   })
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background max-md:overflow-visible max-md:h-auto max-md:min-h-screen">
+    <div className="flex h-screen overflow-hidden bg-background max-md:overflow-visible max-md:h-auto max-md:min-h-screen [@media(max-height:1080px)]:h-auto [@media(max-height:1080px)]:min-h-screen [@media(max-height:1080px)]:overflow-visible">
       <Sidebar />
 
       <main
         className={cn(
           "flex-1 flex flex-col min-h-0 p-4 sm:p-6 lg:p-8 min-[1600px]:p-10 pt-14 md:pt-4 transition-all duration-300",
-          "max-md:min-h-screen max-md:overflow-y-auto max-md:h-auto md:overflow-hidden",
+          "max-md:min-h-screen max-md:overflow-y-auto max-md:h-auto",
+          "md:overflow-hidden",
+          "[@media(max-height:1080px)]:overflow-y-auto [@media(max-height:1080px)]:min-h-screen [@media(max-height:1080px)]:h-auto",
           isCollapsed ? "lg:ml-24" : "lg:ml-64",
         )}
       >
@@ -236,33 +245,35 @@ export default function PQRSFList() {
           <h1 className="text-xl sm:text-2xl lg:text-3xl min-[1600px]:text-4xl font-bold text-foreground mb-1 sm:mb-2 min-[1600px]:mb-3">Listado General de PQRSF</h1>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <TabsList className="mb-4 sm:mb-6 shrink-0 w-full max-w-full overflow-x-auto flex-nowrap justify-start md:justify-center md:w-fit [&>button]:shrink-0">
-            <TabsTrigger value="general" className="whitespace-nowrap">Listado General</TabsTrigger>
-            {user?.rol === "Administrador" && (
-              <>
-                <TabsTrigger value="seguimiento" className="whitespace-nowrap">Seguimiento</TabsTrigger>
-                <TabsTrigger value="apelacion" className="whitespace-nowrap">En Apelación</TabsTrigger>
-                <TabsTrigger value="cerradas" className="whitespace-nowrap">Cerradas</TabsTrigger>
-              </>
-            )}
-            {user?.rol === "Usuario de Área Responsable" && (
-              <>
-                <TabsTrigger value="analisis" className="whitespace-nowrap">Análisis Pendiente</TabsTrigger>
-                <TabsTrigger value="apelacion" className="whitespace-nowrap">En Apelación</TabsTrigger>
-                <TabsTrigger value="cerradas" className="whitespace-nowrap">Cerradas</TabsTrigger>
-              </>
-            )}
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden [@media(max-height:1080px)]:overflow-visible [@media(max-height:1080px)]:min-h-0">
+          <div className="mb-4 sm:mb-6 shrink-0 w-full max-w-full overflow-x-auto overflow-y-hidden">
+            <TabsList className="w-max min-w-full md:min-w-0 inline-flex h-9 flex-none flex-nowrap justify-start md:justify-center gap-0 rounded-lg p-0.75 [&>button]:shrink-0 max-md:pr-10">
+              <TabsTrigger value="general" className="whitespace-nowrap">Listado General</TabsTrigger>
+              {user?.rol === "Administrador" && (
+                <>
+                  <TabsTrigger value="seguimiento" className="whitespace-nowrap">Seguimiento</TabsTrigger>
+                  <TabsTrigger value="apelacion" className="whitespace-nowrap">En Apelación</TabsTrigger>
+                  <TabsTrigger value="cerradas" className="whitespace-nowrap">Cerradas</TabsTrigger>
+                </>
+              )}
+              {user?.rol === "Usuario de Área Responsable" && (
+                <>
+                  <TabsTrigger value="analisis" className="whitespace-nowrap">Análisis Pendiente</TabsTrigger>
+                  <TabsTrigger value="apelacion" className="whitespace-nowrap">En Apelación</TabsTrigger>
+                  <TabsTrigger value="cerradas" className="whitespace-nowrap">Cerradas</TabsTrigger>
+                </>
+              )}
+            </TabsList>
+          </div>
 
-          <TabsContent value="general" className="flex-1 flex flex-col min-h-0 mt-0">
+          <TabsContent value="general" className="flex-1 flex flex-col min-h-0 mt-0 [@media(max-height:1080px)]:min-h-0 [@media(max-height:1080px)]:overflow-visible">
             <CardContent className="pb-2 px-0 mb-4 sm:mb-6 shrink-0">
               <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <div className="flex-1 relative min-w-0 md:min-w-[280px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary pointer-events-none" />
                   <Input
                     placeholder="Buscar por nombre, ID o descripción..."
-                    className="pl-10"
+                    className="pl-10 h-10 border-primary/30 bg-muted/30 placeholder:text-foreground/70 md:min-w-[260px] focus-visible:ring-primary"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -375,8 +386,8 @@ export default function PQRSFList() {
               </div>
             )}
 
-            <div className="flex-1 min-h-0 overflow-hidden mb-2">
-              <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 auto-rows-fr min-h-full gap-3 md:gap-4 min-[1600px]:gap-5">
+            <div className="flex-1 min-h-0 overflow-hidden mb-2 [@media(max-height:1080px)]:overflow-visible [@media(max-height:1080px)]:min-h-0">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 min-[1600px]:gap-5 min-h-full [@media(min-height:1081px)]:grid-rows-2 [@media(min-height:1081px)]:auto-rows-fr [@media(max-height:1080px)]:auto-rows-min [@media(max-height:1080px)]:grid-rows-none">
                 {isLoading && (
                   <Card className="col-span-full border-dashed p-4 sm:p-5">
                     <div className="text-sm text-muted-foreground">Cargando bandeja...</div>
@@ -456,7 +467,7 @@ function SeguimientoTabContent() {
   const [areasSeguimiento, setAreasSeguimiento] = useState<{ id: number; name: string }[]>([])
   const [statusList, setStatusList] = useState<{ id: number; name: string }[]>([])
   const [typesList, setTypesList] = useState<{ id: number; name: string }[]>([])
-  const itemsPerPage = ITEMS_PER_PAGE
+  const itemsPerPage = useItemsPerPage()
   const [items, setItems] = useState<SeguimientoItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -544,7 +555,7 @@ function SeguimientoTabContent() {
   const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
     items: filteredPQRSF,
     itemsPerPage,
-    dependencies: [searchTerm, filtroEstado, filtroTipo, filtroArea, dateFrom, dateTo, sortFilter],
+    dependencies: [searchTerm, filtroEstado, filtroTipo, filtroArea, dateFrom, dateTo, sortFilter, itemsPerPage],
   })
 
   const handleFinalize = async (id: number) => {
@@ -691,8 +702,8 @@ function SeguimientoTabContent() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-hidden mb-2">
-        <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 auto-rows-fr min-h-full gap-3 md:gap-4 min-[1600px]:gap-5">
+      <div className="flex-1 min-h-0 overflow-hidden mb-2 [@media(max-height:1080px)]:overflow-visible [@media(max-height:1080px)]:min-h-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 min-h-full gap-3 md:gap-4 min-[1600px]:gap-5 [@media(min-height:1081px)]:grid-rows-2 [@media(min-height:1081px)]:auto-rows-fr [@media(max-height:1080px)]:auto-rows-min [@media(max-height:1080px)]:grid-rows-none">
           {isLoading && (
             <Card className="col-span-full border-dashed p-4 sm:p-5">
               <div className="text-sm text-muted-foreground">Cargando seguimiento...</div>
@@ -737,7 +748,7 @@ function CerradasTabContent() {
   const [areasCerradas, setAreasCerradas] = useState<{ id: number; name: string }[]>([])
   const [statusList, setStatusList] = useState<{ id: number; name: string }[]>([])
   const [typesList, setTypesList] = useState<{ id: number; name: string }[]>([])
-  const itemsPerPage = ITEMS_PER_PAGE
+  const itemsPerPage = useItemsPerPage()
   const [items, setItems] = useState<CerradaItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -824,7 +835,7 @@ function CerradasTabContent() {
   const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
     items: filteredPQRSF,
     itemsPerPage,
-    dependencies: [searchTerm, filtroEstado, filtroTipo, filtroArea, dateFrom, dateTo, sortFilter],
+    dependencies: [searchTerm, filtroEstado, filtroTipo, filtroArea, dateFrom, dateTo, sortFilter, itemsPerPage],
   })
 
   if (!user || (user.rol !== "Administrador" && user.rol !== "Usuario de Área Responsable")) {
@@ -938,8 +949,8 @@ function CerradasTabContent() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-hidden mb-2">
-        <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 auto-rows-fr min-h-full gap-3 md:gap-4 min-[1600px]:gap-5">
+      <div className="flex-1 min-h-0 overflow-hidden mb-2 [@media(max-height:1080px)]:overflow-visible [@media(max-height:1080px)]:min-h-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 min-h-full gap-3 md:gap-4 min-[1600px]:gap-5 [@media(min-height:1081px)]:grid-rows-2 [@media(min-height:1081px)]:auto-rows-fr [@media(max-height:1080px)]:auto-rows-min [@media(max-height:1080px)]:grid-rows-none">
           {isLoading && (
             <Card className="col-span-full border-dashed p-4 sm:p-5">
               <div className="text-sm text-muted-foreground">Cargando cerradas...</div>
@@ -984,7 +995,7 @@ function ApelacionTabContent() {
   const [areasApelacion, setAreasApelacion] = useState<{ id: number; name: string }[]>([])
   const [statusList, setStatusList] = useState<{ id: number; name: string }[]>([])
   const [typesList, setTypesList] = useState<{ id: number; name: string }[]>([])
-  const itemsPerPage = ITEMS_PER_PAGE
+  const itemsPerPage = useItemsPerPage()
   const [items, setItems] = useState<ApelacionItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -1071,7 +1082,7 @@ function ApelacionTabContent() {
   const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
     items: filteredPQRSF,
     itemsPerPage,
-    dependencies: [searchTerm, filtroEstado, filtroTipo, filtroArea, dateFrom, dateTo, sortFilter],
+    dependencies: [searchTerm, filtroEstado, filtroTipo, filtroArea, dateFrom, dateTo, sortFilter, itemsPerPage],
   })
 
   if (!user || user.rol !== "Administrador") {
@@ -1185,8 +1196,8 @@ function ApelacionTabContent() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-hidden mb-2">
-        <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 auto-rows-fr min-h-full gap-3 md:gap-4 min-[1600px]:gap-5">
+      <div className="flex-1 min-h-0 overflow-hidden mb-2 [@media(max-height:1080px)]:overflow-visible [@media(max-height:1080px)]:min-h-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 min-h-full gap-3 md:gap-4 min-[1600px]:gap-5 [@media(min-height:1081px)]:grid-rows-2 [@media(min-height:1081px)]:auto-rows-fr [@media(max-height:1080px)]:auto-rows-min [@media(max-height:1080px)]:grid-rows-none">
           {isLoading && (
             <Card className="col-span-full border-dashed p-4 sm:p-5">
               <div className="text-sm text-muted-foreground">Cargando apelaciones...</div>
@@ -1231,7 +1242,7 @@ function ApelacionAreaTabContent() {
   const [sortFilter, setSortFilter] = useState<"recent" | "oldest" | "ticket">("recent")
   const [statusList, setStatusList] = useState<{ id: number; name: string }[]>([])
   const [typesList, setTypesList] = useState<{ id: number; name: string }[]>([])
-  const itemsPerPage = ITEMS_PER_PAGE
+  const itemsPerPage = useItemsPerPage()
   const [items, setItems] = useState<AreaAppealItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -1321,7 +1332,7 @@ function ApelacionAreaTabContent() {
   const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
     items: filteredPQRSF,
     itemsPerPage,
-    dependencies: [searchTerm, filtroEstado, filtroTipo, dateFrom, dateTo, sortFilter],
+    dependencies: [searchTerm, filtroEstado, filtroTipo, dateFrom, dateTo, sortFilter, itemsPerPage],
   })
 
   if (!user || user.rol !== "Usuario de Área Responsable") {
@@ -1429,8 +1440,8 @@ function ApelacionAreaTabContent() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-hidden mb-2">
-        <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 auto-rows-fr min-h-full gap-3 md:gap-4 min-[1600px]:gap-5">
+      <div className="flex-1 min-h-0 overflow-hidden mb-2 [@media(max-height:1080px)]:overflow-visible [@media(max-height:1080px)]:min-h-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 min-h-full gap-3 md:gap-4 min-[1600px]:gap-5 [@media(min-height:1081px)]:grid-rows-2 [@media(min-height:1081px)]:auto-rows-fr [@media(max-height:1080px)]:auto-rows-min [@media(max-height:1080px)]:grid-rows-none">
           {isLoading && (
             <Card className="col-span-full border-dashed p-4 sm:p-5">
               <div className="text-sm text-muted-foreground">Cargando apelaciones de tu área...</div>
@@ -1478,7 +1489,7 @@ function AnalisisPendienteTabContent() {
   const [sortFilter, setSortFilter] = useState<"recent" | "oldest" | "ticket">("recent")
   const [statusList, setStatusList] = useState<{ id: number; name: string }[]>([])
   const [typesList, setTypesList] = useState<{ id: number; name: string }[]>([])
-  const itemsPerPage = ITEMS_PER_PAGE
+  const itemsPerPage = useItemsPerPage()
 
   useEffect(() => {
     let active = true
@@ -1575,7 +1586,7 @@ function AnalisisPendienteTabContent() {
   const { currentPage, totalPages, paginatedItems, setCurrentPage } = usePagination({
     items: filteredPending,
     itemsPerPage,
-    dependencies: [searchTerm, filtroEstado, filtroTipo, dateFrom, dateTo, sortFilter],
+    dependencies: [searchTerm, filtroEstado, filtroTipo, dateFrom, dateTo, sortFilter, itemsPerPage],
   })
 
   if (!user || user.rol !== "Usuario de Área Responsable") {
@@ -1678,8 +1689,8 @@ function AnalisisPendienteTabContent() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-hidden mb-2">
-        <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-2 auto-rows-fr min-h-full gap-3 md:gap-4 min-[1600px]:gap-5">
+      <div className="flex-1 min-h-0 overflow-hidden mb-2 [@media(max-height:1080px)]:overflow-visible [@media(max-height:1080px)]:min-h-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 min-h-full gap-3 md:gap-4 min-[1600px]:gap-5 [@media(min-height:1081px)]:grid-rows-2 [@media(min-height:1081px)]:auto-rows-fr [@media(max-height:1080px)]:auto-rows-min [@media(max-height:1080px)]:grid-rows-none">
           {isLoadingData && (
             <Card className="col-span-full border-dashed p-4 sm:p-5">
               <div className="text-sm text-muted-foreground">Cargando pendientes...</div>

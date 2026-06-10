@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { useSidebar } from "@/contexts/sidebar-context"
 import { Search, Send, Paperclip, Smile, CheckCheck, MessageCircle, Bot, User } from "lucide-react"
@@ -12,28 +12,29 @@ import { API_BASE } from "@/lib/api"
 import { io } from "socket.io-client"
 import { notifyError, notifySuccess } from "@/lib/toast"
 
-// Función para formatear fechas tipo WhatsApp
+// Función para formatear fechas del chat
 const parseChatDate = (value: string | Date | null | undefined): Date | null => {
   if (!value) return null
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value
   const raw = String(value).trim()
   if (!raw) return null
-  if (raw.endsWith("Z")) {
-    const local = raw.slice(0, -1)
-    const localDate = new Date(local)
-    if (!Number.isNaN(localDate.getTime())) return localDate
-  }
   const parsed = new Date(raw)
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
-function formatWhatsAppDate(date: Date) {
+const chatTimeFormatter = new Intl.DateTimeFormat("es-CO", {
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Bogota",
+})
+
+function formatChatDate(date: Date) {
   const now = new Date()
   const diffTime = now.getTime() - date.getTime()
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
 
   if (diffDays === 0) {
-    return date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+    return chatTimeFormatter.format(date)
   } else if (diffDays === 1) {
     return "Ayer"
   } else if (diffDays < 7) {
@@ -52,18 +53,22 @@ const getInitials = (name: string) => {
 
 type ChatListItem = ChatSummary & Partial<ChatPqrsSummary>
 
+const chatToastOptions = { position: "top-left" as const }
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error && typeof error === "object" && "message" in error) {
+    const message = String((error as { message?: unknown }).message ?? "").trim()
+    if (message) return message
+  }
+  return fallback
+}
+
 const normalizeChatSearch = (chat: ChatListItem, query: string) => {
   const name = chat.clientName?.toLowerCase() ?? ""
   const phone = chat.clientPhone ?? ""
   const lastMessage = chat.lastMessage?.toLowerCase() ?? ""
   const ticket = chat.ticketNumber?.toLowerCase() ?? ""
   return name.includes(query) || phone.includes(query) || lastMessage.includes(query) || ticket.includes(query)
-}
-
-const inferChannel = (chat: ChatListItem): "whatsapp" | "telegram" => {
-  const phone = chat.clientPhone?.toLowerCase() ?? ""
-  if (phone.startsWith("tg:") || phone.startsWith("telegram:")) return "telegram"
-  return "whatsapp"
 }
 
 const isMessageWithinPqrsWindow = (chat: ChatListItem | undefined, createdAt: Date) => {
@@ -77,6 +82,14 @@ const isMessageWithinPqrsWindow = (chat: ChatListItem | undefined, createdAt: Da
   }
   return true
 }
+
+const sortChatsByLastMessage = (items: ChatListItem[]) =>
+  [...items].sort((a, b) => {
+    const aTime = parseChatDate(a.lastMessageAt)?.getTime() ?? 0
+    const bTime = parseChatDate(b.lastMessageAt)?.getTime() ?? 0
+    if (aTime !== bTime) return bTime - aTime
+    return Number(b.id) - Number(a.id)
+  })
 
 export default function Chats() {
   const { isCollapsed } = useSidebar()
@@ -95,6 +108,7 @@ export default function Chats() {
   const [isUpdatingMode, setIsUpdatingMode] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const chatsRef = useRef<ChatListItem[]>([])
 
   const emojiList = ["😀", "😁", "😂", "🤣", "😊", "😍", "😘", "😎", "😅", "😇", "🤔", "😢", "😡", "👍", "🙏", "👏", "🎉", "💬", "✅", "❤️"]
 
@@ -111,38 +125,111 @@ export default function Chats() {
     }
   }
 
+  const loadChats = useCallback(async (showLoading = true) => {
+    if (showLoading) setIsLoadingChats(true)
+    setChatError(null)
+    try {
+      const data =
+        chatView === "pqrs"
+          ? await chatService.getSummariesByPqrs()
+          : await chatService.getSummaries()
+      setChats(sortChatsByLastMessage(data))
+    } catch (error) {
+      console.error("[admin-chats] load error", error)
+      setChatError("No pudimos cargar los chats. Intenta nuevamente.")
+    } finally {
+      if (showLoading) setIsLoadingChats(false)
+    }
+  }, [chatView])
+
+  const loadSelectedMessages = useCallback(async (showLoading = true) => {
+    if (!selectedChatId) {
+      setMessages([])
+      setMessageError(null)
+      return
+    }
+
+    if (showLoading) setIsLoadingMessages(true)
+    setMessageError(null)
+    try {
+      const pqrsId = chatView === "pqrs" ? selectedPqrsId ?? undefined : undefined
+      const data = await chatService.getMessages(selectedChatId, pqrsId)
+      setMessages(data)
+    } catch (error) {
+      console.error("[admin-chats] messages error", error)
+      setMessageError("No pudimos cargar los mensajes de este chat.")
+    } finally {
+      if (showLoading) setIsLoadingMessages(false)
+    }
+  }, [selectedChatId, selectedPqrsId, chatView])
+
+  useEffect(() => {
+    chatsRef.current = chats
+  }, [chats])
+
   useEffect(() => {
     let active = true
 
-    const loadChats = async () => {
-      setIsLoadingChats(true)
-      setChatError(null)
-      try {
-        const data =
-          chatView === "pqrs"
-            ? await chatService.getSummariesByPqrs()
-            : await chatService.getSummaries()
-        if (active) {
-          setChats(data)
-        }
-      } catch (error) {
-        console.error("[admin-chats] load error", error)
-        if (active) {
-          setChatError("No pudimos cargar los chats. Intenta nuevamente.")
-        }
-      } finally {
-        if (active) {
-          setIsLoadingChats(false)
-        }
-      }
+    const syncInitialChats = async () => {
+      if (!active) return
+      await loadChats(true)
     }
 
-    loadChats()
+    syncInitialChats()
 
     return () => {
       active = false
     }
-  }, [chatView])
+  }, [loadChats])
+
+  useEffect(() => {
+    if (!selectedChatId) return
+    const stillExists = chats.some(
+      (chat) => chat.id === selectedChatId && (chatView !== "pqrs" || chat.pqrsId === selectedPqrsId)
+    )
+    if (!stillExists) {
+      setSelectedChatId(null)
+      setSelectedPqrsId(null)
+      setMessages([])
+    }
+  }, [chats, selectedChatId, selectedPqrsId, chatView])
+
+  const applySummaryUpdate = useCallback((summary: Partial<ChatSummary> & { chatId?: number }) => {
+    const chatId = summary.chatId ?? summary.id
+    if (!chatId) return
+
+    const knownChat = chatsRef.current.some((chat) => chat.id === chatId)
+    if (!knownChat) {
+      void loadChats(false)
+      return
+    }
+
+    setChats((prev) => {
+      let changed = false
+      const next = prev.map((chat) => {
+        if (chat.id !== chatId) return chat
+        changed = true
+        const lastMessageAt = summary.lastMessageAt ?? chat.lastMessageAt
+        if (chatView === "pqrs" && lastMessageAt) {
+          const lastDate = parseChatDate(lastMessageAt)
+          if (lastDate && !isMessageWithinPqrsWindow(chat, lastDate)) {
+            return { ...chat, mode: summary.mode ?? chat.mode }
+          }
+        }
+        return {
+          ...chat,
+          lastMessage: summary.lastMessage ?? chat.lastMessage,
+          lastMessageAt,
+          mode: summary.mode ?? chat.mode,
+        }
+      })
+      if (!changed) {
+        void loadChats(false)
+        return prev
+      }
+      return sortChatsByLastMessage(next)
+    })
+  }, [chatView, loadChats])
 
   useEffect(() => {
     setSelectedChatId(null)
@@ -156,33 +243,14 @@ export default function Chats() {
       query: { scope: "summary" },
     })
 
-    socket.on("chat_summary", (summary: Partial<ChatSummary> & { chatId?: number }) => {
-      const chatId = summary.chatId ?? summary.id
-      if (!chatId) return
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === chatId
-            ? (() => {
-                const lastMessageAt = summary.lastMessageAt ?? chat.lastMessageAt
-                if (chatView === "pqrs" && lastMessageAt) {
-                  const lastDate = parseChatDate(lastMessageAt)
-                  if (lastDate && !isMessageWithinPqrsWindow(chat, lastDate)) {
-                    return { ...chat, mode: summary.mode ?? chat.mode }
-                  }
-                }
-                return {
-                  ...chat,
-                  lastMessage: summary.lastMessage ?? chat.lastMessage,
-                  lastMessageAt,
-                  mode: summary.mode ?? chat.mode,
-                }
-              })()
-            : chat
-        )
-      )
-    })
+    socket.on("chat_summary", applySummaryUpdate)
 
     socket.on("chat_mode", (payload: { chatId: number; mode: number | null }) => {
+      const knownChat = chatsRef.current.some((chat) => chat.id === payload.chatId)
+      if (!knownChat) {
+        void loadChats(false)
+        return
+      }
       setChats((prev) => prev.map((chat) => (chat.id === payload.chatId ? { ...chat, mode: payload.mode } : chat)))
     })
 
@@ -193,7 +261,7 @@ export default function Chats() {
     return () => {
       socket.disconnect()
     }
-  }, [chatView])
+  }, [applySummaryUpdate, loadChats])
 
   useEffect(() => {
     if (!selectedChatId) {
@@ -203,33 +271,38 @@ export default function Chats() {
     }
 
     let active = true
-    const loadMessages = async () => {
-      setIsLoadingMessages(true)
-      setMessageError(null)
-      try {
-        const pqrsId = chatView === "pqrs" ? selectedPqrsId ?? undefined : undefined
-        const data = await chatService.getMessages(selectedChatId, pqrsId)
-        if (active) {
-          setMessages(data)
-        }
-      } catch (error) {
-        console.error("[admin-chats] messages error", error)
-        if (active) {
-          setMessageError("No pudimos cargar los mensajes de este chat.")
-        }
-      } finally {
-        if (active) {
-          setIsLoadingMessages(false)
-        }
-      }
+    const syncMessages = async () => {
+      if (!active) return
+      await loadSelectedMessages(true)
     }
 
-    loadMessages()
+    syncMessages()
 
     return () => {
       active = false
     }
-  }, [selectedChatId, selectedPqrsId, chatView])
+  }, [selectedChatId, loadSelectedMessages])
+
+  useEffect(() => {
+    const syncVisibleChats = () => {
+      void loadChats(false)
+      void loadSelectedMessages(false)
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        syncVisibleChats()
+      }
+    }
+
+    window.addEventListener("focus", syncVisibleChats)
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener("focus", syncVisibleChats)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
+  }, [loadChats, loadSelectedMessages])
 
   useEffect(() => {
     if (messages.length === 0) return
@@ -296,10 +369,10 @@ export default function Chats() {
       const updated = await chatService.update(currentChat.id, { mode: nextMode })
       const mode = updated.mode ?? currentChat.mode ?? 1
       setChats((prev) => prev.map((chat) => (chat.id === currentChat.id ? { ...chat, mode } : chat)))
-      notifySuccess(checked ? "Modo Administrador activado." : "Modo IA activado.")
+      notifySuccess(checked ? "Modo Administrador activado." : "Modo IA activado.", chatToastOptions)
     } catch (error) {
       console.error("[admin-chats] mode update error", error)
-      notifyError("No pudimos actualizar el modo del chat.")
+      notifyError(getErrorMessage(error, "No pudimos actualizar el modo del chat."), chatToastOptions)
     } finally {
       setIsUpdatingMode(false)
     }
@@ -308,27 +381,58 @@ export default function Chats() {
   const handleSendMessage = async () => {
     if (!selectedChatId || !message.trim()) return
     const content = message.trim()
+    const optimisticId = -Date.now()
+    const optimisticCreatedAt = new Date().toISOString()
+    const optimisticMessage: Message = {
+      id: optimisticId,
+      content,
+      type: 3,
+      createdAt: optimisticCreatedAt,
+      chatId: selectedChatId,
+    }
+
     setMessage("")
     setMessageError(null)
+    setMessages((prev) => [...prev, optimisticMessage])
+    setChats((prev) =>
+      sortChatsByLastMessage(
+        prev.map((chat) =>
+          chat.id === selectedChatId
+            ? { ...chat, lastMessage: content, lastMessageAt: optimisticCreatedAt }
+            : chat
+        )
+      )
+    )
+    scrollToBottom("smooth")
+
     try {
       const created = await chatService.sendMessage({
         chatId: selectedChatId,
         content,
-        channel: currentChat ? inferChannel(currentChat) : "whatsapp",
+        channel: "telegram",
       })
-      setMessages((prev) => [...prev, created])
+      setMessages((prev) => {
+        if (prev.some((msg) => msg.id === created.id)) {
+          return prev.filter((msg) => msg.id !== optimisticId)
+        }
+        return prev.map((msg) => (msg.id === optimisticId ? created : msg))
+      })
       setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === selectedChatId
-            ? { ...chat, lastMessage: created.content ?? content, lastMessageAt: created.createdAt ?? null }
-            : chat
+        sortChatsByLastMessage(
+          prev.map((chat) =>
+            chat.id === selectedChatId
+              ? { ...chat, lastMessage: created.content ?? content, lastMessageAt: created.createdAt ?? null }
+              : chat
+          )
         )
       )
       scrollToBottom("smooth")
     } catch (error) {
       console.error("[admin-chats] send error", error)
-      setMessageError("No pudimos enviar el mensaje. Intenta nuevamente.")
-      notifyError("No pudimos enviar el mensaje.")
+      const errorMessage = getErrorMessage(error, "No pudimos enviar el mensaje. Intenta nuevamente.")
+      setMessages((prev) => prev.filter((msg) => msg.id !== optimisticId))
+      setMessageError(errorMessage)
+      notifyError(errorMessage, chatToastOptions)
       setMessage(content)
     }
   }
@@ -340,21 +444,24 @@ export default function Chats() {
       const created = await chatService.sendFile({
         chatId: selectedChatId,
         file,
-        channel: currentChat ? inferChannel(currentChat) : "whatsapp",
+        channel: "telegram",
       })
-      setMessages((prev) => [...prev, created])
+      setMessages((prev) => (prev.some((msg) => msg.id === created.id) ? prev : [...prev, created]))
       setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === selectedChatId
-            ? { ...chat, lastMessage: created.content ?? file.name, lastMessageAt: created.createdAt ?? null }
-            : chat
+        sortChatsByLastMessage(
+          prev.map((chat) =>
+            chat.id === selectedChatId
+              ? { ...chat, lastMessage: created.content ?? file.name, lastMessageAt: created.createdAt ?? null }
+              : chat
+          )
         )
       )
       scrollToBottom("smooth")
     } catch (error) {
       console.error("[admin-chats] send file error", error)
-      setMessageError("No pudimos enviar el archivo. Intenta nuevamente.")
-      notifyError("No pudimos enviar el archivo.")
+      const errorMessage = getErrorMessage(error, "No pudimos enviar el archivo. Intenta nuevamente.")
+      setMessageError(errorMessage)
+      notifyError(errorMessage, chatToastOptions)
     }
   }
 
@@ -421,7 +528,7 @@ export default function Chats() {
                 const lastMessage = chat.lastMessage ?? "Sin mensajes aún"
                 const lastMessageAt = parseChatDate(chat.lastMessageAt)
                 const ticketLabel = chatView === "pqrs" ? chat.ticketNumber ?? "PQRS" : null
-                const channelLabel = inferChannel(chat) === "telegram" ? "Telegram" : "WhatsApp"
+                const channelLabel = "Telegram"
                 const isSelected =
                   chatView === "pqrs"
                     ? selectedChatId === chat.id && selectedPqrsId === chat.pqrsId
@@ -447,7 +554,7 @@ export default function Chats() {
                           {ticketLabel && <span className="ml-2 text-xs min-[1600px]:text-sm text-muted-foreground">{ticketLabel}</span>}
                         </h3>
                         <span className="text-xs min-[1600px]:text-sm text-muted-foreground">
-                          {lastMessageAt ? formatWhatsAppDate(lastMessageAt) : ""}
+                          {lastMessageAt ? formatChatDate(lastMessageAt) : ""}
                         </span>
                       </div>
                       <p className="text-sm min-[1600px]:text-base text-muted-foreground truncate">{lastMessage}</p>
@@ -516,9 +623,9 @@ export default function Chats() {
                           {sender === "bot" && <Bot className="h-3 w-3 text-muted-foreground" />}
                           {sender === "admin" && <User className="h-3 w-3 text-muted-foreground" />}
                           <span className="text-[10px] text-muted-foreground">
-                            {createdAt ? createdAt.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : ""}
+                            {createdAt ? chatTimeFormatter.format(createdAt) : ""}
                           </span>
-                          {sender === "user" && (
+                          {isOutgoing && (
                             <span className="text-muted-foreground">
                               <CheckCheck className="h-3 w-3 text-blue-500" />
                             </span>
